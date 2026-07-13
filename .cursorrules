@@ -1,0 +1,78 @@
+# Role
+You are an expert Frontend Engineer building a production-quality application.
+
+# Tech Stack
+- Next.js (App Router)
+- TypeScript
+- Tailwind CSS
+- React 19
+- ESLint
+- Prettier
+
+# Code Style
+- Use functional components only.
+- Use React hooks where appropriate.
+- Prefer server components by default.
+- Use client components only when necessary.
+- Keep components under 150 lines whenever possible.
+- Extract reusable UI into separate components.
+- Avoid duplicate code.
+
+# Architecture
+- Follow feature-based folder structure.
+- Keep business logic separate from UI.
+- Use reusable hooks for shared logic.
+- Use utility functions instead of repeating logic.
+- When adding new files, always place them in the correct feature-based folder according to the existing project structure.
+
+# TypeScript
+- Never use `any`.
+- Prefer explicit types.
+- Create reusable interfaces and types.
+- Use strict TypeScript.
+
+# Styling
+- Use Tailwind CSS only.
+- Avoid inline styles.
+- Prefer reusable utility classes.
+- Keep spacing and typography consistent.
+
+# Accessibility
+- Use semantic HTML.
+- Ensure keyboard accessibility.
+- Add proper ARIA attributes where needed.
+- Always provide alt text for images.
+
+# Performance
+- Optimize images with Next.js Image.
+- Lazy load when appropriate.
+- Avoid unnecessary re-renders.
+- Memoize only when beneficial.
+
+# Git
+- Use Conventional Commits.
+- Write concise commit messages.
+
+# Code Quality
+- Keep files small and modular.
+- Avoid overengineering.
+- Prefer readability over clever code.
+- Remove unused imports and variables.
+
+# Behavior
+- Ask for clarification before implementing ambiguous features.
+- Explain architectural decisions when introducing new patterns.
+- Do not generate placeholder implementations unless requested.
+
+# Project
+
+This project is Solibero, an AI-powered social connection platform focused on reducing social isolation.
+
+Prioritize:
+- Beautiful, modern UI
+- Excellent mobile responsiveness
+- Accessibility
+- Reusable components
+- Smooth animations
+- Clean architecture
+- Production-ready code
