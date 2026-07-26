@@ -3,20 +3,21 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { MatchStack } from './MatchStack';
 import type { MatchCard } from '../types/matching';
+import { vi } from 'vitest';
 
 // Mock matchMedia for Framer Motion's useReducedMotion hook
 beforeAll(() => {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation(query => ({
+    value: vi.fn().mockImplementation(query => ({
       matches: false,
       media: query,
       onchange: null,
-      addListener: jest.fn(),
-      removeListener: jest.fn(),
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-      dispatchEvent: jest.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
     })),
   });
 });
@@ -30,16 +31,15 @@ const mockCards: MatchCard[] = [
 ];
 
 describe('MatchStack Component', () => {
-  it('1. Renders the initial layout with active and preview cards', () => {
-    render(<MatchStack cards={mockCards} />);
-    
-    // Active card
+ it('1. Renders the initial layout with active and preview cards', async () => {
+  render(<MatchStack cards={mockCards} />);
+  
+  await waitFor(() => {
     expect(screen.getByText('Alice')).toBeVisible();
-    // Preview card
-    expect(screen.getByText('Bob')).toBeInTheDocument();
-    // Past card should not exist yet
-    expect(screen.queryByText('Eve')).not.toBeInTheDocument();
   });
+  expect(screen.getByText('Bob')).toBeInTheDocument();
+  expect(screen.queryByText('Eve')).not.toBeInTheDocument();
+});
 
   it('2 & 9. Keyboard Nav: Right swipe removes card and loads next', async () => {
     render(<MatchStack cards={mockCards} />);
@@ -58,27 +58,23 @@ describe('MatchStack Component', () => {
   });
 
   it('3 & 4. Left swipe decrements limit, disables after 3', async () => {
-    render(<MatchStack cards={mockCards} />);
-    
-    // 1st left swipe
-    fireEvent.keyDown(screen.getByRole('button', { name: /Alice/i }), { key: 'ArrowLeft' });
-    // 2nd left swipe
-    fireEvent.keyDown(screen.getByRole('button', { name: /Bob/i }), { key: 'ArrowLeft' });
-    // 3rd left swipe
-    fireEvent.keyDown(screen.getByRole('button', { name: /Charlie/i }), { key: 'ArrowLeft' });
-    
-    // Active should now be Diana
-    const dianaCard = await screen.findByRole('button', { name: /Diana/i });
-    expect(dianaCard).toBeInTheDocument();
-    
-    // 4th left swipe (should be blocked)
-    fireEvent.keyDown(dianaCard, { key: 'ArrowLeft' });
-    
-    // Tooltip should appear
-    expect(screen.getByRole('alert')).toHaveTextContent(/You've passed on 3/i);
-    // Diana should STILL be the active card
-    expect(screen.getByRole('button', { name: /Diana/i })).toBeInTheDocument();
-  });
+  render(<MatchStack cards={mockCards} />);
+
+  // 1st, 2nd, 3rd left swipes — always grab whichever card is currently active
+  for (let i = 0; i < 3; i++) {
+    const activeCard = screen.getByRole('button', { name: new RegExp(mockCards[i].name, 'i') });
+    fireEvent.keyDown(activeCard, { key: 'ArrowLeft' });
+    await waitFor(() => {}); // let state settle
+  }
+
+  const dianaCard = await screen.findByRole('button', { name: /Diana/i });
+  expect(dianaCard).toBeInTheDocument();
+
+  fireEvent.keyDown(dianaCard, { key: 'ArrowLeft' });
+
+  expect(screen.getByRole('alert')).toHaveTextContent(/You've passed on 3/i);
+  expect(screen.getByRole('button', { name: /Diana/i })).toBeInTheDocument();
+});
 
   it('5 & 6. Undo reverts action, but only once per session', async () => {
     render(<MatchStack cards={mockCards} />);

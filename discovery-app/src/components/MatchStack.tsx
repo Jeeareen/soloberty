@@ -44,6 +44,11 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards, onComplete }) => 
     if (isFinished && onComplete) onComplete();
   }, [isFinished, onComplete]);
 
+  useEffect(() => {
+    controls.start({ scale: 1, opacity: 1, x: 0 });
+  }, [currentIndex]);
+  //to fix the invisible card unless the user interacts with it.
+ 
   // Focus management for accessibility
   useEffect(() => {
     if (!isExpanded && activeCardRef.current) {
