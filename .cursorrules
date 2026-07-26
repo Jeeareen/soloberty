@@ -59,6 +59,12 @@ You are an expert Frontend Engineer building a production-quality application.
 - Prefer readability over clever code.
 - Remove unused imports and variables.
 
+# AI-Directed Build Rules (learned from FE drill)
+- Animated components must render in their final, correct visible state on first mount — verify by loading the page in the browser, not just by reading the code or trusting a passing build.
+- Stateful behavior described with words like "once", "always", "never", or a count (e.g. "undo resets after each new swipe, not once per session") must be restated back as a one-line test case before implementation, since these are easy to subtly misimplement in a way that looks correct at a glance.
+- Whenever tests are generated for this project, the test runner (Vitest, not Jest, for this Vite/Next.js stack) must also be installed and configured, and `npm test` must run without config errors before the task is considered done — a written test file is not a verified one.
+- Layout specs with an exact structural count (e.g. "3 cards: past/active/preview" or any fixed number of visible elements) must be checked visually in the running app, not assumed correct because the code references the right number of states.
+
 # Behavior
 - Ask for clarification before implementing ambiguous features.
 - Explain architectural decisions when introducing new patterns.
