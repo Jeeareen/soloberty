@@ -1,4 +1,4 @@
-// src/types/matching.ts
+// types/matching.ts
 
 export type CardState = 'past' | 'active' | 'preview' | 'hidden';
 export type SwipeDirection = 'left' | 'right';
@@ -17,6 +17,6 @@ export interface SwipeAction {
 }
 
 export interface MatchStackProps {
-  cards: MatchCard[];
+  cards?: MatchCard[];
   onComplete?: () => void;
 }
