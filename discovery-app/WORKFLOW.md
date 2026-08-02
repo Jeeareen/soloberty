@@ -110,3 +110,4 @@ No Secrets in Repo - Done
 
 Responsive Design (375px & 1280px) - Tested and formatted for mobile viewports (375px) and desktop screens (1280px). - Done
 
+Deploy the app using Vercel - DONE
