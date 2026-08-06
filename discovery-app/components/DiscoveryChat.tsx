@@ -30,6 +30,22 @@ function sanitizeStreamMarkdown(text: string): string {
   return text;
 }
 
+/**
+ * Helper to extract readable text content from AI SDK v7 UIMessage parts or content.
+ */
+function getMessageText(msg: any): string {
+  if (typeof msg?.content === 'string' && msg.content) {
+    return msg.content;
+  }
+  if (Array.isArray(msg?.parts)) {
+    return msg.parts
+      .filter((p: any) => p.type === 'text' && typeof p.text === 'string')
+      .map((p: any) => p.text)
+      .join('');
+  }
+  return '';
+}
+
 // Initial prompt suggestions for fast user interaction
 const SUGGESTED_PROMPTS = [
   'Looking for coffee lovers & indie music fans ☕🎵',
@@ -39,19 +55,18 @@ const SUGGESTED_PROMPTS = [
 ];
 
 export const DiscoveryChat: React.FC = () => {
+  // Local input state for full control across AI SDK versions
+  const [input, setInput] = useState('');
+
   const {
     messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
+    sendMessage,
+    status,
     stop,
-    reload,
-    setInput,
     setMessages,
-  } = useChat({
-    api: '/api/chat',
-  });
+  } = useChat();
+
+  const isLoading = status === 'submitted' || status === 'streaming';
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isUserScrolledUp, setIsUserScrolledUp] = useState(false);
@@ -99,15 +114,18 @@ export const DiscoveryChat: React.FC = () => {
     setInput(promptText);
   };
 
-  // Safe submission handler
+  // Submission handler
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!input?.trim() || isLoading) return;
+    const trimmedInput = input.trim();
+    if (!trimmedInput || isLoading) return;
+
+    setInput('');
     setIsUserScrolledUp(false);
-    handleSubmit(e);
+    sendMessage({ text: trimmedInput });
   };
 
-  // Safe stop generation handler
+  // Stop generation handler
   const handleStop = () => {
     stop();
   };
@@ -119,11 +137,12 @@ export const DiscoveryChat: React.FC = () => {
   };
 
   const lastMessage = messages[messages.length - 1];
+  const lastMessageText = getMessageText(lastMessage);
   const isAssistantThinking =
     isLoading &&
     (messages.length === 0 ||
       lastMessage?.role === 'user' ||
-      (lastMessage?.role === 'assistant' && !lastMessage.content));
+      (lastMessage?.role === 'assistant' && !lastMessageText));
 
   return (
     <div className="flex flex-col h-[650px] max-h-[82vh] w-full max-w-3xl mx-auto bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden font-sans transition-all duration-200">
@@ -202,6 +221,7 @@ export const DiscoveryChat: React.FC = () => {
           const isUser = msg.role === 'user';
           const isLastMessage = index === messages.length - 1;
           const isStreamingThisMessage = isLastMessage && isLoading && !isUser;
+          const textContent = getMessageText(msg);
 
           return (
             <div
@@ -230,11 +250,11 @@ export const DiscoveryChat: React.FC = () => {
                 }`}
               >
                 {isUser ? (
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                  <p className="whitespace-pre-wrap">{textContent}</p>
                 ) : (
                   <div className="prose prose-sm max-w-none text-gray-800 dark:prose-invert">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {sanitizeStreamMarkdown(msg.content)}
+                      {sanitizeStreamMarkdown(textContent)}
                     </ReactMarkdown>
                     {isStreamingThisMessage && (
                       <span className="inline-block w-1.5 h-4 ml-1 bg-indigo-500 animate-pulse align-middle" />
@@ -288,7 +308,7 @@ export const DiscoveryChat: React.FC = () => {
           <input
             type="text"
             value={input}
-            onChange={handleInputChange}
+            onChange={(e) => setInput(e.target.value)}
             placeholder={
               isLoading
                 ? 'AI response is streaming...'
@@ -310,7 +330,7 @@ export const DiscoveryChat: React.FC = () => {
           ) : (
             <button
               type="submit"
-              disabled={!input?.trim()}
+              disabled={!input.trim()}
               className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 text-white text-sm font-semibold rounded-xl transition-all shadow-sm"
             >
               <Send className="w-4 h-4" />
