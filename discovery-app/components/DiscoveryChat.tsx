@@ -69,45 +69,83 @@ export const DiscoveryChat: React.FC = () => {
   const isLoading = status === 'submitted' || status === 'streaming';
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [isUserScrolledUp, setIsUserScrolledUp] = useState(false);
+  const touchStartTopRef = useRef(0);
+  const userScrolledUpGestureRef = useRef(false);
+
+  const [isAutoScrolling, setIsAutoScrolling] = useState(true);
+  const [isAtBottom, setIsAtBottom] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Auto-scroll handler
+  // Auto-scroll helper
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     if (scrollRef.current) {
+      userScrolledUpGestureRef.current = false;
+      setIsAutoScrolling(true);
+      setIsAtBottom(true);
+      setUnreadCount(0);
       scrollRef.current.scrollTo({
         top: scrollRef.current.scrollHeight,
         behavior,
       });
-      setIsUserScrolledUp(false);
-      setUnreadCount(0);
     }
   }, []);
 
-  // Monitor user scrolling to toggle auto-scroll behavior
+  // Detect user manual scroll interactions
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    if (e.deltaY < 0) {
+      // User scrolled UP using mouse wheel
+      userScrolledUpGestureRef.current = true;
+      setIsAutoScrolling(false);
+      setIsAtBottom(false);
+    }
+  }, []);
+
+  const handleTouchStart = useCallback(() => {
+    if (scrollRef.current) {
+      touchStartTopRef.current = scrollRef.current.scrollTop;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback(() => {
+    if (scrollRef.current) {
+      if (scrollRef.current.scrollTop < touchStartTopRef.current - 5) {
+        userScrolledUpGestureRef.current = true;
+        setIsAutoScrolling(false);
+        setIsAtBottom(false);
+      }
+    }
+  }, []);
+
+  // Monitor user scrolling position
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
 
-    // Threshold check (30px from bottom)
-    const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 30;
+    // Tight threshold check (10px buffer for absolute bottom)
+    const distanceFromBottom = el.scrollHeight - Math.ceil(el.scrollTop) - el.clientHeight;
+    const atBottom = distanceFromBottom < 10;
 
-    if (isAtBottom) {
-      setIsUserScrolledUp(false);
+    if (atBottom && !userScrolledUpGestureRef.current) {
+      setIsAtBottom(true);
+      setIsAutoScrolling(true);
       setUnreadCount(0);
-    } else {
-      setIsUserScrolledUp(true);
+    } else if (!atBottom) {
+      setIsAtBottom(false);
+      userScrolledUpGestureRef.current = false;
     }
   }, []);
 
   // Auto scroll effect on message changes or streaming tokens
   useEffect(() => {
-    if (!isUserScrolledUp) {
-      scrollToBottom('smooth');
+    if (isAutoScrolling) {
+      const el = scrollRef.current;
+      if (el) {
+        el.scrollTop = el.scrollHeight;
+      }
     } else if (isLoading) {
       setUnreadCount((prev) => prev + 1);
     }
-  }, [messages, isLoading, isUserScrolledUp, scrollToBottom]);
+  }, [messages, isLoading, isAutoScrolling]);
 
   // Handle clicking a suggestion chip
   const handleSelectSuggestion = (promptText: string) => {
@@ -121,8 +159,8 @@ export const DiscoveryChat: React.FC = () => {
     if (!trimmedInput || isLoading) return;
 
     setInput('');
-    setIsUserScrolledUp(false);
     sendMessage({ text: trimmedInput });
+    scrollToBottom('smooth');
   };
 
   // Stop generation handler
@@ -145,21 +183,21 @@ export const DiscoveryChat: React.FC = () => {
       (lastMessage?.role === 'assistant' && !lastMessageText));
 
   return (
-    <div className="flex flex-col h-[650px] max-h-[82vh] w-full max-w-3xl mx-auto bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden font-sans transition-all duration-200">
+    <div className="flex flex-col h-[650px] max-h-[82vh] w-full max-w-3xl mx-auto bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden min-w-0 max-w-full font-sans transition-all duration-200">
       {/* Header */}
-      <header className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-sm">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-white/15 rounded-xl backdrop-blur-md border border-white/20">
+      <header className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-sm w-full min-w-0">
+        <div className="flex items-center space-x-3 min-w-0">
+          <div className="p-2 bg-white/15 rounded-xl backdrop-blur-md border border-white/20 shrink-0">
             <Sparkles className="w-5 h-5 text-yellow-300 animate-pulse" />
           </div>
-          <div>
-            <h2 className="text-base font-bold tracking-tight flex items-center gap-2">
+          <div className="min-w-0">
+            <h2 className="text-base font-bold tracking-tight flex items-center gap-2 truncate">
               Solibero Concierge
-              <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full font-medium tracking-wide uppercase">
+              <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full font-medium tracking-wide uppercase shrink-0">
                 AI Discovery
               </span>
             </h2>
-            <p className="text-xs text-blue-100/90 font-normal">
+            <p className="text-xs text-blue-100/90 font-normal truncate">
               Describe your ideal match, vibe, or hobbies
             </p>
           </div>
@@ -169,7 +207,7 @@ export const DiscoveryChat: React.FC = () => {
           <button
             onClick={handleClear}
             title="Reset Chat"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors border border-white/15"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors border border-white/15 shrink-0"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Reset</span>
@@ -177,116 +215,164 @@ export const DiscoveryChat: React.FC = () => {
         )}
       </header>
 
-      {/* Messages Scroll Area */}
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 bg-slate-50/50 relative scroll-smooth"
-      >
-        {/* Welcome State */}
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center min-h-[320px] text-center p-6 bg-white rounded-2xl border border-dashed border-gray-200 shadow-sm my-auto">
-            <div className="w-14 h-14 bg-gradient-to-tr from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-md mb-4">
-              <Compass className="w-8 h-8 animate-spin-slow" />
-            </div>
-            <h3 className="text-lg font-bold text-gray-800">
-              Welcome to Solibero AI Concierge!
-            </h3>
-            <p className="text-sm text-gray-500 max-w-md mt-1 mb-6 leading-relaxed">
-              Describe who or what you are looking for in natural language. I'll help you explore matching profiles, shared interests, and discovery ideas!
-            </p>
-
-            {/* Suggestion Chips */}
-            <div className="w-full max-w-lg space-y-2">
-              <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                <Lightbulb className="w-3.5 h-3.5 text-amber-500" /> Try asking:
+      {/* Messages Scroll Area Wrapper */}
+      <div className="relative flex-1 min-h-0 overflow-hidden bg-slate-50/50 w-full max-w-full min-w-0">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          onWheel={handleWheel}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          className="h-full overflow-y-auto overflow-x-hidden p-4 sm:p-6 space-y-5 [overflow-anchor:none] [scrollbar-gutter:stable] w-full max-w-full min-w-0"
+        >
+          {/* Welcome State */}
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center min-h-[320px] text-center p-6 bg-white rounded-2xl border border-dashed border-gray-200 shadow-sm my-auto">
+              <div className="w-14 h-14 bg-gradient-to-tr from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-md mb-4">
+                <Compass className="w-8 h-8 animate-spin-slow" />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left">
-                {SUGGESTED_PROMPTS.map((prompt, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSelectSuggestion(prompt)}
-                    className="p-3 text-xs text-gray-700 bg-slate-100/80 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200/80 rounded-xl transition-all duration-150 font-medium active:scale-[0.98]"
-                  >
-                    {prompt}
-                  </button>
-                ))}
+              <h3 className="text-lg font-bold text-gray-800">
+                Welcome to Solibero AI Concierge!
+              </h3>
+              <p className="text-sm text-gray-500 max-w-md mt-1 mb-6 leading-relaxed">
+                Describe who or what you are looking for in natural language. I'll help you explore matching profiles, shared interests, and discovery ideas!
+              </p>
+
+              {/* Suggestion Chips */}
+              <div className="w-full max-w-lg space-y-2">
+                <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                  <Lightbulb className="w-3.5 h-3.5 text-amber-500" /> Try asking:
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left">
+                  {SUGGESTED_PROMPTS.map((prompt, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleSelectSuggestion(prompt)}
+                      className="p-3 text-xs text-gray-700 bg-slate-100/80 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200/80 rounded-xl transition-all duration-150 font-medium active:scale-[0.98]"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Message Stream List */}
-        {messages.map((msg, index) => {
-          const isUser = msg.role === 'user';
-          const isLastMessage = index === messages.length - 1;
-          const isStreamingThisMessage = isLastMessage && isLoading && !isUser;
-          const textContent = getMessageText(msg);
+          {/* Message Stream List */}
+          {messages.map((msg, index) => {
+            const isUser = msg.role === 'user';
+            const isLastMessage = index === messages.length - 1;
+            const isStreamingThisMessage = isLastMessage && isLoading && !isUser;
+            const textContent = getMessageText(msg);
 
-          return (
-            <div
-              key={msg.id || index}
-              className={`flex gap-3 max-w-[88%] sm:max-w-[82%] ${isUser ? 'ml-auto flex-row-reverse' : 'mr-auto flex-row'
-                }`}
-            >
-              {/* Avatar */}
+            return (
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm text-xs font-bold ${isUser
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gradient-to-tr from-indigo-500 to-purple-600 text-white'
+                key={msg.id || index}
+                className={`flex gap-3 max-w-[88%] sm:max-w-[82%] min-w-0 max-w-full ${isUser ? 'ml-auto flex-row-reverse' : 'mr-auto flex-row'
                   }`}
               >
-                {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
-              </div>
+                {/* Avatar */}
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm text-xs font-bold ${isUser
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gradient-to-tr from-indigo-500 to-purple-600 text-white'
+                    }`}
+                >
+                  {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                </div>
 
-              {/* Bubble Content */}
-              <div
-                className={`rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm transition-all ${isUser
-                    ? 'bg-blue-600 text-white rounded-tr-none'
-                    : 'bg-white text-gray-800 border border-gray-200/80 rounded-tl-none'
-                  }`}
-              >
-                {isUser ? (
-                  <p className="whitespace-pre-wrap">{textContent}</p>
-                ) : (
-                  <div className="prose prose-sm max-w-none text-gray-800 dark:prose-invert">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {sanitizeStreamMarkdown(textContent)}
-                    </ReactMarkdown>
-                    {isStreamingThisMessage && (
-                      <span className="inline-block w-1.5 h-4 ml-1 bg-indigo-500 animate-pulse align-middle" />
-                    )}
-                  </div>
-                )}
+                {/* Bubble Content */}
+                <div
+                  className={`rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm transition-all min-w-0 max-w-full overflow-hidden ${isUser
+                      ? 'bg-blue-600 text-white rounded-tr-none'
+                      : 'bg-white text-gray-800 border border-gray-200/80 rounded-tl-none'
+                    }`}
+                >
+                  {isUser ? (
+                    <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] [word-break:break-word] min-w-0 max-w-full">{textContent}</p>
+                  ) : (
+                    <div className="prose prose-sm max-w-none text-gray-800 dark:prose-invert break-words [overflow-wrap:anywhere] [word-break:break-word] min-w-0 max-w-full overflow-hidden">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          strong: ({ children }) => (
+                            <strong className="font-bold text-gray-900">{children}</strong>
+                          ),
+                          b: ({ children }) => (
+                            <strong className="font-bold text-gray-900">{children}</strong>
+                          ),
+                          a: ({ href, children, ...props }: any) => (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 underline font-medium break-all"
+                              {...props}
+                            >
+                              {children || href}
+                            </a>
+                          ),
+                          code: ({ node, inline, className, children, ...props }: any) => {
+                            const isInline = inline ?? (!className || !String(className).includes('language-'));
+                            return isInline ? (
+                              <code
+                                className="bg-slate-100 text-slate-900 px-1.5 py-0.5 rounded text-xs font-mono font-semibold border border-slate-200 inline break-all"
+                                {...props}
+                              >
+                                {children}
+                              </code>
+                            ) : (
+                              <pre className="bg-slate-900 text-slate-100 p-3 rounded-xl overflow-x-auto max-w-full my-2 text-xs font-mono break-all whitespace-pre-wrap min-w-0">
+                                <code className={className} {...props}>
+                                  {children}
+                                </code>
+                              </pre>
+                            );
+                          },
+                          blockquote: ({ children }) => (
+                            <blockquote className="border-l-4 border-indigo-500 pl-4 py-2 my-2 bg-slate-100/70 text-gray-800 rounded-r-lg font-medium [&_p]:before:content-none [&_p]:after:content-none [&_p]:before:hidden [&_p]:after:hidden">
+                              {children}
+                            </blockquote>
+                          ),
+                        }}
+                      >
+                        {sanitizeStreamMarkdown(textContent)}
+                      </ReactMarkdown>
+                      {isStreamingThisMessage && (
+                        <span className="inline-block w-1.5 h-4 ml-1 bg-indigo-500 animate-pulse align-middle" />
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Smooth Thinking Indicator (Before First Token) */}
+          {isAssistantThinking && (
+            <div className="flex gap-3 mr-auto max-w-[88%] sm:max-w-[82%] items-center">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <Bot className="w-4 h-4 animate-bounce" />
+              </div>
+              <div className="bg-white border border-gray-200/80 rounded-2xl rounded-tl-none px-4 py-3 text-sm text-gray-500 shadow-sm flex items-center space-x-2">
+                <span className="text-xs font-medium text-indigo-600">
+                  Solibero Concierge is thinking
+                </span>
+                <div className="flex space-x-1 items-center">
+                  <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping" />
+                  <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping delay-150" />
+                  <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping delay-300" />
+                </div>
               </div>
             </div>
-          );
-        })}
+          )}
+        </div>
 
-        {/* Smooth Thinking Indicator (Before First Token) */}
-        {isAssistantThinking && (
-          <div className="flex gap-3 mr-auto max-w-[88%] sm:max-w-[82%] items-center">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-              <Bot className="w-4 h-4 animate-bounce" />
-            </div>
-            <div className="bg-white border border-gray-200/80 rounded-2xl rounded-tl-none px-4 py-3 text-sm text-gray-500 shadow-sm flex items-center space-x-2">
-              <span className="text-xs font-medium text-indigo-600">
-                Solibero Concierge is thinking
-              </span>
-              <div className="flex space-x-1 items-center">
-                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping" />
-                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping delay-150" />
-                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping delay-300" />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Floating "Jump to Latest" Affordance */}
-        {isUserScrolledUp && (
+        {/* Floating "Jump to Latest" Affordance (Positioned absolutely over wrapper to avoid scrollHeight shifts) */}
+        {!isAutoScrolling && !isAtBottom && (
           <button
             onClick={() => scrollToBottom('smooth')}
-            className="sticky bottom-3 left-1/2 -translate-x-1/2 mx-auto flex items-center gap-2 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-full shadow-lg transition-all duration-200 animate-fade-in hover:scale-105 active:scale-95 border border-white/20"
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-full shadow-lg transition-all duration-200 animate-fade-in hover:scale-105 active:scale-95 border border-white/20 pointer-events-auto"
           >
             <ArrowDown className="w-3.5 h-3.5 animate-bounce" />
             Jump to latest

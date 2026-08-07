@@ -13,6 +13,7 @@
   "dependencies": {
     "@ai-sdk/google": "^4.0.36",
     "@ai-sdk/react": "^4.0.58",
+    "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.3",
     "ai": "^7.0.55",
     "framer-motion": "^12.42.2",
