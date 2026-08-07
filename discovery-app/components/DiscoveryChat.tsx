@@ -183,21 +183,21 @@ export const DiscoveryChat: React.FC = () => {
       (lastMessage?.role === 'assistant' && !lastMessageText));
 
   return (
-    <div className="flex flex-col h-[650px] max-h-[82vh] w-full max-w-3xl mx-auto bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden min-w-0 max-w-full font-sans transition-all duration-200">
+    <div className="flex flex-col h-[calc(100vh-170px)] sm:h-[650px] min-h-[480px] max-h-[88vh] w-full max-w-3xl mx-auto bg-white border border-gray-200 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden min-w-0 max-w-full font-sans transition-all duration-200">
       {/* Header */}
-      <header className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-sm w-full min-w-0">
-        <div className="flex items-center space-x-3 min-w-0">
-          <div className="p-2 bg-white/15 rounded-xl backdrop-blur-md border border-white/20 shrink-0">
-            <Sparkles className="w-5 h-5 text-yellow-300 animate-pulse" />
+      <header className="flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-sm w-full min-w-0 gap-2">
+        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+          <div className="p-1.5 sm:p-2 bg-white/15 rounded-xl backdrop-blur-md border border-white/20 shrink-0">
+            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-300 animate-pulse" />
           </div>
-          <div className="min-w-0">
-            <h2 className="text-base font-bold tracking-tight flex items-center gap-2 truncate">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm sm:text-base font-bold tracking-tight flex items-center gap-1.5 truncate">
               Solibero Concierge
-              <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full font-medium tracking-wide uppercase shrink-0">
+              <span className="text-[9px] sm:text-[10px] bg-white/20 text-white px-1.5 sm:px-2 py-0.5 rounded-full font-medium tracking-wide uppercase shrink-0">
                 AI Discovery
               </span>
             </h2>
-            <p className="text-xs text-blue-100/90 font-normal truncate">
+            <p className="text-[11px] sm:text-xs text-blue-100/90 font-normal truncate">
               Describe your ideal match, vibe, or hobbies
             </p>
           </div>
@@ -207,7 +207,7 @@ export const DiscoveryChat: React.FC = () => {
           <button
             onClick={handleClear}
             title="Reset Chat"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors border border-white/15 shrink-0"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors border border-white/15 shrink-0"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Reset</span>

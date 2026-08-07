@@ -8,14 +8,14 @@ export const metadata = {
 
 export default function DiscoverPage() {
   return (
-    <main className="min-h-screen bg-slate-100/60 py-6 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <main className="min-h-[calc(100vh-60px)] bg-slate-100/60 py-3 sm:py-6 px-2 sm:px-6 lg:px-8 w-full max-w-full overflow-x-hidden">
+      <div className="max-w-4xl mx-auto space-y-3 sm:space-y-6 w-full min-w-0">
         {/* Page Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
+        <div className="text-center space-y-1 sm:space-y-2 px-2">
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
             Discover Your Vibe
           </h1>
-          <p className="text-base text-gray-600 max-w-xl mx-auto">
+          <p className="text-xs sm:text-base text-gray-600 max-w-xl mx-auto">
             Describe what you’re looking for in natural language — our AI Concierge will guide your discovery experience on Solibero.
           </p>
         </div>

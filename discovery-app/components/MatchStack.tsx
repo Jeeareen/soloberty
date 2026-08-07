@@ -170,7 +170,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards = defaultMockCards
   }
 
   return (
-    <div className="relative flex h-[480px] w-full max-w-[520px] flex-col items-center justify-center overflow-hidden bg-gray-50 rounded-2xl shadow-lg touch-none mx-auto mt-6 [perspective:1000px]">
+    <div className="relative flex h-[480px] w-full max-w-[520px] min-w-0 max-w-full flex-col items-center justify-center overflow-hidden bg-gray-50 rounded-2xl shadow-lg touch-none mx-auto mt-4 sm:mt-6 [perspective:1000px]">
       {/* Accessibility Header */}
       <span className="sr-only" aria-live="polite">
         {UI_TEXT.ANNOUNCE_CARD(currentIndex + 1, cards.length)}
