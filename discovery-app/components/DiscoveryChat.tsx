@@ -226,28 +226,25 @@ export const DiscoveryChat: React.FC = () => {
           return (
             <div
               key={msg.id || index}
-              className={`flex gap-3 max-w-[88%] sm:max-w-[82%] ${
-                isUser ? 'ml-auto flex-row-reverse' : 'mr-auto flex-row'
-              }`}
+              className={`flex gap-3 max-w-[88%] sm:max-w-[82%] ${isUser ? 'ml-auto flex-row-reverse' : 'mr-auto flex-row'
+                }`}
             >
               {/* Avatar */}
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm text-xs font-bold ${
-                  isUser
+                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm text-xs font-bold ${isUser
                     ? 'bg-blue-600 text-white'
                     : 'bg-gradient-to-tr from-indigo-500 to-purple-600 text-white'
-                }`}
+                  }`}
               >
                 {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
               </div>
 
               {/* Bubble Content */}
               <div
-                className={`rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm transition-all ${
-                  isUser
+                className={`rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm transition-all ${isUser
                     ? 'bg-blue-600 text-white rounded-tr-none'
                     : 'bg-white text-gray-800 border border-gray-200/80 rounded-tl-none'
-                }`}
+                  }`}
               >
                 {isUser ? (
                   <p className="whitespace-pre-wrap">{textContent}</p>

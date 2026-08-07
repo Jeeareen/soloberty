@@ -17,7 +17,7 @@ import { google } from '@ai-sdk/google';
  * Primary model name specified for Solibero AI Concierge.
  * Reads environment variable fallback or defaults to `gemini-3.5-flash`.
  */
-export const CHAT_MODEL_NAME = process.env.SOLIBERO_AI_MODEL || 'gemini-3.5-flash';
+export const CHAT_MODEL_NAME = process.env.SOLIBERO_AI_MODEL || 'gemini-3.5-flash-lite';
 
 /**
  * Initialized Google Gemini model instance using @ai-sdk/google.

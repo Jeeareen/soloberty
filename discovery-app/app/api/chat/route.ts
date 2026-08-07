@@ -1,4 +1,4 @@
-import { streamText } from 'ai';
+import { streamText, convertToModelMessages } from 'ai';
 import { discoveryModel, DISCOVERY_SYSTEM_PROMPT, DEFAULT_MODEL_PARAMS } from '../../../lib/ai/config';
 
 // Allow streaming responses up to 30 seconds
@@ -19,13 +19,13 @@ export async function POST(req: Request) {
     const result = streamText({
       model: discoveryModel,
       system: DISCOVERY_SYSTEM_PROMPT,
-      messages,
+      messages: await convertToModelMessages(messages),
       temperature: DEFAULT_MODEL_PARAMS.temperature,
       maxTokens: DEFAULT_MODEL_PARAMS.maxTokens,
     });
 
     // Return real streaming response (compatible with useChat client hook)
-    return result.toDataStreamResponse();
+    return result.toUIMessageStreamResponse();
   } catch (error: any) {
     console.error('[Solibero Discovery AI Chat API Error]:', error);
     return new Response(
