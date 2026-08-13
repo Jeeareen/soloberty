@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import Navbar from '../components/Navbar';
+import { AuthProvider } from '../lib/context/AuthContext';
 
 export const metadata: Metadata = {
   title: 'Discovery App - Soloberty',
@@ -15,8 +16,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="max-w-full overflow-x-hidden">
       <body className="min-h-screen bg-gray-50 text-gray-900 antialiased max-w-full w-full overflow-x-hidden">
-        <Navbar />
-        <main className="w-full max-w-full overflow-x-hidden">{children}</main>
+        <AuthProvider>
+          <Navbar />
+          <main className="w-full max-w-full overflow-x-hidden">{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );

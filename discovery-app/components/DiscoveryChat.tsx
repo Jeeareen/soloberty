@@ -185,7 +185,7 @@ export const DiscoveryChat: React.FC = () => {
   return (
     <div className="flex flex-col h-[calc(100vh-170px)] sm:h-[650px] min-h-[480px] max-h-[88vh] w-full max-w-3xl mx-auto bg-white border border-gray-200 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden min-w-0 max-w-full font-sans transition-all duration-200">
       {/* Header */}
-      <header className="flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-sm w-full min-w-0 gap-2">
+      <header className="flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-4 bg-blue-600 text-white shadow-sm w-full min-w-0 gap-2">
         <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
           <div className="p-1.5 sm:p-2 bg-white/15 rounded-xl backdrop-blur-md border border-white/20 shrink-0">
             <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-300 animate-pulse" />
@@ -228,7 +228,7 @@ export const DiscoveryChat: React.FC = () => {
           {/* Welcome State */}
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center min-h-[320px] text-center p-6 bg-white rounded-2xl border border-dashed border-gray-200 shadow-sm my-auto">
-              <div className="w-14 h-14 bg-gradient-to-tr from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-md mb-4">
+              <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-md mb-4">
                 <Compass className="w-8 h-8 animate-spin-slow" />
               </div>
               <h3 className="text-lg font-bold text-gray-800">
@@ -275,7 +275,7 @@ export const DiscoveryChat: React.FC = () => {
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm text-xs font-bold ${isUser
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gradient-to-tr from-indigo-500 to-purple-600 text-white'
+                      : 'bg-blue-600 text-white'
                     }`}
                 >
                   {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
@@ -283,63 +283,48 @@ export const DiscoveryChat: React.FC = () => {
 
                 {/* Bubble Content */}
                 <div
-                  className={`rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm transition-all min-w-0 max-w-full overflow-hidden ${isUser
+                  className={`relative p-3.5 sm:p-4 rounded-2xl text-xs sm:text-sm leading-relaxed min-w-0 shadow-sm transition-all duration-200 ${isUser
                       ? 'bg-blue-600 text-white rounded-tr-none'
                       : 'bg-white text-gray-800 border border-gray-200/80 rounded-tl-none'
                     }`}
                 >
                   {isUser ? (
-                    <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] [word-break:break-word] min-w-0 max-w-full">{textContent}</p>
+                    <div className="whitespace-pre-wrap break-words font-medium">
+                      {textContent}
+                    </div>
                   ) : (
-                    <div className="prose prose-sm max-w-none text-gray-800 dark:prose-invert break-words [overflow-wrap:anywhere] [word-break:break-word] min-w-0 max-w-full overflow-hidden">
+                    <div className="prose prose-sm max-w-none prose-p:my-1 prose-pre:bg-slate-900 prose-pre:text-slate-100 dark:prose-invert break-words overflow-hidden text-gray-800">
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
-                          strong: ({ children }) => (
-                            <strong className="font-bold text-gray-900">{children}</strong>
-                          ),
-                          b: ({ children }) => (
-                            <strong className="font-bold text-gray-900">{children}</strong>
-                          ),
-                          a: ({ href, children, ...props }: any) => (
+                          a: ({ node, ...props }) => (
                             <a
-                              href={href}
+                              {...props}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800 underline font-medium break-all"
-                              {...props}
-                            >
-                              {children || href}
-                            </a>
+                              className="text-blue-600 hover:underline font-semibold"
+                            />
                           ),
                           code: ({ node, inline, className, children, ...props }: any) => {
-                            const isInline = inline ?? (!className || !String(className).includes('language-'));
-                            return isInline ? (
+                            return inline ? (
                               <code
-                                className="bg-slate-100 text-slate-900 px-1.5 py-0.5 rounded text-xs font-mono font-semibold border border-slate-200 inline break-all"
+                                className="bg-slate-100 text-blue-700 px-1.5 py-0.5 rounded font-mono text-xs"
                                 {...props}
                               >
                                 {children}
                               </code>
                             ) : (
-                              <pre className="bg-slate-900 text-slate-100 p-3 rounded-xl overflow-x-auto max-w-full my-2 text-xs font-mono break-all whitespace-pre-wrap min-w-0">
-                                <code className={className} {...props}>
-                                  {children}
-                                </code>
-                              </pre>
+                              <code className={className} {...props}>
+                                {children}
+                              </code>
                             );
                           },
-                          blockquote: ({ children }) => (
-                            <blockquote className="border-l-4 border-indigo-500 pl-4 py-2 my-2 bg-slate-100/70 text-gray-800 rounded-r-lg font-medium [&_p]:before:content-none [&_p]:after:content-none [&_p]:before:hidden [&_p]:after:hidden">
-                              {children}
-                            </blockquote>
-                          ),
                         }}
                       >
-                        {sanitizeStreamMarkdown(textContent)}
+                        {sanitizeStreamMarkdown(textContent) || (isStreamingThisMessage ? '...' : '')}
                       </ReactMarkdown>
                       {isStreamingThisMessage && (
-                        <span className="inline-block w-1.5 h-4 ml-1 bg-indigo-500 animate-pulse align-middle" />
+                        <span className="inline-block w-1.5 h-4 ml-1 bg-blue-600 animate-pulse align-middle" />
                       )}
                     </div>
                   )}
@@ -351,17 +336,17 @@ export const DiscoveryChat: React.FC = () => {
           {/* Smooth Thinking Indicator (Before First Token) */}
           {isAssistantThinking && (
             <div className="flex gap-3 mr-auto max-w-[88%] sm:max-w-[82%] items-center">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+              <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
                 <Bot className="w-4 h-4 animate-bounce" />
               </div>
               <div className="bg-white border border-gray-200/80 rounded-2xl rounded-tl-none px-4 py-3 text-sm text-gray-500 shadow-sm flex items-center space-x-2">
-                <span className="text-xs font-medium text-indigo-600">
+                <span className="text-xs font-medium text-blue-600">
                   Soloberty Scout is thinking
                 </span>
                 <div className="flex space-x-1 items-center">
-                  <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping" />
-                  <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping delay-150" />
-                  <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping delay-300" />
+                  <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-ping" />
+                  <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-ping delay-150" />
+                  <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-ping delay-300" />
                 </div>
               </div>
             </div>
