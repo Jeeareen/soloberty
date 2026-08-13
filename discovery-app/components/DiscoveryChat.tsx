@@ -192,7 +192,7 @@ export const DiscoveryChat: React.FC = () => {
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="text-sm sm:text-base font-bold tracking-tight flex items-center gap-1.5 truncate">
-              Solibero Concierge
+              Soloberty Scout
               <span className="text-[9px] sm:text-[10px] bg-white/20 text-white px-1.5 sm:px-2 py-0.5 rounded-full font-medium tracking-wide uppercase shrink-0">
                 AI Discovery
               </span>
@@ -232,7 +232,7 @@ export const DiscoveryChat: React.FC = () => {
                 <Compass className="w-8 h-8 animate-spin-slow" />
               </div>
               <h3 className="text-lg font-bold text-gray-800">
-                Welcome to Solibero AI Concierge!
+                Welcome to Soloberty Scout!
               </h3>
               <p className="text-sm text-gray-500 max-w-md mt-1 mb-6 leading-relaxed">
                 Describe who or what you are looking for in natural language. I'll help you explore matching profiles, shared interests, and discovery ideas!
@@ -356,7 +356,7 @@ export const DiscoveryChat: React.FC = () => {
               </div>
               <div className="bg-white border border-gray-200/80 rounded-2xl rounded-tl-none px-4 py-3 text-sm text-gray-500 shadow-sm flex items-center space-x-2">
                 <span className="text-xs font-medium text-indigo-600">
-                  Solibero Concierge is thinking
+                  Soloberty Scout is thinking
                 </span>
                 <div className="flex space-x-1 items-center">
                   <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping" />
@@ -395,7 +395,7 @@ export const DiscoveryChat: React.FC = () => {
             placeholder={
               isLoading
                 ? 'AI response is streaming...'
-                : 'Ask AI Concierge (e.g. Find workout buddies who love sushi)'
+                : 'Ask Soloberty Scout (e.g. Find workout buddies who love sushi)'
             }
             className="flex-1 px-4 py-2.5 text-sm bg-slate-100/90 text-gray-800 placeholder-gray-400 rounded-xl border border-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
           />

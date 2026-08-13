@@ -2,8 +2,8 @@ import React from 'react';
 import DiscoveryChat from '../../components/DiscoveryChat';
 
 export const metadata = {
-  title: 'Discover AI Concierge | Solibero',
-  description: 'Use Solibero AI Assistant to express what kind of matches, hobbies, and social connections you are looking for.',
+  title: 'Discover Soloberty Scout | Soloberty',
+  description: 'Use Soloberty Scout to express what kind of matches, hobbies, and social connections you are looking for.',
 };
 
 export default function DiscoverPage() {
@@ -16,7 +16,7 @@ export default function DiscoverPage() {
             Discover Your Vibe
           </h1>
           <p className="text-xs sm:text-base text-gray-600 max-w-xl mx-auto">
-            Describe what you’re looking for in natural language — our AI Concierge will guide your discovery experience on Solibero.
+            Describe what you’re looking for in natural language — Soloberty Scout will guide your discovery experience on Soloberty.
           </p>
         </div>
 

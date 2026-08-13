@@ -3,7 +3,7 @@ import './globals.css';
 import Navbar from '../components/Navbar';
 
 export const metadata: Metadata = {
-  title: 'Discovery App - Solibero',
+  title: 'Discovery App - Soloberty',
   description: 'Discovery and matching application',
 };
 

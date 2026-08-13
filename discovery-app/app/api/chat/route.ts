@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     // Return real streaming response (compatible with useChat client hook)
     return result.toUIMessageStreamResponse();
   } catch (error: any) {
-    console.error('[Solibero Discovery AI Chat API Error]:', error);
+    console.error('[Soloberty Scout API Error]:', error);
     return new Response(
       JSON.stringify({ error: error.message || 'An error occurred processing your request' }),
       {

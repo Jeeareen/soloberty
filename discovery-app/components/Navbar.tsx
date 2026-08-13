@@ -24,7 +24,7 @@ export const Navbar: React.FC = () => {
     <header className="sticky top-0 z-50 w-full max-w-full bg-blue-600 shadow-md overflow-hidden min-w-0">
       <div className="max-w-6xl mx-auto flex items-center justify-between px-3 sm:px-6 py-2.5 min-w-0 w-full">
         <Link href="/feed" className="text-lg sm:text-xl font-extrabold text-white tracking-tight hover:opacity-90 shrink-0 mr-2 sm:mr-4">
-          Solibero
+          Soloberty
         </Link>
         <nav className="flex items-center space-x-1 sm:space-x-2 overflow-x-auto no-scrollbar py-0.5 max-w-full min-w-0">
           {navItems.map((item) => {

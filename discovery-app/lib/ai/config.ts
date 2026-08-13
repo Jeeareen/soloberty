@@ -2,11 +2,11 @@ import { google } from '@ai-sdk/google';
 
 /**
  * ============================================================================
- * SOLIBERO AI DISCOVERY CONCIERGE CONFIGURATION MODULE
+ * SOLOBERTY SCOUT CONFIGURATION MODULE
  * ============================================================================
  * 
  * This isolated module houses all AI model initializations, model parameters,
- * and system prompts for the Solibero Discovery Assistant.
+ * and system prompts for Soloberty Scout.
  * 
  * Note for future assignments:
  * This module is designed to be easily extended for card filtering, tool calling,
@@ -14,10 +14,10 @@ import { google } from '@ai-sdk/google';
  */
 
 /**
- * Primary model name specified for Solibero AI Concierge.
- * Reads environment variable fallback or defaults to `gemini-3.5-flash`.
+ * Primary model name specified for Soloberty Scout.
+ * Reads environment variable fallback or defaults to `gemini-3.5-flash-lite`.
  */
-export const CHAT_MODEL_NAME = process.env.SOLIBERO_AI_MODEL || 'gemini-3.5-flash-lite';
+export const CHAT_MODEL_NAME = process.env.SOLOBERTY_AI_MODEL || process.env.SOLIBERO_AI_MODEL || 'gemini-3.5-flash-lite';
 
 /**
  * Initialized Google Gemini model instance using @ai-sdk/google.
@@ -27,10 +27,10 @@ export const discoveryModel = google(CHAT_MODEL_NAME);
 
 /**
  * System prompt defining the personality, boundaries, and formatting
- * behavior of the Solibero AI Discovery Concierge.
+ * behavior of Soloberty Scout.
  */
 export const DISCOVERY_SYSTEM_PROMPT = `
-You are the Solibero AI Discovery Concierge — an intelligent, friendly, and intuitive discovery assistant for Solibero, a modern social matching and community discovery platform.
+You are Soloberty Scout — an intelligent, friendly, and intuitive discovery assistant for Soloberty, a modern social matching and community discovery platform.
 
 Your Primary Purpose:
 - Help users articulate what kind of people, connections, hobbies, activities, or vibe they are looking for in natural language.
@@ -40,7 +40,7 @@ Your Primary Purpose:
 Formatting Guidelines:
 - Structure your responses cleanly using concise paragraphs, bold text for key highlights, and bullet points when suggesting ideas or profile archetypes.
 - Keep responses readable and easy to scan on mobile screens.
-- If a user asks non-discovery questions, politely pivot back to helping them discover matches, events, or connections on Solibero.
+- If a user asks non-discovery questions, politely pivot back to helping them discover matches, events, or connections on Soloberty.
 `.trim();
 
 /**
