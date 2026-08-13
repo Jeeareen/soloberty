@@ -3,6 +3,9 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion } from 'motion/react';
+
+const MotionLink = motion.create(Link);
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
@@ -21,26 +24,50 @@ export const Navbar: React.FC = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full max-w-full bg-blue-600 shadow-md overflow-hidden min-w-0">
-      <div className="max-w-6xl mx-auto flex items-center justify-between px-3 sm:px-6 py-2.5 min-w-0 w-full">
-        <Link href="/feed" className="text-lg sm:text-xl font-extrabold text-white tracking-tight hover:opacity-90 shrink-0 mr-2 sm:mr-4">
-          Soloberty
-        </Link>
-        <nav className="flex items-center space-x-1 sm:space-x-2 overflow-x-auto no-scrollbar py-0.5 max-w-full min-w-0">
+    <header className="sticky top-0 z-50 w-screen max-w-none bg-blue-600 shadow-md overflow-hidden h-14 sm:h-16">
+      <div className="max-w-6xl mx-auto flex items-stretch justify-between px-3 sm:px-6 h-full min-w-0 w-full">
+        <div className="flex items-center shrink-0 mr-2 sm:mr-6">
+          <Link href="/feed" className="text-lg sm:text-xl font-extrabold text-white tracking-tight hover:opacity-90">
+            Soloberty
+          </Link>
+        </div>
+
+        <nav className="relative flex items-stretch px-3 sm:px-6 max-w-full min-w-0 h-full">
           {navItems.map((item) => {
             const isActive = pathname === item.href || (item.href !== '/feed' && pathname?.startsWith(item.href));
             return (
-              <Link
+              <MotionLink
                 key={item.href}
                 href={item.href}
-                className={`rounded-lg px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition-all duration-150 whitespace-nowrap shrink-0 ${
-                  isActive
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'bg-white/10 text-white hover:bg-white/25 hover:text-white'
-                }`}
+                initial="rest"
+                whileHover="hover"
+                animate="rest"
+                className={`relative flex items-center justify-center px-3.5 sm:px-6 h-full text-xs sm:text-sm font-bold transition-colors whitespace-nowrap shrink-0 ${isActive ? 'text-blue-600' : 'text-white/90 hover:text-white'
+                  }`}
               >
-                {item.name}
-              </Link>
+                {isActive && (
+                  <motion.div
+                    layoutId="activeNavbarTab"
+                    className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0)_0%,rgba(255,255,255,0.45)_5%,rgba(255,255,255,0.75)_10%,rgba(255,255,255,0.92)_15%,rgba(255,255,255,1)_20%,rgba(255,255,255,1)_80%,rgba(255,255,255,0.92)_85%,rgba(255,255,255,0.75)_90%,rgba(255,255,255,0.45)_95%,rgba(255,255,255,0)_100%)] shadow-sm"
+                    transition={{
+                      type: 'spring',
+                      stiffness: 500,
+                      damping: 30,
+                      mass: 0.7,
+                    }}
+                  />
+                )}
+                <motion.span
+                  className="relative z-10 inline-block origin-center"
+                  variants={{
+                    rest: { scale: 1 },
+                    hover: { scale: 1.1 },
+                  }}
+                  transition={{ type: 'tween', ease: 'easeOut', duration: 0.15 }}
+                >
+                  {item.name}
+                </motion.span>
+              </MotionLink>
             );
           })}
         </nav>

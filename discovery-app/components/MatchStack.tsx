@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useAnimation, useMotionValue, useTransform, useReducedMotion, animate, type PanInfo } from 'framer-motion';
+import { motion, AnimatePresence, useAnimation, useMotionValue, useTransform, useReducedMotion, animate, type PanInfo } from 'motion/react';
 import type { MatchCard, MatchStackProps } from '../types/matching';
 
 const UI_TEXT = {
