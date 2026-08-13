@@ -1,4 +1,4 @@
-import { streamText, convertToModelMessages } from 'ai';
+import { streamText } from 'ai';
 import { discoveryModel, DISCOVERY_SYSTEM_PROMPT, DEFAULT_MODEL_PARAMS } from '../../../lib/ai/config';
 
 // Allow streaming responses up to 30 seconds
@@ -15,17 +15,21 @@ export async function POST(req: Request) {
       });
     }
 
-    // Call streamText using our isolated config module
+    // Standardize message format to ensure compatibility with Vercel AI SDK streamText
+    const formattedMessages = messages.map((m: any) => ({
+      role: m.role || 'user',
+      content: typeof m.content === 'string' ? m.content : (Array.isArray(m.parts) ? m.parts.map((p: any) => p.text || '').join('') : String(m.content || '')),
+    }));
+
     const result = streamText({
       model: discoveryModel,
       system: DISCOVERY_SYSTEM_PROMPT,
-      messages: await convertToModelMessages(messages),
+      messages: formattedMessages,
       temperature: DEFAULT_MODEL_PARAMS.temperature,
       maxTokens: DEFAULT_MODEL_PARAMS.maxTokens,
     });
 
-    // Return real streaming response (compatible with useChat client hook)
-    return result.toUIMessageStreamResponse();
+    return result.toDataStreamResponse();
   } catch (error: any) {
     console.error('[Soloberty Scout API Error]:', error);
     return new Response(

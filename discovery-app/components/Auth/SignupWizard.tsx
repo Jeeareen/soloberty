@@ -23,6 +23,7 @@ import {
   Image as ImageIcon,
   X,
   Check,
+  MapPin,
 } from 'lucide-react';
 
 export const SignupWizard: React.FC = () => {
@@ -68,6 +69,52 @@ export const SignupWizard: React.FC = () => {
     profilePhotoUrl: '',
     interestImageUrls: [],
   });
+
+  // Step 5: City Autocomplete Suggestions (OpenFreeMap / Server API Geocoding)
+  const [citySuggestions, setCitySuggestions] = useState<
+    { city: string; country: string; code: string; lat: number; lng: number }[]
+  >([]);
+  const [selectedLocationData, setSelectedLocationData] = useState<{
+    city: string;
+    country: string;
+    code: string;
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [isCityValid, setIsCityValid] = useState<boolean>(false);
+  const [showCityDropdown, setShowCityDropdown] = useState<boolean>(false);
+
+  useEffect(() => {
+    const query = formData.city.trim();
+    if (!query || query.length < 2 || formData.locationType !== 'approximate' || query.includes(',')) {
+      setCitySuggestions([]);
+      setShowCityDropdown(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/location/search?q=${encodeURIComponent(query)}`, {
+          signal: controller.signal,
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.suggestions)) {
+            setCitySuggestions(data.suggestions);
+            setShowCityDropdown(data.suggestions.length > 0);
+          }
+        }
+      } catch (err) {
+        // Silently ignore aborts or network timeouts
+      }
+    }, 150);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [formData.city, formData.locationType]);
 
   // Step 1 Submission: Validate email/password locally (account is created on step 7 finish)
   const handleStep1Submit = (e: React.FormEvent) => {
@@ -158,7 +205,13 @@ export const SignupWizard: React.FC = () => {
       }
 
       const text = await response.text();
-      const cleanedText = text.replace(/^"|"$/g, '').trim().slice(0, 300);
+      const cleanedText = text
+        .replace(/^\d+:"/gm, '')
+        .replace(/"$/gm, '')
+        .replace(/\\n/g, ' ')
+        .replace(/^"|"$/g, '')
+        .trim()
+        .slice(0, 300);
 
       if (cleanedText.length >= 30) {
         setFormData((prev) => ({ ...prev, bio: cleanedText }));
@@ -189,16 +242,7 @@ export const SignupWizard: React.FC = () => {
     setStep(5);
   };
 
-  // Step 5: Location Selection
-  const handleStep5Next = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (!formData.city.trim()) {
-      setError('Please enter your city or select a location.');
-      return;
-    }
-    setStep(6);
-  };
+
 
   // Step 6 & 7: Photo upload states
   const [profilePhotoFile, setProfilePhotoFile] = useState<File | null>(null);
@@ -255,10 +299,98 @@ export const SignupWizard: React.FC = () => {
     setInterestPreviews(updatedPreviews);
   };
 
-  // Remove interest image thumbnail
-  const removeInterestImage = (index: number) => {
-    setInterestFiles((prev) => prev.filter((_, i) => i !== index));
-    setInterestPreviews((prev) => prev.filter((_, i) => i !== index));
+  // Step 5: Detect GPS Location via HTML5 Geolocation + Reverse Geocoding
+  const [detectingGps, setDetectingGps] = useState<boolean>(false);
+
+  const handleDetectGpsLocation = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setError('Geolocation is not supported by your browser.');
+      return;
+    }
+
+    setError(null);
+    setDetectingGps(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
+            {
+              headers: {
+                'User-Agent': 'SolobertyApp/1.0 (contact@soloberty.app)',
+                'Accept-Language': 'en',
+              },
+            }
+          );
+
+          let cityName = 'Current Location';
+          let countryCode = 'GPS';
+          let countryName = '';
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.address) {
+              const addr = data.address;
+              cityName =
+                addr.city ||
+                addr.town ||
+                addr.village ||
+                addr.municipality ||
+                addr.county ||
+                'Detected Location';
+              countryCode = (addr.country_code || '').toUpperCase();
+              countryName = addr.country || '';
+            }
+          }
+
+          const fullCityStr = countryCode ? `${cityName}, ${countryCode}` : cityName;
+          setFormData((prev) => ({ ...prev, city: fullCityStr }));
+          setSelectedLocationData({
+            city: cityName,
+            country: countryName,
+            code: countryCode,
+            lat: latitude,
+            lng: longitude,
+          });
+          setIsCityValid(true);
+        } catch (err) {
+          const fullCityStr = `GPS (${latitude.toFixed(2)}, ${longitude.toFixed(2)})`;
+          setFormData((prev) => ({ ...prev, city: fullCityStr }));
+          setSelectedLocationData({
+            city: 'GPS Location',
+            country: '',
+            code: 'GPS',
+            lat: latitude,
+            lng: longitude,
+          });
+          setIsCityValid(true);
+        } finally {
+          setDetectingGps(false);
+        }
+      },
+      (err) => {
+        console.warn('GPS location error:', err);
+        setError('Location permission denied or unavailable. Please enable GPS permissions.');
+        setDetectingGps(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
+  const handleStep5Next = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isCityValid || !formData.city.trim()) {
+      setError(
+        formData.locationType === 'exact'
+          ? 'Please click "Detect Current Location via GPS" to grab your coordinates.'
+          : 'Please select a valid city from the upward dropdown menu.'
+      );
+      return;
+    }
+    setError(null);
+    setStep(6);
   };
 
   // Final Submission: Save full UserProfile to Firestore
@@ -312,10 +444,10 @@ export const SignupWizard: React.FC = () => {
         interests: formData.interests,
         location: {
           type: formData.locationType,
-          city: formData.city || 'San Francisco, CA',
+          city: formData.city || 'Vienna, AT',
           coordinates: {
-            lat: 37.7749,
-            lng: -122.4194,
+            lat: selectedLocationData?.lat || (formData.locationType === 'exact' ? 48.2082 : 0),
+            lng: selectedLocationData?.lng || (formData.locationType === 'exact' ? 16.3738 : 0),
           },
         },
         profilePhoto: {
@@ -393,7 +525,11 @@ export const SignupWizard: React.FC = () => {
   );
 
   return (
-    <div className="w-full max-w-xl mx-auto h-[580px] bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col justify-between text-slate-900 overflow-hidden">
+    <div
+      className={`w-full max-w-xl mx-auto h-[580px] bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col justify-between text-slate-900 ${
+        step === 5 ? 'overflow-visible' : 'overflow-hidden'
+      }`}
+    >
       {/* Progress Bar Header */}
       <div className="space-y-3">
         <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -813,56 +949,168 @@ export const SignupWizard: React.FC = () => {
               </p>
             </div>
 
+            {renderErrorAlert()}
+
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   Location Sharing Privacy
                 </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, locationType: 'approximate' })}
-                    className={`p-4 rounded-2xl border text-left space-y-1 transition-all ${formData.locationType === 'approximate'
-                      ? 'bg-blue-50 border-blue-500 text-blue-900 shadow-sm ring-1 ring-blue-500'
-                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300'
-                      }`}
-                  >
-                    <div className="font-bold text-sm">Approximate</div>
-                    <p className="text-[11px] text-slate-500 leading-snug">
-                      Displays city center only. Keeps your exact neighborhood private.
-                    </p>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, locationType: 'exact' })}
-                    className={`p-4 rounded-2xl border text-left space-y-1 transition-all ${formData.locationType === 'exact'
-                      ? 'bg-blue-50 border-blue-500 text-blue-900 shadow-sm ring-1 ring-blue-500'
-                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300'
-                      }`}
-                  >
-                    <div className="font-bold text-sm">Exact Location</div>
-                    <p className="text-[11px] text-slate-500 leading-snug">
-                      Allows precise distance matching and pin mapping.
-                    </p>
-                  </button>
+                <div className="relative p-1 bg-slate-100/90 rounded-2xl flex items-center border border-slate-200/80 shadow-inner">
+                  {[
+                    { id: 'approximate', title: 'Approximate', desc: 'Displays city center only.' },
+                    { id: 'exact', title: 'Exact Location', desc: 'Allows precise distance matching.' },
+                  ].map((opt) => {
+                    const isActive = formData.locationType === opt.id;
+                    return (
+                      <motion.button
+                        key={opt.id}
+                        type="button"
+                        initial="rest"
+                        whileHover="hover"
+                        animate="rest"
+                        onClick={() => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            locationType: opt.id as 'approximate' | 'exact',
+                          }));
+                          if (opt.id === 'approximate') {
+                            setShowCityDropdown(false);
+                          }
+                        }}
+                        className="relative flex-1 py-3 px-3.5 text-left transition-colors duration-200 z-10 rounded-xl"
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="locationPrivacyPill"
+                            className="absolute inset-0 bg-blue-600 rounded-xl shadow-md"
+                            transition={{
+                              type: 'spring',
+                              stiffness: 500,
+                              damping: 30,
+                              mass: 0.7,
+                            }}
+                          />
+                        )}
+                        <motion.div
+                          variants={{
+                            rest: { scale: 1 },
+                            hover: { scale: 1.03 },
+                          }}
+                          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                          className={`relative z-10 space-y-0.5 ${isActive ? 'text-white' : 'text-slate-700'}`}
+                        >
+                          <div className="font-bold text-xs sm:text-sm">{opt.title}</div>
+                          <p
+                            className={`text-[10px] sm:text-[11px] leading-snug ${
+                              isActive ? 'text-blue-100' : 'text-slate-500'
+                            }`}
+                          >
+                            {opt.desc}
+                          </p>
+                        </motion.div>
+                      </motion.button>
+                    );
+                  })}
                 </div>
               </div>
 
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  City Name / Location
+                  {formData.locationType === 'approximate' ? 'City Name & Country Code' : 'GPS Live Location Detector'}
                 </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    required
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    placeholder="e.g. San Francisco, CA or London, UK"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
+
+                {formData.locationType === 'exact' ? (
+                  <button
+                    type="button"
+                    onClick={handleDetectGpsLocation}
+                    disabled={detectingGps || Boolean(selectedLocationData?.lat && isCityValid)}
+                    className={`w-full h-[46px] px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 border shadow-sm ${
+                      detectingGps || (selectedLocationData?.lat && isCityValid)
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800 opacity-90 cursor-not-allowed'
+                        : 'bg-rose-600 hover:bg-rose-500 text-white border-rose-600 shadow-rose-600/20 active:scale-95 cursor-pointer'
+                    }`}
+                  >
+                    {detectingGps ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Detecting exact GPS coordinates...
+                      </>
+                    ) : selectedLocationData?.lat && isCityValid ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        Location Detected: {formData.city}
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="w-4 h-4 text-white animate-bounce" />
+                        Detect Current Location via GPS
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <div className="relative">
+                    <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10" />
+                    <input
+                      type="text"
+                      required={formData.locationType === 'approximate'}
+                      value={formData.city}
+                      onChange={(e) => {
+                        setFormData({ ...formData, city: e.target.value });
+                        setIsCityValid(false);
+                      }}
+                      onFocus={() => {
+                        if (formData.locationType === 'approximate' && citySuggestions.length > 0 && !formData.city.includes(',')) {
+                          setShowCityDropdown(true);
+                        }
+                      }}
+                      placeholder="Type city name (e.g. Vienna, London)..."
+                      className="w-full h-[46px] pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
+                    />
+
+                    {/* OpenFreeMap / Photon Geocoding City Autocomplete Dropdown */}
+                    <AnimatePresence>
+                      {showCityDropdown && formData.locationType === 'approximate' && citySuggestions.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 5 }}
+                          className="absolute left-0 right-0 bottom-full mb-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 max-h-44 overflow-y-auto p-1.5 space-y-0.5 ring-1 ring-slate-900/5"
+                        >
+                          {citySuggestions.map((item, idx) => (
+                            <button
+                              key={`${item.city}-${item.code}-${idx}`}
+                              type="button"
+                              onClick={() => {
+                                const selectedCityStr = `${item.city}, ${item.code}`;
+                                setFormData((prev) => ({ ...prev, city: selectedCityStr }));
+                                setSelectedLocationData({
+                                  city: item.city,
+                                  country: item.country,
+                                  code: item.code,
+                                  lat: item.lat,
+                                  lng: item.lng,
+                                });
+                                setIsCityValid(true);
+                                setCitySuggestions([]);
+                                setShowCityDropdown(false);
+                              }}
+                              className="w-full px-3.5 py-2.5 rounded-xl hover:bg-blue-50 text-left flex items-center justify-between text-xs font-semibold text-slate-800 transition-colors group"
+                            >
+                              <span className="flex items-center gap-2 group-hover:text-blue-900 font-bold">
+                                <MapPin className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 shrink-0" />
+                                {item.city}
+                              </span>
+                              <span className="px-2 py-0.5 bg-blue-50 text-blue-700 font-extrabold text-[10px] rounded-md border border-blue-100 shrink-0">
+                                {item.code}
+                              </span>
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -877,7 +1125,8 @@ export const SignupWizard: React.FC = () => {
               </button>
               <button
                 type="submit"
-                className="flex-1 py-3.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2"
+                disabled={!isCityValid || !formData.city.trim() || detectingGps}
+                className="flex-1 py-3.5 px-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2"
               >
                 Continue to Photos
                 <ArrowRight className="w-4 h-4" />
