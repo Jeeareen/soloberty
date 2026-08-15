@@ -14,6 +14,7 @@ import {
   Bell,
   Mail,
   Check,
+  Activity,
 } from 'lucide-react';
 
 const MotionLink = motion.create(Link);
@@ -220,6 +221,24 @@ export const Navbar: React.FC = () => {
                       />
                     </div>
                   </button>
+
+                  {/* Health Status Tile transferred to dropdown menu */}
+                  <Link
+                    href="/health"
+                    onClick={() => setMenuOpen(false)}
+                    className="w-full p-3 bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-2xl flex items-center justify-between transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-xl">
+                        <Activity className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-900">System Health</div>
+                        <div className="text-[10px] text-emerald-600 font-semibold">Status: OK</div>
+                      </div>
+                    </div>
+                    <span className="text-xs text-slate-400 font-bold">→</span>
+                  </Link>
 
                   <div className="my-1 border-t border-slate-100" />
 
