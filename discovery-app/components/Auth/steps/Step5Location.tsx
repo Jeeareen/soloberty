@@ -25,6 +25,8 @@ interface Step5LocationProps {
   showCityDropdown: boolean;
   setShowCityDropdown: (show: boolean) => void;
   detectingGps: boolean;
+  isGpsDetected: boolean;
+  setIsGpsDetected: (detected: boolean) => void;
   handleDetectGpsLocation: () => void;
   handleStep5Next: (e: React.FormEvent) => void;
   renderErrorAlert: () => React.ReactNode;
@@ -43,6 +45,8 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
   showCityDropdown,
   setShowCityDropdown,
   detectingGps,
+  isGpsDetected,
+  setIsGpsDetected,
   handleDetectGpsLocation,
   handleStep5Next,
   renderErrorAlert,
@@ -92,6 +96,7 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
                     if (opt.id === 'approximate') {
                       setShowCityDropdown(false);
                     }
+                    setIsGpsDetected(false);
                   }}
                   className="relative flex-1 py-3 px-3.5 text-left transition-colors duration-200 z-10 rounded-xl"
                 >
@@ -141,9 +146,9 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
             <button
               type="button"
               onClick={handleDetectGpsLocation}
-              disabled={detectingGps || Boolean(selectedLocationData?.lat && isCityValid)}
+              disabled={detectingGps || isGpsDetected}
               className={`w-full h-[46px] px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 border shadow-sm ${
-                detectingGps || (selectedLocationData?.lat && isCityValid)
+                detectingGps || isGpsDetected
                   ? 'bg-emerald-50 border-emerald-300 text-emerald-800 opacity-90 cursor-not-allowed'
                   : 'bg-rose-600 hover:bg-rose-500 text-white border-rose-600 shadow-rose-600/20 active:scale-95 cursor-pointer'
               }`}
@@ -153,7 +158,7 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Detecting exact GPS coordinates...
                 </>
-              ) : selectedLocationData?.lat && isCityValid ? (
+              ) : isGpsDetected ? (
                 <>
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                   Location Detected: {formData.city}
@@ -248,7 +253,12 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
         </button>
         <button
           type="submit"
-          disabled={!isCityValid || !formData.city.trim() || detectingGps}
+          disabled={
+            detectingGps ||
+            (formData.locationType === 'exact'
+              ? !isGpsDetected
+              : !isCityValid || !formData.city.trim())
+          }
           className="flex-1 py-3.5 px-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2"
         >
           Continue to Photos

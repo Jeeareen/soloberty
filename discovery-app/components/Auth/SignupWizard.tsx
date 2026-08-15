@@ -74,6 +74,7 @@ export const SignupWizard: React.FC = () => {
   } | null>(null);
   const [isCityValid, setIsCityValid] = useState<boolean>(false);
   const [showCityDropdown, setShowCityDropdown] = useState<boolean>(false);
+  const [isGpsDetected, setIsGpsDetected] = useState<boolean>(false);
 
   useEffect(() => {
     const query = formData.city.trim();
@@ -240,11 +241,8 @@ export const SignupWizard: React.FC = () => {
   const [interestPreviews, setInterestPreviews] = useState<string[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState<boolean>(false);
 
-  const handleProfilePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfilePhotoFile = (file: File) => {
     setError(null);
-    const file = e.target.files?.[0];
-    if (!file) return;
-
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       setError('Profile photo must be JPG, PNG, or WEBP format.');
       return;
@@ -256,6 +254,18 @@ export const SignupWizard: React.FC = () => {
 
     setProfilePhotoFile(file);
     setProfilePhotoPreview(URL.createObjectURL(file));
+  };
+
+  const handleProfilePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    handleProfilePhotoFile(file);
+  };
+
+  const handleRemoveProfilePhoto = () => {
+    setError(null);
+    setProfilePhotoFile(null);
+    setProfilePhotoPreview(null);
   };
 
   const handleInterestImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -347,6 +357,7 @@ export const SignupWizard: React.FC = () => {
             lng: longitude,
           });
           setIsCityValid(true);
+          setIsGpsDetected(true);
         } catch (err) {
           const fullCityStr = `GPS (${latitude.toFixed(2)}, ${longitude.toFixed(2)})`;
           setFormData((prev) => ({ ...prev, city: fullCityStr }));
@@ -358,6 +369,7 @@ export const SignupWizard: React.FC = () => {
             lng: longitude,
           });
           setIsCityValid(true);
+          setIsGpsDetected(true);
         } finally {
           setDetectingGps(false);
         }
@@ -373,12 +385,12 @@ export const SignupWizard: React.FC = () => {
 
   const handleStep5Next = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isCityValid || !formData.city.trim()) {
-      setError(
-        formData.locationType === 'exact'
-          ? 'Please click "Detect Current Location via GPS" to grab your coordinates.'
-          : 'Please select a valid city from the upward dropdown menu.'
-      );
+    if (formData.locationType === 'exact' && !isGpsDetected) {
+      setError('Please click "Detect Current Location via GPS" to grab your coordinates.');
+      return;
+    }
+    if (formData.locationType === 'approximate' && (!isCityValid || !formData.city.trim())) {
+      setError('Please select a valid city from the upward dropdown menu.');
       return;
     }
     setError(null);
@@ -598,6 +610,8 @@ export const SignupWizard: React.FC = () => {
             showCityDropdown={showCityDropdown}
             setShowCityDropdown={setShowCityDropdown}
             detectingGps={detectingGps}
+            isGpsDetected={isGpsDetected}
+            setIsGpsDetected={setIsGpsDetected}
             handleDetectGpsLocation={handleDetectGpsLocation}
             handleStep5Next={handleStep5Next}
             renderErrorAlert={renderErrorAlert}
@@ -608,7 +622,10 @@ export const SignupWizard: React.FC = () => {
         {step === 6 && (
           <Step6PhotoUpload
             profilePhotoPreview={profilePhotoPreview}
+            handleProfilePhotoFile={handleProfilePhotoFile}
             handleProfilePhotoChange={handleProfilePhotoChange}
+            handleRemoveProfilePhoto={handleRemoveProfilePhoto}
+            renderErrorAlert={renderErrorAlert}
             setStep={setStep}
           />
         )}
