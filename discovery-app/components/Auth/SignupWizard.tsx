@@ -410,18 +410,36 @@ export const SignupWizard: React.FC = () => {
         currentUid = newUser.uid;
       }
 
-      let profilePhotoUrl = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80';
-      let interestPhotoUrls = [
-        'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=500&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=500&auto=format&fit=crop&q=80',
-      ];
+      let profilePhotoUrl =
+        profilePhotoPreview ||
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80';
 
-      // Attempt live Firebase Storage upload if files selected
+      let interestPhotoUrls =
+        interestPreviews.length > 0
+          ? interestPreviews
+          : [
+              'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80',
+              'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=500&auto=format&fit=crop&q=80',
+              'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=500&auto=format&fit=crop&q=80',
+            ];
+
+      // Helper function for timeout safety so Firebase Storage never hangs Firestore registration
+      const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, fallbackValue: T): Promise<T> => {
+        return Promise.race([
+          promise,
+          new Promise<T>((resolve) => setTimeout(() => resolve(fallbackValue), timeoutMs)),
+        ]);
+      };
+
+      // Attempt live Firebase Storage upload if files selected (with 2.5s timeout safety)
       if (profilePhotoFile) {
         try {
           const { uploadProfilePhoto } = await import('../../lib/firebase/storage');
-          profilePhotoUrl = await uploadProfilePhoto(currentUid, profilePhotoFile);
+          profilePhotoUrl = await withTimeout(
+            uploadProfilePhoto(currentUid, profilePhotoFile),
+            2500,
+            profilePhotoUrl
+          );
         } catch (stErr) {
           console.warn('Storage profile photo upload fallback:', stErr);
         }
@@ -430,7 +448,11 @@ export const SignupWizard: React.FC = () => {
       if (interestFiles.length > 0) {
         try {
           const { uploadInterestImages } = await import('../../lib/firebase/storage');
-          interestPhotoUrls = await uploadInterestImages(currentUid, interestFiles);
+          interestPhotoUrls = await withTimeout(
+            uploadInterestImages(currentUid, interestFiles),
+            3000,
+            interestPhotoUrls
+          );
         } catch (stErr) {
           console.warn('Storage interest images upload fallback:', stErr);
         }
