@@ -5,26 +5,17 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../../lib/hooks/useAuth';
 import { PREDEFINED_INTERESTS, type UserProfile } from '../../types/user';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../../lib/firebase/config';
-import {
-  Sparkles,
-  ArrowRight,
-  ArrowLeft,
-  Mail,
-  Lock,
-  User as UserIcon,
-  Calendar,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
-  Heart,
-  Upload,
-  Image as ImageIcon,
-  X,
-  Check,
-  MapPin,
-} from 'lucide-react';
+import { Sparkles, AlertCircle } from 'lucide-react';
+
+import { Step1Credentials } from './steps/Step1Credentials';
+import { Step2BasicInfo } from './steps/Step2BasicInfo';
+import { Step3Interests } from './steps/Step3Interests';
+import { Step4BioScout } from './steps/Step4BioScout';
+import { Step5Location } from './steps/Step5Location';
+import { Step6PhotoUpload } from './steps/Step6PhotoUpload';
+import { Step7InterestPhotos } from './steps/Step7InterestPhotos';
 
 export const SignupWizard: React.FC = () => {
   const router = useRouter();
@@ -242,8 +233,6 @@ export const SignupWizard: React.FC = () => {
     setStep(5);
   };
 
-
-
   // Step 6 & 7: Photo upload states
   const [profilePhotoFile, setProfilePhotoFile] = useState<File | null>(null);
   const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(null);
@@ -251,7 +240,6 @@ export const SignupWizard: React.FC = () => {
   const [interestPreviews, setInterestPreviews] = useState<string[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState<boolean>(false);
 
-  // Profile photo file picker handler
   const handleProfilePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
     const file = e.target.files?.[0];
@@ -270,7 +258,6 @@ export const SignupWizard: React.FC = () => {
     setProfilePhotoPreview(URL.createObjectURL(file));
   };
 
-  // Interest images file picker handler (up to 3)
   const handleInterestImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
     const selectedFiles = Array.from(e.target.files || []);
@@ -297,6 +284,11 @@ export const SignupWizard: React.FC = () => {
 
     setInterestFiles(updatedFiles);
     setInterestPreviews(updatedPreviews);
+  };
+
+  const removeInterestImage = (index: number) => {
+    setInterestFiles((prev) => prev.filter((_, i) => i !== index));
+    setInterestPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   // Step 5: Detect GPS Location via HTML5 Geolocation + Reverse Geocoding
@@ -552,759 +544,84 @@ export const SignupWizard: React.FC = () => {
 
       {/* Step Content */}
       <AnimatePresence mode="wait">
-        {/* STEP 1: Registration */}
         {step === 1 && (
-          <motion.form
-            key="step1"
-            initial={{ opacity: 0, x: 4 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -4 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
-            onSubmit={handleStep1Submit}
-            className="space-y-5"
-          >
-            <div className="space-y-1">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">Create your account</h2>
-              <p className="text-xs sm:text-sm text-slate-500">Step 1: Enter your email and choose a secure password</p>
-            </div>
-
-            {renderErrorAlert()}
-
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="you@example.com"
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Password (min 8 characters)
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    type="password"
-                    required
-                    minLength={8}
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    type="password"
-                    required
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || authLoading}
-              className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {loading || authLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Registering account...
-                </>
-              ) : (
-                <>
-                  Continue to Basic Info
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </motion.form>
+          <Step1Credentials
+            formData={formData}
+            setFormData={setFormData}
+            handleStep1Submit={handleStep1Submit}
+            renderErrorAlert={renderErrorAlert}
+            loading={loading}
+            authLoading={authLoading}
+          />
         )}
 
-        {/* STEP 2: Basic Info */}
         {step === 2 && (
-          <motion.form
-            key="step2"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            onSubmit={handleStep2Next}
-            className="space-y-5"
-          >
-            <div className="space-y-1">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">Tell us about yourself</h2>
-              <p className="text-xs sm:text-sm text-slate-500">Step 2: Enter your name, age, and gender</p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    type="text"
-                    required
-                    maxLength={50}
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        name: e.target.value.replace(/[^a-zA-Z\s\u00C0-\u024F]/g, ''),
-                      })
-                    }
-                    placeholder="Alex Morgan"
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Age (18 - 130)
-                </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    type="number"
-                    required
-                    min={18}
-                    max={130}
-                    value={formData.age}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        age: e.target.value ? parseInt(e.target.value, 10) : '',
-                      })
-                    }
-                    placeholder="25"
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Gender Identity
-                </label>
-                <div className="relative p-1 bg-slate-100/90 rounded-2xl flex items-center border border-slate-200/80 shadow-inner">
-                  {[
-                    { id: 'male', label: 'Male' },
-                    { id: 'female', label: 'Female' },
-                    { id: 'other', label: 'Other' },
-                  ].map((g) => {
-                    const isActive = formData.gender === g.id;
-                    return (
-                      <motion.button
-                        key={g.id}
-                        type="button"
-                        initial="rest"
-                        whileHover="hover"
-                        animate="rest"
-                        onClick={() => setFormData({ ...formData, gender: g.id })}
-                        className="relative flex-1 py-2.5 text-xs font-extrabold text-center transition-colors duration-200 z-10 flex items-center justify-center"
-                      >
-                        {isActive && (
-                          <motion.div
-                            layoutId="genderSwitchPill"
-                            className="absolute inset-0 bg-blue-600 rounded-xl shadow-md"
-                            transition={{
-                              type: 'spring',
-                              stiffness: 500,
-                              damping: 30,
-                              mass: 0.7,
-                            }}
-                          />
-                        )}
-                        <motion.span
-                          variants={{
-                            rest: { scale: 1 },
-                            hover: { scale: 1.1 },
-                          }}
-                          transition={{ type: 'tween', ease: 'easeOut', duration: 0.15 }}
-                          className={`relative z-10 inline-block origin-center transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-600 hover:text-slate-900'
-                            }`}
-                        >
-                          {g.label}
-                        </motion.span>
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-1.5"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back
-              </button>
-              <button
-                type="submit"
-                className="flex-1 py-3.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2"
-              >
-                Continue to Interests
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </motion.form>
+          <Step2BasicInfo
+            formData={formData}
+            setFormData={setFormData}
+            handleStep2Next={handleStep2Next}
+            setStep={setStep}
+          />
         )}
 
-        {/* STEP 3: Interests Selection */}
         {step === 3 && (
-          <motion.div
-            key="step3"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-5"
-          >
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">Select your interests</h2>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
-                  {formData.interests.length} / 3 selected
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-500">
-                Step 3: Choose <span className="text-slate-900 font-bold">at most 3</span> hobbies or passions
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-[320px] overflow-y-auto pr-1">
-              {PREDEFINED_INTERESTS.map((item) => {
-                const isSelected = formData.interests.includes(item.id);
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => toggleInterest(item.id)}
-                    className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all relative ${isSelected
-                        ? 'bg-blue-50 border-slate-200 text-blue-900 shadow-sm'
-                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-100'
-                      }`}
-                  >
-                    <div className="flex items-center justify-between w-full mb-2">
-                      <span className="text-2xl">{item.icon}</span>
-                      {isSelected && (
-                        <CheckCircle2 className="w-4 h-4 text-blue-600 absolute top-2.5 right-2.5" />
-                      )}
-                    </div>
-                    <span className="text-xs font-bold line-clamp-1">{item.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setStep(2)}
-                className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-1.5"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back
-              </button>
-              <button
-                type="button"
-                onClick={handleStep3Next}
-                disabled={formData.interests.length === 0 || formData.interests.length > 3}
-                className="flex-1 py-3.5 px-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2"
-              >
-                Continue to Bio
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </motion.div>
+          <Step3Interests
+            interests={formData.interests}
+            toggleInterest={toggleInterest}
+            handleStep3Next={handleStep3Next}
+            setStep={setStep}
+          />
         )}
 
-        {/* STEP 4: Bio & Scout AI Auto-Generation */}
         {step === 4 && (
-          <motion.div
-            key="step4"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-5"
-          >
-            <div className="space-y-1">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">Create your bio</h2>
-              <p className="text-xs sm:text-sm text-slate-500">
-                Step 4: Write a short bio or let <span className="text-blue-600 font-bold">Soloberty Scout</span> draft one for you!
-              </p>
-            </div>
-
-            {renderErrorAlert()}
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Your Bio (30 - 300 characters)
-                </label>
-                <button
-                  type="button"
-                  onClick={handleGenerateBio}
-                  disabled={generatingBio}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-50"
-                >
-                  {generatingBio ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Scout is drafting...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-3.5 h-3.5 text-yellow-300 animate-pulse" />
-                      Auto-generate with Scout
-                    </>
-                  )}
-                </button>
-              </div>
-
-              <div className="relative">
-                <textarea
-                  rows={4}
-                  minLength={30}
-                  maxLength={300}
-                  value={formData.bio}
-                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                  placeholder="Share a little bit about what you love, your vibe, or what kind of connections you're hoping to make..."
-                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 resize-none leading-relaxed"
-                />
-                <div
-                  className={`absolute bottom-3 right-3 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${formData.bio.trim().length >= 30 && formData.bio.trim().length <= 300
-                      ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                      : 'text-slate-500 bg-white/90 border-slate-200'
-                    }`}
-                >
-                  {formData.bio.length} / 300 (min 30)
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setStep(3)}
-                className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-1.5"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back
-              </button>
-              <button
-                type="button"
-                onClick={handleStep4Next}
-                disabled={formData.bio.trim().length < 30 || formData.bio.trim().length > 300}
-                className="flex-1 py-3.5 px-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2"
-              >
-                Continue to Location
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </motion.div>
+          <Step4BioScout
+            bio={formData.bio}
+            setBio={(bioText) => setFormData((prev) => ({ ...prev, bio: bioText }))}
+            generatingBio={generatingBio}
+            handleGenerateBio={handleGenerateBio}
+            handleStep4Next={handleStep4Next}
+            renderErrorAlert={renderErrorAlert}
+            setStep={setStep}
+          />
         )}
 
-        {/* STEP 5: Location Selection */}
         {step === 5 && (
-          <motion.form
-            key="step5"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            onSubmit={handleStep5Next}
-            className="space-y-5"
-          >
-            <div className="space-y-1">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">Your location</h2>
-              <p className="text-xs sm:text-sm text-slate-500">
-                Step 5: Choose how you'd like to share your location with potential matches
-              </p>
-            </div>
-
-            {renderErrorAlert()}
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Location Sharing Privacy
-                </label>
-                <div className="relative p-1 bg-slate-100/90 rounded-2xl flex items-center border border-slate-200/80 shadow-inner">
-                  {[
-                    { id: 'approximate', title: 'Approximate', desc: 'Displays city center only.' },
-                    { id: 'exact', title: 'Exact Location', desc: 'Allows precise distance matching.' },
-                  ].map((opt) => {
-                    const isActive = formData.locationType === opt.id;
-                    return (
-                      <motion.button
-                        key={opt.id}
-                        type="button"
-                        initial="rest"
-                        whileHover="hover"
-                        animate="rest"
-                        onClick={() => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            locationType: opt.id as 'approximate' | 'exact',
-                          }));
-                          if (opt.id === 'approximate') {
-                            setShowCityDropdown(false);
-                          }
-                        }}
-                        className="relative flex-1 py-3 px-3.5 text-left transition-colors duration-200 z-10 rounded-xl"
-                      >
-                        {isActive && (
-                          <motion.div
-                            layoutId="locationPrivacyPill"
-                            className="absolute inset-0 bg-blue-600 rounded-xl shadow-md"
-                            transition={{
-                              type: 'spring',
-                              stiffness: 500,
-                              damping: 30,
-                              mass: 0.7,
-                            }}
-                          />
-                        )}
-                        <motion.div
-                          variants={{
-                            rest: { scale: 1 },
-                            hover: { scale: 1.03 },
-                          }}
-                          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                          className={`relative z-10 space-y-0.5 ${isActive ? 'text-white' : 'text-slate-700'}`}
-                        >
-                          <div className="font-bold text-xs sm:text-sm">{opt.title}</div>
-                          <p
-                            className={`text-[10px] sm:text-[11px] leading-snug ${
-                              isActive ? 'text-blue-100' : 'text-slate-500'
-                            }`}
-                          >
-                            {opt.desc}
-                          </p>
-                        </motion.div>
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  {formData.locationType === 'approximate' ? 'City Name & Country Code' : 'GPS Live Location Detector'}
-                </label>
-
-                {formData.locationType === 'exact' ? (
-                  <button
-                    type="button"
-                    onClick={handleDetectGpsLocation}
-                    disabled={detectingGps || Boolean(selectedLocationData?.lat && isCityValid)}
-                    className={`w-full h-[46px] px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 border shadow-sm ${
-                      detectingGps || (selectedLocationData?.lat && isCityValid)
-                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800 opacity-90 cursor-not-allowed'
-                        : 'bg-rose-600 hover:bg-rose-500 text-white border-rose-600 shadow-rose-600/20 active:scale-95 cursor-pointer'
-                    }`}
-                  >
-                    {detectingGps ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Detecting exact GPS coordinates...
-                      </>
-                    ) : selectedLocationData?.lat && isCityValid ? (
-                      <>
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                        Location Detected: {formData.city}
-                      </>
-                    ) : (
-                      <>
-                        <MapPin className="w-4 h-4 text-white animate-bounce" />
-                        Detect Current Location via GPS
-                      </>
-                    )}
-                  </button>
-                ) : (
-                  <div className="relative">
-                    <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10" />
-                    <input
-                      type="text"
-                      required={formData.locationType === 'approximate'}
-                      value={formData.city}
-                      onChange={(e) => {
-                        setFormData({ ...formData, city: e.target.value });
-                        setIsCityValid(false);
-                      }}
-                      onFocus={() => {
-                        if (formData.locationType === 'approximate' && citySuggestions.length > 0 && !formData.city.includes(',')) {
-                          setShowCityDropdown(true);
-                        }
-                      }}
-                      placeholder="Type city name (e.g. Vienna, London)..."
-                      className="w-full h-[46px] pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
-                    />
-
-                    {/* OpenFreeMap / Photon Geocoding City Autocomplete Dropdown */}
-                    <AnimatePresence>
-                      {showCityDropdown && formData.locationType === 'approximate' && citySuggestions.length > 0 && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 5 }}
-                          className="absolute left-0 right-0 bottom-full mb-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 max-h-44 overflow-y-auto p-1.5 space-y-0.5 ring-1 ring-slate-900/5"
-                        >
-                          {citySuggestions.map((item, idx) => (
-                            <button
-                              key={`${item.city}-${item.code}-${idx}`}
-                              type="button"
-                              onClick={() => {
-                                const selectedCityStr = `${item.city}, ${item.code}`;
-                                setFormData((prev) => ({ ...prev, city: selectedCityStr }));
-                                setSelectedLocationData({
-                                  city: item.city,
-                                  country: item.country,
-                                  code: item.code,
-                                  lat: item.lat,
-                                  lng: item.lng,
-                                });
-                                setIsCityValid(true);
-                                setCitySuggestions([]);
-                                setShowCityDropdown(false);
-                              }}
-                              className="w-full px-3.5 py-2.5 rounded-xl hover:bg-blue-50 text-left flex items-center justify-between text-xs font-semibold text-slate-800 transition-colors group"
-                            >
-                              <span className="flex items-center gap-2 group-hover:text-blue-900 font-bold">
-                                <MapPin className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 shrink-0" />
-                                {item.city}
-                              </span>
-                              <span className="px-2 py-0.5 bg-blue-50 text-blue-700 font-extrabold text-[10px] rounded-md border border-blue-100 shrink-0">
-                                {item.code}
-                              </span>
-                            </button>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setStep(4)}
-                className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-1.5"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back
-              </button>
-              <button
-                type="submit"
-                disabled={!isCityValid || !formData.city.trim() || detectingGps}
-                className="flex-1 py-3.5 px-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2"
-              >
-                Continue to Photos
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </motion.form>
+          <Step5Location
+            formData={formData}
+            setFormData={setFormData}
+            selectedLocationData={selectedLocationData}
+            setSelectedLocationData={setSelectedLocationData}
+            isCityValid={isCityValid}
+            setIsCityValid={setIsCityValid}
+            citySuggestions={citySuggestions}
+            setCitySuggestions={setCitySuggestions}
+            showCityDropdown={showCityDropdown}
+            setShowCityDropdown={setShowCityDropdown}
+            detectingGps={detectingGps}
+            handleDetectGpsLocation={handleDetectGpsLocation}
+            handleStep5Next={handleStep5Next}
+            renderErrorAlert={renderErrorAlert}
+            setStep={setStep}
+          />
         )}
 
-        {/* STEP 6: Profile Photo Upload */}
         {step === 6 && (
-          <motion.div
-            key="step6"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-5"
-          >
-            <div className="space-y-1">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">Upload your profile photo</h2>
-              <p className="text-xs sm:text-sm text-slate-500">
-                Step 6: Choose a clear photo of yourself for your main match card
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 hover:border-blue-500 bg-slate-50 rounded-3xl transition-all relative">
-                {profilePhotoPreview ? (
-                  <div className="relative group">
-                    <img
-                      src={profilePhotoPreview}
-                      alt="Profile Preview"
-                      className="w-32 h-32 object-cover rounded-full border-4 border-blue-500/20 shadow-lg"
-                    />
-                    <label
-                      htmlFor="profilePhotoInput"
-                      className="absolute bottom-0 right-0 p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-full cursor-pointer shadow-lg transition-transform active:scale-90"
-                      title="Change photo"
-                    >
-                      <Upload className="w-4 h-4" />
-                    </label>
-                  </div>
-                ) : (
-                  <label
-                    htmlFor="profilePhotoInput"
-                    className="flex flex-col items-center justify-center cursor-pointer space-y-3 py-4 w-full"
-                  >
-                    <div className="w-16 h-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
-                      <ImageIcon className="w-8 h-8" />
-                    </div>
-                    <div className="text-center space-y-1">
-                      <span className="text-xs font-bold text-blue-600 hover:underline">
-                        Click to upload
-                      </span>{' '}
-                      <span className="text-xs text-slate-500">or drag and drop</span>
-                      <p className="text-[11px] text-slate-400">JPG, PNG or WEBP (Max 5MB)</p>
-                    </div>
-                  </label>
-                )}
-
-                <input
-                  id="profilePhotoInput"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleProfilePhotoChange}
-                  className="hidden"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setStep(5)}
-                className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-1.5"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back
-              </button>
-              <button
-                type="button"
-                onClick={() => setStep(7)}
-                className="flex-1 py-3.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2"
-              >
-                Continue to Interest Images
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </motion.div>
+          <Step6PhotoUpload
+            profilePhotoPreview={profilePhotoPreview}
+            handleProfilePhotoChange={handleProfilePhotoChange}
+            setStep={setStep}
+          />
         )}
 
-        {/* STEP 7: Interest Images & Complete Profile */}
         {step === 7 && (
-          <motion.div
-            key="step7"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-5"
-          >
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">Interest images</h2>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
-                  {interestPreviews.length} / 3 images
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-500">
-                Step 7: Upload up to 3 photos showing your hobbies, lifestyle, or activities
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-3">
-                {interestPreviews.map((url, idx) => (
-                  <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-200 group shadow-sm">
-                    <img src={url} alt={`Interest ${idx + 1}`} className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => removeInterestImage(idx)}
-                      className="absolute top-1.5 right-1.5 p-1 bg-rose-600 hover:bg-rose-500 text-white rounded-full transition-transform active:scale-90 shadow-md"
-                      title="Remove image"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-
-                {interestPreviews.length < 3 && (
-                  <label
-                    htmlFor="interestImagesInput"
-                    className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 hover:border-blue-500 bg-slate-50 flex flex-col items-center justify-center cursor-pointer transition-all p-2 text-center"
-                  >
-                    <Upload className="w-5 h-5 text-blue-600 mb-1" />
-                    <span className="text-[11px] font-bold text-slate-700">Add Photo</span>
-                    <span className="text-[9px] text-slate-400">Max 5MB</span>
-                  </label>
-                )}
-              </div>
-
-              <input
-                id="interestImagesInput"
-                type="file"
-                multiple
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleInterestImagesChange}
-                className="hidden"
-              />
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setStep(6)}
-                className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-1.5"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back
-              </button>
-              <button
-                type="button"
-                onClick={handleFinishProfile}
-                disabled={uploadingPhotos}
-                className="flex-1 py-3.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {uploadingPhotos ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Saving profile...
-                  </>
-                ) : (
-                  <>
-                    <Check className="w-4 h-4" />
-                    Finish & Launch Soloberty
-                  </>
-                )}
-              </button>
-            </div>
-          </motion.div>
+          <Step7InterestPhotos
+            interestPreviews={interestPreviews}
+            handleInterestImagesChange={handleInterestImagesChange}
+            removeInterestImage={removeInterestImage}
+            handleFinishProfile={handleFinishProfile}
+            uploadingPhotos={uploadingPhotos}
+            setStep={setStep}
+          />
         )}
       </AnimatePresence>
     </div>
