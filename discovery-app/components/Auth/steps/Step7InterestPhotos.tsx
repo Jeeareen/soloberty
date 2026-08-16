@@ -10,6 +10,7 @@ interface Step7InterestPhotosProps {
   removeInterestImage: (index: number) => void;
   handleFinishProfile: () => Promise<void>;
   uploadingPhotos: boolean;
+  renderErrorAlert: () => React.ReactNode;
   setStep: (step: number) => void;
 }
 
@@ -19,6 +20,7 @@ export const Step7InterestPhotos: React.FC<Step7InterestPhotosProps> = ({
   removeInterestImage,
   handleFinishProfile,
   uploadingPhotos,
+  renderErrorAlert,
   setStep,
 }) => {
   return (
@@ -40,6 +42,8 @@ export const Step7InterestPhotos: React.FC<Step7InterestPhotosProps> = ({
           Step 7: Upload up to 3 photos showing your hobbies, lifestyle, or activities
         </p>
       </div>
+
+      {renderErrorAlert()}
 
       <div className="space-y-4">
         <div className="grid grid-cols-3 gap-3">

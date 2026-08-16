@@ -6,6 +6,7 @@ import { useAuth } from '../../lib/hooks/useAuth';
 import { db } from '../../lib/firebase/config';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { PREDEFINED_INTERESTS, type UserProfile } from '../../types/user';
+import { uploadToCloudinary, deleteFromCloudinary } from '../../lib/cloudinary';
 import {
   Pencil,
   Save,
@@ -42,7 +43,9 @@ export const ProfileEditor: React.FC = () => {
     city: string;
     interests: string[];
     profilePhotoUrl: string;
+    avatarPublicId?: string;
     interestImageUrls: string[];
+    interestImagesList?: Array<{ slot?: number; url: string; publicId?: string; uploadedAt?: any }>;
   }>({
     name: '',
     age: '',
@@ -53,7 +56,9 @@ export const ProfileEditor: React.FC = () => {
     city: '',
     interests: [],
     profilePhotoUrl: '',
+    avatarPublicId: '',
     interestImageUrls: [],
+    interestImagesList: [],
   });
 
   // Edit Mode Temp States
@@ -109,16 +114,13 @@ export const ProfileEditor: React.FC = () => {
             locationType: data.location?.type || 'approximate',
             city: data.location?.city || 'Vienna, AT',
             interests: data.interests || [],
-            profilePhotoUrl:
-              data.profilePhoto?.url ||
-              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80',
+            profilePhotoUrl: data.profilePhoto?.url || data.avatarUrl || '',
+            avatarPublicId: data.avatarPublicId || data.profilePhoto?.publicId || '',
             interestImageUrls: (data.interestImages || []).map((img) => img.url),
+            interestImagesList: data.interestImages || [],
           });
 
-          setProfilePhotoPreview(
-            data.profilePhoto?.url ||
-              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80'
-          );
+          setProfilePhotoPreview(data.profilePhoto?.url || data.avatarUrl || null);
           setInterestPreviews((data.interestImages || []).map((img) => img.url));
           if (data.location?.coordinates) {
             setSelectedLocationData({
@@ -438,40 +440,79 @@ export const ProfileEditor: React.FC = () => {
     setSaving(true);
 
     try {
-      let finalProfilePhotoUrl = profilePhotoPreview || profileData.profilePhotoUrl;
-      let finalInterestPhotoUrls = interestPreviews.length > 0 ? interestPreviews : profileData.interestImageUrls;
+      // Track publicIds for current avatar and interest photos
+      let currentAvatarPublicId = profileData.avatarPublicId || profileData.profilePhoto?.publicId || '';
+      let finalAvatarUrl = profileData.profilePhotoUrl;
+      let finalAvatarPublicId = currentAvatarPublicId;
 
-      // Safe Storage Upload Helper
-      const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, fallbackValue: T): Promise<T> => {
-        return Promise.race([
-          promise,
-          new Promise<T>((resolve) => setTimeout(() => resolve(fallbackValue), timeoutMs)),
-        ]);
-      };
-
+      // Handle Avatar Upload / Replacement / Deletion
       if (profilePhotoFile) {
-        try {
-          const { uploadProfilePhoto } = await import('../../lib/firebase/storage');
-          finalProfilePhotoUrl = await withTimeout(
-            uploadProfilePhoto(user.uid, profilePhotoFile),
-            2500,
-            finalProfilePhotoUrl
-          );
-        } catch (stErr) {
-          console.warn('Storage upload fallback:', stErr);
+        // Upload new avatar to scoped folder users/<userId>/avatar
+        const res = await uploadToCloudinary(profilePhotoFile, `users/${user.uid}/avatar`);
+        finalAvatarUrl = res.secure_url;
+        finalAvatarPublicId = res.public_id;
+
+        // Delete old avatar if present
+        if (currentAvatarPublicId && currentAvatarPublicId !== finalAvatarPublicId) {
+          await deleteFromCloudinary(currentAvatarPublicId, user.uid);
+        }
+      } else if (!profilePhotoPreview) {
+        // Avatar was removed by user clicking red X button
+        if (currentAvatarPublicId) {
+          await deleteFromCloudinary(currentAvatarPublicId, user.uid);
+        }
+        finalAvatarUrl = '';
+        finalAvatarPublicId = '';
+      }
+
+      // Handle Interest Images Upload / Replacement / Deletion with Slotted Model
+      const existingInterestItems = profileData.interestImagesList || [];
+      const updatedInterestItems: Array<{ slot: number; url: string; publicId: string; uploadedAt?: string }> = [];
+
+      let fileIdx = 0;
+      for (let i = 0; i < interestPreviews.length; i++) {
+        const previewUrl = interestPreviews[i];
+        const slotNum = i + 1;
+
+        if (previewUrl.startsWith('blob:')) {
+          // Newly selected file
+          const fileToUpload = interestFiles[fileIdx];
+          fileIdx++;
+          if (fileToUpload) {
+            const uploadRes = await uploadToCloudinary(fileToUpload, `users/${user.uid}/interests`);
+            
+            // If replacing an existing slot that had a publicId, delete old asset
+            const oldItem = existingInterestItems.find((item) => item.slot === slotNum);
+            if (oldItem?.publicId) {
+              await deleteFromCloudinary(oldItem.publicId, user.uid);
+            }
+
+            updatedInterestItems.push({
+              slot: slotNum,
+              url: uploadRes.secure_url,
+              publicId: uploadRes.public_id,
+              uploadedAt: new Date().toISOString(),
+            });
+          }
+        } else {
+          // Existing saved image URL
+          const match = existingInterestItems.find((item) => item.url === previewUrl || item.slot === slotNum);
+          updatedInterestItems.push({
+            slot: slotNum,
+            url: previewUrl,
+            publicId: match?.publicId || '',
+            uploadedAt: match?.uploadedAt ? (typeof match.uploadedAt === 'string' ? match.uploadedAt : new Date().toISOString()) : new Date().toISOString(),
+          });
         }
       }
 
-      if (interestFiles.length > 0) {
-        try {
-          const { uploadInterestImages } = await import('../../lib/firebase/storage');
-          finalInterestPhotoUrls = await withTimeout(
-            uploadInterestImages(user.uid, interestFiles),
-            3000,
-            finalInterestPhotoUrls
-          );
-        } catch (stErr) {
-          console.warn('Storage upload fallback:', stErr);
+      // Find any removed interest image slots and delete their Cloudinary assets
+      for (const oldItem of existingInterestItems) {
+        const isStillPresent = updatedInterestItems.some(
+          (newItem) => newItem.url === oldItem.url || (newItem.publicId && newItem.publicId === oldItem.publicId)
+        );
+        if (!isStillPresent && oldItem.publicId) {
+          await deleteFromCloudinary(oldItem.publicId, user.uid);
         }
       }
 
@@ -493,18 +534,26 @@ export const ProfileEditor: React.FC = () => {
             lng: selectedLocationData?.lng || (profileData.locationType === 'exact' ? 16.3738 : 0),
           },
         },
+        avatarUrl: finalAvatarUrl,
+        avatarPublicId: finalAvatarPublicId,
         profilePhoto: {
-          url: finalProfilePhotoUrl,
+          url: finalAvatarUrl,
+          publicId: finalAvatarPublicId,
           uploadedAt: new Date().toISOString(),
         },
-        interestImages: finalInterestPhotoUrls.map((url) => ({
-          url,
-          uploadedAt: new Date().toISOString(),
-        })),
+        interestImages: updatedInterestItems,
         updatedAt: serverTimestamp(),
       };
 
       await setDoc(doc(db, 'users', user.uid), fullProfile, { merge: true });
+
+      setProfileData((prev) => ({
+        ...prev,
+        avatarPublicId: finalAvatarPublicId,
+        profilePhotoUrl: finalAvatarUrl,
+        interestImageUrls: updatedInterestItems.map((item) => item.url),
+        interestImagesList: updatedInterestItems,
+      }));
 
       if (refreshProfileStatus) {
         await refreshProfileStatus();
@@ -619,11 +668,17 @@ export const ProfileEditor: React.FC = () => {
           <div className="space-y-6">
             {/* Header Identity Row */}
             <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-slate-100">
-              <img
-                src={profilePhotoPreview || profileData.profilePhotoUrl}
-                alt={profileData.name}
-                className="w-28 h-28 object-cover rounded-full border-4 border-blue-500/20 shadow-lg shrink-0"
-              />
+              {profilePhotoPreview || profileData.profilePhotoUrl ? (
+                <img
+                  src={profilePhotoPreview || profileData.profilePhotoUrl}
+                  alt={profileData.name}
+                  className="w-28 h-28 object-cover rounded-full border-4 border-blue-500/20 shadow-lg shrink-0"
+                />
+              ) : (
+                <div className="w-28 h-28 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center border-4 border-blue-500/20 shadow-lg shrink-0">
+                  <User className="w-12 h-12" />
+                </div>
+              )}
               <div className="space-y-2 text-center sm:text-left flex-1">
                 {/* Non-interactive static Name, Age, Gender */}
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
@@ -680,8 +735,12 @@ export const ProfileEditor: React.FC = () => {
               {interestPreviews.length > 0 ? (
                 <div className="grid grid-cols-3 gap-3">
                   {interestPreviews.map((url, idx) => (
-                    <div key={idx} className="aspect-square rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
-                      <img src={url} alt={`Interest ${idx + 1}`} className="w-full h-full object-cover" />
+                    <div key={idx} className="aspect-square rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100">
+                      <img
+                        src={url}
+                        alt={`Interest ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   ))}
                 </div>

@@ -15,6 +15,7 @@ import {
   Mail,
   Check,
   Activity,
+  Lock,
 } from 'lucide-react';
 
 const MotionLink = motion.create(Link);
@@ -239,6 +240,26 @@ export const Navbar: React.FC = () => {
                     </div>
                     <span className="text-xs text-slate-400 font-bold">→</span>
                   </Link>
+
+                  {/* Change Password Option */}
+                  {user && (
+                    <Link
+                      href="/auth/changePassword"
+                      onClick={() => setMenuOpen(false)}
+                      className="w-full p-3 bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-2xl flex items-center justify-between transition-colors text-left"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 bg-amber-50 text-amber-600 rounded-xl">
+                          <Lock className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-slate-900">Change Password</div>
+                          <div className="text-[10px] text-slate-500">Security & Credentials</div>
+                        </div>
+                      </div>
+                      <span className="text-xs text-slate-400 font-bold">→</span>
+                    </Link>
+                  )}
 
                   <div className="my-1 border-t border-slate-100" />
 

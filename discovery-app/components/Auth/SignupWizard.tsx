@@ -7,6 +7,7 @@ import { useAuth } from '../../lib/hooks/useAuth';
 import { PREDEFINED_INTERESTS, type UserProfile } from '../../types/user';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../../lib/firebase/config';
+import { uploadToCloudinary } from '../../lib/cloudinary';
 import { Sparkles, AlertCircle } from 'lucide-react';
 
 import { Step1Credentials } from './steps/Step1Credentials';
@@ -410,51 +411,36 @@ export const SignupWizard: React.FC = () => {
         currentUid = newUser.uid;
       }
 
-      let profilePhotoUrl =
-        profilePhotoPreview ||
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80';
-
-      let interestPhotoUrls =
-        interestPreviews.length > 0
-          ? interestPreviews
-          : [
-              'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=500&auto=format&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=500&auto=format&fit=crop&q=80',
-            ];
-
-      // Helper function for timeout safety so Firebase Storage never hangs Firestore registration
-      const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, fallbackValue: T): Promise<T> => {
-        return Promise.race([
-          promise,
-          new Promise<T>((resolve) => setTimeout(() => resolve(fallbackValue), timeoutMs)),
-        ]);
-      };
-
-      // Attempt live Firebase Storage upload if files selected (with 2.5s timeout safety)
+      // Upload Profile Photo directly to Cloudinary with scoped folder
+      let profilePhotoUrl = '';
+      let profilePhotoPublicId = '';
       if (profilePhotoFile) {
         try {
-          const { uploadProfilePhoto } = await import('../../lib/firebase/storage');
-          profilePhotoUrl = await withTimeout(
-            uploadProfilePhoto(currentUid, profilePhotoFile),
-            2500,
-            profilePhotoUrl
-          );
-        } catch (stErr) {
-          console.warn('Storage profile photo upload fallback:', stErr);
+          const res = await uploadToCloudinary(profilePhotoFile, `users/${currentUid}/avatar`);
+          profilePhotoUrl = res.secure_url;
+          profilePhotoPublicId = res.public_id;
+        } catch (cErr: any) {
+          console.error('Cloudinary profile photo upload failed:', cErr);
+          throw new Error(cErr?.message || 'Failed to upload profile photo to Cloudinary.');
         }
       }
 
+      // Upload Interest Photos directly to Cloudinary with scoped folder and slotted model
+      let interestImagesData: Array<{ slot: number; url: string; publicId: string; uploadedAt: string }> = [];
       if (interestFiles.length > 0) {
         try {
-          const { uploadInterestImages } = await import('../../lib/firebase/storage');
-          interestPhotoUrls = await withTimeout(
-            uploadInterestImages(currentUid, interestFiles),
-            3000,
-            interestPhotoUrls
+          const uploadResults = await Promise.all(
+            interestFiles.slice(0, 3).map((file) => uploadToCloudinary(file, `users/${currentUid}/interests`))
           );
-        } catch (stErr) {
-          console.warn('Storage interest images upload fallback:', stErr);
+          interestImagesData = uploadResults.map((res, idx) => ({
+            slot: idx + 1,
+            url: res.secure_url,
+            publicId: res.public_id,
+            uploadedAt: new Date().toISOString(),
+          }));
+        } catch (cErr: any) {
+          console.error('Cloudinary interest images upload failed:', cErr);
+          throw new Error(cErr?.message || 'Failed to upload interest images to Cloudinary.');
         }
       }
 
@@ -476,14 +462,14 @@ export const SignupWizard: React.FC = () => {
             lng: selectedLocationData?.lng || (formData.locationType === 'exact' ? 16.3738 : 0),
           },
         },
+        avatarUrl: profilePhotoUrl,
+        avatarPublicId: profilePhotoPublicId,
         profilePhoto: {
           url: profilePhotoUrl,
+          publicId: profilePhotoPublicId,
           uploadedAt: new Date().toISOString(),
         },
-        interestImages: interestPhotoUrls.map((url) => ({
-          url,
-          uploadedAt: new Date().toISOString(),
-        })),
+        interestImages: interestImagesData,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
@@ -552,9 +538,8 @@ export const SignupWizard: React.FC = () => {
 
   return (
     <div
-      className={`w-full max-w-xl mx-auto h-[580px] bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col justify-between text-slate-900 ${
-        step === 5 ? 'overflow-visible' : 'overflow-hidden'
-      }`}
+      className={`w-full max-w-xl mx-auto h-[580px] bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col justify-between text-slate-900 ${step === 5 ? 'overflow-visible' : 'overflow-hidden'
+        }`}
     >
       {/* Progress Bar Header */}
       <div className="space-y-3">
@@ -659,6 +644,7 @@ export const SignupWizard: React.FC = () => {
             removeInterestImage={removeInterestImage}
             handleFinishProfile={handleFinishProfile}
             uploadingPhotos={uploadingPhotos}
+            renderErrorAlert={renderErrorAlert}
             setStep={setStep}
           />
         )}

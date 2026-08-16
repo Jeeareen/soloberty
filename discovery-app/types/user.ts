@@ -24,12 +24,17 @@ export interface UserProfile {
       lng: number;
     };
   };
-  profilePhoto: {
+  avatarUrl?: string;
+  avatarPublicId?: string;
+  profilePhoto?: {
     url: string;
+    publicId?: string;
     uploadedAt?: string | Timestamp;
   };
-  interestImages: Array<{
+  interestImages?: Array<{
+    slot?: number;
     url: string;
+    publicId?: string;
     uploadedAt?: string | Timestamp;
   }>;
   createdAt?: string | Timestamp;
