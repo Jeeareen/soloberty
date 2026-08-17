@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-brand-primary: #00AAFF;
   --color-brand-secondary: #0088CC;
@@ -16,6 +18,14 @@
   --text-h: #0F172A;
   --social-bg: #F8FAFC;
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+}
+
+/* Dark Mode Global Overrides */
+.dark,
+.dark body {
+  background-color: #090D16 !important;
+  color: #F8FAFC !important;
+  color-scheme: dark;
 }
 
 /* Ensure markdown headings, lists, and elements in .prose container render with distinct sizes, weights, and markers */

@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function ProfilePage() {
   return (
-    <main className="min-h-screen bg-slate-50/60 pb-16 px-4">
+    <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] pt-3 sm:pt-5 pb-8 sm:pb-12 px-4 sm:px-8 transition-colors duration-200">
       <ProfileEditor />
     </main>
   );

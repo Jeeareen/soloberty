@@ -1,8 +1,8 @@
 export default function MapPage() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
-      <h1 className="text-3xl font-bold text-gray-800">Map Page</h1>
-      <p className="mt-2 text-lg text-gray-500">Map page coming soon...</p>
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-60px)] text-center p-6 bg-slate-50 dark:bg-black transition-colors duration-200">
+      <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Map Page</h1>
+      <p className="mt-2 text-lg text-gray-500 dark:text-slate-300">Map page coming soon...</p>
     </div>
   );
 }

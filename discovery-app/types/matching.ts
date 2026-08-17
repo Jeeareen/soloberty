@@ -8,6 +8,12 @@ export interface MatchCard {
   name: string;
   summary: string;
   details?: string;
+  age?: number;
+  gender?: 'male' | 'female' | 'other';
+  location?: string;
+  interests?: string[];
+  photoUrl?: string;
+  interestImages?: string[];
 }
 
 export interface SwipeAction {
