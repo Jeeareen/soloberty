@@ -33,24 +33,27 @@ export const Step7InterestPhotos: React.FC<Step7InterestPhotosProps> = ({
     >
       <div className="space-y-1">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">Interest images</h2>
-          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
+          <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900">Interest images</h2>
+          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#B8E7FF] text-[#00AAFF] border border-transparent">
             {interestPreviews.length} / 3 images
           </span>
         </div>
         <p className="text-xs sm:text-sm text-slate-500">
-          Step 7: Upload up to 3 photos showing your hobbies, lifestyle, or activities
+          Step 7: Add up to 3 optional images that represent your lifestyle or hobbies
         </p>
       </div>
 
       {renderErrorAlert()}
 
-      <div className="space-y-4">
+      <div className="space-y-3">
+        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          Upload Photos (Max 3)
+        </label>
+        
         <div className="grid grid-cols-3 gap-3">
           {interestPreviews.map((url, idx) => (
             <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-200 group shadow-sm">
               <img src={url} alt={`Interest ${idx + 1}`} className="w-full h-full object-cover" />
-              {/* Delete button disabled with Ban / slash cursor while profile saving */}
               <button
                 type="button"
                 onClick={() => !uploadingPhotos && removeInterestImage(idx)}
@@ -77,10 +80,10 @@ export const Step7InterestPhotos: React.FC<Step7InterestPhotosProps> = ({
               className={`aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center transition-all p-2 text-center ${
                 uploadingPhotos
                   ? 'cursor-not-allowed opacity-50'
-                  : 'hover:border-blue-500 cursor-pointer'
+                  : 'hover:border-[#00AAFF] cursor-pointer'
               }`}
             >
-              <Upload className="w-5 h-5 text-blue-600 mb-1" />
+              <Upload className="w-5 h-5 text-[#00AAFF] mb-1" />
               <span className="text-[11px] font-bold text-slate-700">Add Photo</span>
               <span className="text-[9px] text-slate-400">Max 5MB</span>
             </label>
@@ -102,8 +105,7 @@ export const Step7InterestPhotos: React.FC<Step7InterestPhotosProps> = ({
         <button
           type="button"
           onClick={() => setStep(6)}
-          disabled={uploadingPhotos}
-          className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-1.5"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
@@ -112,7 +114,7 @@ export const Step7InterestPhotos: React.FC<Step7InterestPhotosProps> = ({
           type="button"
           onClick={handleFinishProfile}
           disabled={uploadingPhotos}
-          className="flex-1 py-3.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {uploadingPhotos ? (
             <>

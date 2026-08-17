@@ -62,7 +62,7 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
       className="space-y-5"
     >
       <div className="space-y-1">
-        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">Your location</h2>
+        <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900">Your location</h2>
         <p className="text-xs sm:text-sm text-slate-500">
           Step 5: Choose how you'd like to share your location with potential matches
         </p>
@@ -103,7 +103,7 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
                   {isActive && (
                     <motion.div
                       layoutId="locationPrivacyPill"
-                      className="absolute inset-0 bg-blue-600 rounded-xl shadow-md"
+                      className="absolute inset-0 bg-[#00AAFF] rounded-xl shadow-md"
                       transition={{
                         type: 'spring',
                         stiffness: 500,
@@ -123,7 +123,7 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
                     <div className="font-bold text-xs sm:text-sm">{opt.title}</div>
                     <p
                       className={`text-[10px] sm:text-[11px] leading-snug ${
-                        isActive ? 'text-blue-100' : 'text-slate-500'
+                        isActive ? 'text-amber-100' : 'text-slate-500'
                       }`}
                     >
                       {opt.desc}
@@ -259,7 +259,7 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
               ? !isGpsDetected
               : !isCityValid || !formData.city.trim())
           }
-          className="flex-1 py-3.5 px-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2"
+          className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2"
         >
           Continue to Photos
           <ArrowRight className="w-4 h-4" />

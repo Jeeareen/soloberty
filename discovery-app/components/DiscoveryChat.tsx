@@ -185,19 +185,19 @@ export const DiscoveryChat: React.FC = () => {
   return (
     <div className="flex flex-col h-[calc(100vh-170px)] sm:h-[650px] min-h-[480px] max-h-[88vh] w-full max-w-3xl mx-auto bg-white border border-gray-200 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden min-w-0 max-w-full font-sans transition-all duration-200">
       {/* Header */}
-      <header className="flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-4 bg-blue-600 text-white shadow-sm w-full min-w-0 gap-2">
+      <header className="flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-4 bg-[#00AAFF] text-white shadow-sm w-full min-w-0 gap-2">
         <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
           <div className="p-1.5 sm:p-2 bg-white/15 rounded-xl backdrop-blur-md border border-white/20 shrink-0">
-            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-300 animate-pulse" />
+            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-200 animate-pulse" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-sm sm:text-base font-bold tracking-tight flex items-center gap-1.5 truncate">
+            <h2 className="text-sm sm:text-base font-heading font-bold tracking-tight flex items-center gap-1.5 truncate">
               Soloberty Scout
-              <span className="text-[9px] sm:text-[10px] bg-white/20 text-white px-1.5 sm:px-2 py-0.5 rounded-full font-medium tracking-wide uppercase shrink-0">
+              <span className="text-[9px] sm:text-[10px] bg-white/20 text-white px-1.5 sm:px-2 py-0.5 rounded-full font-medium tracking-wide uppercase shrink-0 font-sans">
                 AI Discovery
               </span>
             </h2>
-            <p className="text-[11px] sm:text-xs text-blue-100/90 font-normal truncate">
+            <p className="text-[11px] sm:text-xs text-amber-100/90 font-normal truncate">
               Describe your ideal match, vibe, or hobbies
             </p>
           </div>
@@ -228,10 +228,10 @@ export const DiscoveryChat: React.FC = () => {
           {/* Welcome State */}
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center min-h-[320px] text-center p-6 bg-white rounded-2xl border border-dashed border-gray-200 shadow-sm my-auto">
-              <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-md mb-4">
+              <div className="w-14 h-14 bg-[#00AAFF] rounded-2xl flex items-center justify-center text-white shadow-md mb-4">
                 <Compass className="w-8 h-8 animate-spin-slow" />
               </div>
-              <h3 className="text-lg font-bold text-gray-800">
+              <h3 className="text-lg font-heading font-bold tracking-tight text-gray-800">
                 Welcome to Soloberty Scout!
               </h3>
               <p className="text-sm text-gray-500 max-w-md mt-1 mb-6 leading-relaxed">
@@ -248,7 +248,7 @@ export const DiscoveryChat: React.FC = () => {
                     <button
                       key={idx}
                       onClick={() => handleSelectSuggestion(prompt)}
-                      className="p-3 text-xs text-gray-700 bg-slate-100/80 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200/80 rounded-xl transition-all duration-150 font-medium active:scale-[0.98]"
+                      className="p-3 text-xs text-gray-700 bg-slate-100/80 hover:bg-[#B8E7FF] hover:text-[#0088CC] hover:border-[#B8E7FF] border border-slate-200/80 rounded-xl transition-all duration-150 font-medium active:scale-[0.98]"
                     >
                       {prompt}
                     </button>
@@ -274,8 +274,8 @@ export const DiscoveryChat: React.FC = () => {
                 {/* Avatar */}
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm text-xs font-bold ${isUser
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-blue-600 text-white'
+                      ? 'bg-[#00AAFF] text-white'
+                      : 'bg-[#00AAFF] text-white'
                     }`}
                 >
                   {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
@@ -284,7 +284,7 @@ export const DiscoveryChat: React.FC = () => {
                 {/* Bubble Content */}
                 <div
                   className={`relative p-3.5 sm:p-4 rounded-2xl text-xs sm:text-sm leading-relaxed min-w-0 shadow-sm transition-all duration-200 ${isUser
-                      ? 'bg-blue-600 text-white rounded-tr-none'
+                      ? 'bg-[#00AAFF] text-white rounded-tr-none'
                       : 'bg-white text-gray-800 border border-gray-200/80 rounded-tl-none'
                     }`}
                 >
@@ -302,13 +302,13 @@ export const DiscoveryChat: React.FC = () => {
                               {...props}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline font-semibold"
+                              className="text-[#00AAFF] hover:underline font-semibold"
                             />
                           ),
                           code: ({ node, inline, className, children, ...props }: any) => {
                             return inline ? (
                               <code
-                                className="bg-slate-100 text-blue-700 px-1.5 py-0.5 rounded font-mono text-xs"
+                                className="bg-[#B8E7FF] text-[#0088CC] border border-[#B8E7FF] px-1.5 py-0.5 rounded font-mono text-xs"
                                 {...props}
                               >
                                 {children}
@@ -324,7 +324,7 @@ export const DiscoveryChat: React.FC = () => {
                         {sanitizeStreamMarkdown(textContent) || (isStreamingThisMessage ? '...' : '')}
                       </ReactMarkdown>
                       {isStreamingThisMessage && (
-                        <span className="inline-block w-1.5 h-4 ml-1 bg-blue-600 animate-pulse align-middle" />
+                        <span className="inline-block w-1.5 h-4 ml-1 bg-[#00AAFF] animate-pulse align-middle" />
                       )}
                     </div>
                   )}
@@ -336,33 +336,33 @@ export const DiscoveryChat: React.FC = () => {
           {/* Smooth Thinking Indicator (Before First Token) */}
           {isAssistantThinking && (
             <div className="flex gap-3 mr-auto max-w-[88%] sm:max-w-[82%] items-center">
-              <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+              <div className="w-8 h-8 rounded-full bg-[#00AAFF] text-white flex items-center justify-center shrink-0 shadow-sm">
                 <Bot className="w-4 h-4 animate-bounce" />
               </div>
               <div className="bg-white border border-gray-200/80 rounded-2xl rounded-tl-none px-4 py-3 text-sm text-gray-500 shadow-sm flex items-center space-x-2">
-                <span className="text-xs font-medium text-blue-600">
+                <span className="text-xs font-medium text-[#00AAFF]">
                   Soloberty Scout is thinking
                 </span>
                 <div className="flex space-x-1 items-center">
-                  <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-ping" />
-                  <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-ping delay-150" />
-                  <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-ping delay-300" />
+                  <span className="w-1.5 h-1.5 bg-[#00AAFF] rounded-full animate-ping" />
+                  <span className="w-1.5 h-1.5 bg-[#00AAFF] rounded-full animate-ping delay-150" />
+                  <span className="w-1.5 h-1.5 bg-[#00AAFF] rounded-full animate-ping delay-300" />
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Floating "Jump to Latest" Affordance (Positioned absolutely over wrapper to avoid scrollHeight shifts) */}
+        {/* Floating "Jump to Latest" Affordance */}
         {!isAutoScrolling && !isAtBottom && (
           <button
             onClick={() => scrollToBottom('smooth')}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-full shadow-lg transition-all duration-200 animate-fade-in hover:scale-105 active:scale-95 border border-white/20 pointer-events-auto"
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3.5 py-1.5 bg-[#00AAFF] hover:bg-[#0088CC] text-white text-xs font-semibold rounded-full shadow-lg transition-all duration-200 animate-fade-in hover:scale-105 active:scale-95 border border-white/20 pointer-events-auto"
           >
             <ArrowDown className="w-3.5 h-3.5 animate-bounce" />
             Jump to latest
             {unreadCount > 0 && (
-              <span className="bg-white text-indigo-600 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+              <span className="bg-white text-[#00AAFF] text-[10px] font-bold px-1.5 py-0.2 rounded-full">
                 {unreadCount}
               </span>
             )}
@@ -382,7 +382,7 @@ export const DiscoveryChat: React.FC = () => {
                 ? 'AI response is streaming...'
                 : 'Ask Soloberty Scout (e.g. Find workout buddies who love sushi)'
             }
-            className="flex-1 px-4 py-2.5 text-sm bg-slate-100/90 text-gray-800 placeholder-gray-400 rounded-xl border border-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
+            className="flex-1 px-4 py-2.5 text-sm bg-slate-100/90 text-gray-800 placeholder-gray-400 rounded-xl border border-transparent focus:border-[#00AAFF] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#B8E7FF] transition-all"
           />
 
           {isLoading ? (
@@ -399,7 +399,7 @@ export const DiscoveryChat: React.FC = () => {
             <button
               type="submit"
               disabled={!input.trim()}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 text-white text-sm font-semibold rounded-xl transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-[#00AAFF] hover:bg-[#0088CC] disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 text-white text-sm font-semibold rounded-xl transition-all shadow-sm"
             >
               <Send className="w-4 h-4" />
               <span className="hidden sm:inline">Send</span>

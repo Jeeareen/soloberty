@@ -26,10 +26,10 @@ export async function POST(req: Request) {
       system: DISCOVERY_SYSTEM_PROMPT,
       messages: formattedMessages,
       temperature: DEFAULT_MODEL_PARAMS.temperature,
-      maxTokens: DEFAULT_MODEL_PARAMS.maxTokens,
+      maxOutputTokens: DEFAULT_MODEL_PARAMS.maxTokens,
     });
 
-    return result.toDataStreamResponse();
+    return result.toUIMessageStreamResponse();
   } catch (error: any) {
     console.error('[Soloberty Scout API Error]:', error);
     return new Response(

@@ -19,8 +19,6 @@ import {
   AlertCircle,
   Loader2,
   User,
-  Heart,
-  ImageIcon,
   Navigation,
 } from 'lucide-react';
 
@@ -441,7 +439,7 @@ export const ProfileEditor: React.FC = () => {
 
     try {
       // Track publicIds for current avatar and interest photos
-      let currentAvatarPublicId = profileData.avatarPublicId || profileData.profilePhoto?.publicId || '';
+      let currentAvatarPublicId = profileData.avatarPublicId || '';
       let finalAvatarUrl = profileData.profilePhotoUrl;
       let finalAvatarPublicId = currentAvatarPublicId;
 
@@ -584,7 +582,7 @@ export const ProfileEditor: React.FC = () => {
       {/* Top Header & Edit Mode Toggle Button */}
       <div className="flex items-center justify-between px-2">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">My Profile</h1>
+          <h1 className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight text-slate-900">My Profile</h1>
           <p className="text-xs sm:text-sm text-slate-500">
             {isEditMode
               ? 'Edit your location, bio, interests, and profile pictures'
@@ -609,7 +607,7 @@ export const ProfileEditor: React.FC = () => {
               type="button"
               onClick={handleSaveProfile}
               disabled={saving}
-              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-600/20 transition-all flex items-center gap-1.5 active:scale-95 disabled:opacity-50"
+              className="px-4 py-2.5 bg-[#00AAFF] hover:bg-[#0088CC] text-white text-xs font-bold rounded-xl shadow-md shadow-[#00AAFF]/20 transition-all flex items-center gap-1.5 active:scale-95 disabled:opacity-50"
             >
               {saving ? (
                 <>
@@ -628,7 +626,7 @@ export const ProfileEditor: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsEditMode(true)}
-            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-bold rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
+            className="px-4 py-2.5 bg-[#00AAFF] hover:bg-[#0088CC] text-white text-xs sm:text-sm font-bold rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
           >
             <Pencil className="w-4 h-4" />
             Edit Profile
@@ -672,17 +670,17 @@ export const ProfileEditor: React.FC = () => {
                 <img
                   src={profilePhotoPreview || profileData.profilePhotoUrl}
                   alt={profileData.name}
-                  className="w-28 h-28 object-cover rounded-full border-4 border-blue-500/20 shadow-lg shrink-0"
+                  className="w-28 h-28 object-cover rounded-full border-4 border-slate-100 shrink-0"
                 />
               ) : (
-                <div className="w-28 h-28 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center border-4 border-blue-500/20 shadow-lg shrink-0">
+                <div className="w-28 h-28 rounded-full bg-[#B8E7FF] text-[#00AAFF] flex items-center justify-center border-4 border-slate-100 shrink-0">
                   <User className="w-12 h-12" />
                 </div>
               )}
               <div className="space-y-2 text-center sm:text-left flex-1">
                 {/* Non-interactive static Name, Age, Gender */}
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                  <h2 className="text-2xl font-extrabold text-slate-900">{profileData.name}</h2>
+                  <h2 className="text-2xl font-heading font-extrabold tracking-tight text-slate-900">{profileData.name}</h2>
                   <span className="text-sm font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
                     {profileData.age} yrs
                   </span>
@@ -692,7 +690,7 @@ export const ProfileEditor: React.FC = () => {
                 </div>
 
                 <div className="flex items-center justify-center sm:justify-start gap-2 text-xs font-semibold text-slate-600">
-                  <MapPin className="w-4 h-4 text-blue-600" />
+                  <MapPin className="w-4 h-4 text-[#00AAFF]" />
                   <span>{profileData.city || 'Vienna, AT'}</span>
                 </div>
               </div>
@@ -700,7 +698,7 @@ export const ProfileEditor: React.FC = () => {
 
             {/* Static Bio Card */}
             <div className="space-y-2">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-400">About Me</h3>
+              <h3 className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400">About Me</h3>
               <p className="text-sm sm:text-base text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-100">
                 {profileData.bio || 'No bio provided yet.'}
               </p>
@@ -708,7 +706,7 @@ export const ProfileEditor: React.FC = () => {
 
             {/* Static Interests */}
             <div className="space-y-2">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-400">Interests</h3>
+              <h3 className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400">Interests</h3>
               <div className="flex flex-wrap gap-2">
                 {profileData.interests.length > 0 ? (
                   profileData.interests.map((id) => {
@@ -716,9 +714,9 @@ export const ProfileEditor: React.FC = () => {
                     return (
                       <span
                         key={id}
-                        className="px-3.5 py-1.5 bg-blue-50 text-blue-700 font-bold text-xs rounded-xl border border-blue-100 flex items-center gap-1.5"
+                        className="px-3.5 py-1.5 bg-[#B8E7FF] text-[#0088CC] font-bold text-xs rounded-xl border border-[#B8E7FF] flex items-center gap-1.5"
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+                        <Sparkles className="w-3.5 h-3.5 text-[#00AAFF]" />
                         {interest ? interest.name : id}
                       </span>
                     );
@@ -731,7 +729,7 @@ export const ProfileEditor: React.FC = () => {
 
             {/* Static Interest Photos Grid */}
             <div className="space-y-2 pt-2">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-400">Interest Photos</h3>
+              <h3 className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400">Interest Photos</h3>
               {interestPreviews.length > 0 ? (
                 <div className="grid grid-cols-3 gap-3">
                   {interestPreviews.map((url, idx) => (
@@ -786,7 +784,7 @@ export const ProfileEditor: React.FC = () => {
                     <img
                       src={profilePhotoPreview}
                       alt="Profile Preview"
-                      className="w-24 h-24 object-cover rounded-full border-4 border-blue-500/20 shadow-md"
+                      className="w-24 h-24 object-cover rounded-full border-4 border-slate-100"
                     />
                     <button
                       type="button"
@@ -798,7 +796,7 @@ export const ProfileEditor: React.FC = () => {
                     </button>
                   </div>
                 ) : (
-                  <div className="w-24 h-24 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shrink-0">
+                  <div className="w-24 h-24 rounded-full bg-[#B8E7FF] text-[#00AAFF] flex items-center justify-center border border-[#B8E7FF] shrink-0">
                     <User className="w-10 h-10" />
                   </div>
                 )}
@@ -808,14 +806,14 @@ export const ProfileEditor: React.FC = () => {
                     htmlFor="profilePhotoInputProfile"
                     className="flex-1 py-2.5 px-3 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl cursor-pointer shadow-sm flex items-center justify-center gap-1.5 transition-all text-center"
                   >
-                    <Upload className="w-4 h-4 text-blue-600" />
+                    <Upload className="w-4 h-4 text-[#00AAFF]" />
                     Upload File
                   </label>
                   <button
                     type="button"
                     onClick={openCamera}
                     disabled={isCameraStarting}
-                    className="flex-1 py-2.5 px-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-600/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50 text-center"
+                    className="flex-1 py-2.5 px-3 bg-[#00AAFF] hover:bg-[#0088CC] text-white text-xs font-bold rounded-xl shadow-md shadow-[#00AAFF]/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50 text-center"
                   >
                     <Camera className="w-4 h-4" />
                     Shoot Cam
@@ -856,7 +854,7 @@ export const ProfileEditor: React.FC = () => {
                   }}
                   className={`py-2 text-xs font-bold rounded-xl transition-all relative z-10 ${
                     profileData.locationType === 'approximate'
-                      ? 'text-blue-600 shadow-sm bg-white'
+                      ? 'text-[#00AAFF] shadow-sm bg-white'
                       : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
@@ -870,7 +868,7 @@ export const ProfileEditor: React.FC = () => {
                   }}
                   className={`py-2 text-xs font-bold rounded-xl transition-all relative z-10 ${
                     profileData.locationType === 'exact'
-                      ? 'text-blue-600 shadow-sm bg-white'
+                      ? 'text-[#00AAFF] shadow-sm bg-white'
                       : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
@@ -894,10 +892,10 @@ export const ProfileEditor: React.FC = () => {
                             setIsCityValid(true);
                             setShowCityDropdown(false);
                           }}
-                          className="w-full text-left p-2.5 hover:bg-blue-50 rounded-xl transition-colors flex items-center justify-between text-xs font-semibold text-slate-800"
+                          className="w-full text-left p-2.5 hover:bg-[#B8E7FF] rounded-xl transition-colors flex items-center justify-between text-xs font-semibold text-slate-800"
                         >
                           <div className="flex items-center gap-2">
-                            <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                            <MapPin className="w-3.5 h-3.5 text-[#00AAFF] shrink-0" />
                             <span>{item.city}</span>
                           </div>
                           <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 rounded-md text-slate-600">
@@ -916,7 +914,7 @@ export const ProfileEditor: React.FC = () => {
                       setIsCityValid(false);
                     }}
                     placeholder="Search city e.g. Vienna, AT"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:border-blue-600 transition-colors"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:border-[#00AAFF] transition-colors"
                   />
                 </div>
               ) : (
@@ -928,7 +926,7 @@ export const ProfileEditor: React.FC = () => {
                     className={`w-full py-3.5 px-4 font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 ${
                       isGpsDetected || selectedLocationData?.lat
                         ? 'bg-emerald-50 border border-emerald-200 text-emerald-800 cursor-default'
-                        : 'bg-rose-600 hover:bg-rose-500 text-white active:scale-95 cursor-pointer'
+                        : 'bg-[#00AAFF] hover:bg-[#0088CC] text-white active:scale-95 cursor-pointer'
                     }`}
                   >
                     {detectingGps ? (
@@ -969,7 +967,7 @@ export const ProfileEditor: React.FC = () => {
                   setProfileData((prev) => ({ ...prev, bio: e.target.value.slice(0, 300) }))
                 }
                 placeholder="Share your hobbies, favorite spots, and what you love doing..."
-                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-800 focus:outline-none focus:border-blue-600 transition-colors resize-none"
+                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-800 focus:outline-none focus:border-[#00AAFF] transition-colors resize-none"
               />
             </div>
 
@@ -979,7 +977,7 @@ export const ProfileEditor: React.FC = () => {
                 <label className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
                   Interests (Select 1 to 3)
                 </label>
-                <span className="text-xs font-bold text-blue-600">
+                <span className="text-xs font-bold text-[#00AAFF]">
                   {profileData.interests.length} / 3
                 </span>
               </div>
@@ -993,7 +991,7 @@ export const ProfileEditor: React.FC = () => {
                       onClick={() => toggleInterest(interest.id)}
                       className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                         selected
-                          ? 'bg-blue-600 text-white shadow-sm scale-[1.02]'
+                          ? 'bg-[#00AAFF] text-white shadow-sm scale-[1.02]'
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}
                     >
@@ -1072,7 +1070,7 @@ export const ProfileEditor: React.FC = () => {
             >
               <div className="flex items-center justify-between w-full pb-1 border-b border-slate-100">
                 <span className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                  <Camera className="w-4 h-4 text-blue-600" />
+                  <Camera className="w-4 h-4 text-[#00AAFF]" />
                   Capture Profile Photo
                 </span>
                 <button
@@ -1090,7 +1088,7 @@ export const ProfileEditor: React.FC = () => {
                   {cameraError}
                 </div>
               ) : (
-                <div className="relative w-64 h-64 rounded-full overflow-hidden border-4 border-blue-500/30 bg-slate-900 shadow-inner flex items-center justify-center">
+                <div className="relative w-64 h-64 rounded-full overflow-hidden border-4 border-[#00AAFF]/40 bg-slate-900 shadow-inner flex items-center justify-center">
                   <video
                     ref={videoRef}
                     autoPlay
@@ -1105,7 +1103,7 @@ export const ProfileEditor: React.FC = () => {
                 <button
                   type="button"
                   onClick={capturePhotoFromCamera}
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-blue-600/20 transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+                  className="w-full py-3 bg-[#00AAFF] hover:bg-[#0088CC] text-white text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
                 >
                   <Camera className="w-4 h-4" />
                   Capture Photo

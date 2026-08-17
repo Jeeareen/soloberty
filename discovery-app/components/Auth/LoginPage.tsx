@@ -109,7 +109,7 @@ export const LoginPage: React.FC = () => {
           className="space-y-5"
         >
           <div className="space-y-1">
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">Welcome back</h2>
+            <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900">Welcome back</h2>
             <p className="text-xs sm:text-sm text-slate-500">Enter your email and password to continue</p>
           </div>
 

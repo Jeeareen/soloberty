@@ -31,7 +31,7 @@ export const Step2BasicInfo: React.FC<Step2BasicInfoProps> = ({
       className="space-y-5"
     >
       <div className="space-y-1">
-        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">Tell us about yourself</h2>
+        <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900">Tell us about yourself</h2>
         <p className="text-xs sm:text-sm text-slate-500">Step 2: Enter your name, age, and gender</p>
       </div>
 
@@ -107,7 +107,7 @@ export const Step2BasicInfo: React.FC<Step2BasicInfoProps> = ({
                   {isActive && (
                     <motion.div
                       layoutId="genderSwitchPill"
-                      className="absolute inset-0 bg-blue-600 rounded-xl shadow-md"
+                      className="absolute inset-0 bg-[#00AAFF] rounded-xl shadow-md"
                       transition={{
                         type: 'spring',
                         stiffness: 500,
@@ -146,7 +146,7 @@ export const Step2BasicInfo: React.FC<Step2BasicInfoProps> = ({
         </button>
         <button
           type="submit"
-          className="flex-1 py-3.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2"
+          className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2"
         >
           Continue to Interests
           <ArrowRight className="w-4 h-4" />

@@ -15,6 +15,8 @@ interface Step1CredentialsProps {
   renderErrorAlert: () => React.ReactNode;
   loading: boolean;
   authLoading: boolean;
+  emailExists?: boolean;
+  onEmailChange?: () => void;
 }
 
 export const Step1Credentials: React.FC<Step1CredentialsProps> = ({
@@ -24,6 +26,8 @@ export const Step1Credentials: React.FC<Step1CredentialsProps> = ({
   renderErrorAlert,
   loading,
   authLoading,
+  emailExists = false,
+  onEmailChange,
 }) => {
   return (
     <motion.form
@@ -36,7 +40,7 @@ export const Step1Credentials: React.FC<Step1CredentialsProps> = ({
       className="space-y-5"
     >
       <div className="space-y-1">
-        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">Create your account</h2>
+        <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900">Create your account</h2>
         <p className="text-xs sm:text-sm text-slate-500">Step 1: Enter your email and choose a secure password</p>
       </div>
 
@@ -53,9 +57,12 @@ export const Step1Credentials: React.FC<Step1CredentialsProps> = ({
               type="email"
               required
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, email: e.target.value });
+                if (onEmailChange) onEmailChange();
+              }}
               placeholder="you@example.com"
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+              className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-[#00AAFF] focus:bg-white focus:ring-2 focus:ring-[#B8E7FF]"
             />
           </div>
         </div>
@@ -73,7 +80,7 @@ export const Step1Credentials: React.FC<Step1CredentialsProps> = ({
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               placeholder="••••••••"
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+              className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-[#00AAFF] focus:bg-white focus:ring-2 focus:ring-[#B8E7FF]"
             />
           </div>
         </div>
@@ -90,7 +97,7 @@ export const Step1Credentials: React.FC<Step1CredentialsProps> = ({
               value={formData.confirmPassword}
               onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               placeholder="••••••••"
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+              className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-[#00AAFF] focus:bg-white focus:ring-2 focus:ring-[#B8E7FF]"
             />
           </div>
         </div>
@@ -98,13 +105,17 @@ export const Step1Credentials: React.FC<Step1CredentialsProps> = ({
 
       <button
         type="submit"
-        disabled={loading || authLoading}
-        className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+        disabled={loading || authLoading || emailExists}
+        className="w-full py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading || authLoading ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            Registering account...
+            Checking account status...
+          </>
+        ) : emailExists ? (
+          <>
+            Account Already Exists
           </>
         ) : (
           <>

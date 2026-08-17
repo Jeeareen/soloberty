@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../../lib/hooks/useAuth';
 import { PREDEFINED_INTERESTS, type UserProfile } from '../../types/user';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
+import { fetchSignInMethodsForEmail } from 'firebase/auth';
 import { db, auth } from '../../lib/firebase/config';
 import { uploadToCloudinary } from '../../lib/cloudinary';
-import { Sparkles, AlertCircle } from 'lucide-react';
+import { Sparkles, AlertCircle, LogIn } from 'lucide-react';
 
 import { Step1Credentials } from './steps/Step1Credentials';
 import { Step2BasicInfo } from './steps/Step2BasicInfo';
@@ -25,6 +26,23 @@ export const SignupWizard: React.FC = () => {
   const [error, setErrorState] = useState<string | null>(null);
   const [errorKey, setErrorKey] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
+  const [emailExists, setEmailExists] = useState<boolean>(false);
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
+
+  // Live countdown timer for automatic login page redirection
+  useEffect(() => {
+    if (redirectCountdown === null) return;
+    if (redirectCountdown <= 0) {
+      router.push('/auth/login');
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setRedirectCountdown((prev) => (prev !== null ? prev - 1 : null));
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [redirectCountdown, router]);
 
   const setError = (msg: string | null) => {
     setErrorState(msg);
@@ -109,11 +127,12 @@ export const SignupWizard: React.FC = () => {
     };
   }, [formData.city, formData.locationType]);
 
-  // Step 1 Submission: Validate email/password locally (account is created on step 7 finish)
-  const handleStep1Submit = (e: React.FormEvent) => {
+  // Step 1 Submission: Validate email/password locally and verify email isn't already registered
+  const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.email.trim() || !formData.password || !formData.confirmPassword) {
+    const trimmedEmail = formData.email.trim();
+    if (!trimmedEmail || !formData.password || !formData.confirmPassword) {
       setError('Please fill in all fields.');
       return;
     }
@@ -127,7 +146,47 @@ export const SignupWizard: React.FC = () => {
     }
 
     setError(null);
-    setStep(2);
+    setLoading(true);
+
+    try {
+      let isRegistered = false;
+
+      // Check Firebase Auth sign-in methods for email
+      try {
+        const methods = await fetchSignInMethodsForEmail(auth, trimmedEmail);
+        if (methods && methods.length > 0) {
+          isRegistered = true;
+        }
+      } catch (authErr) {
+        // Silently ignore auth methods query errors (e.g. domain restriction)
+      }
+
+      // Also check Firestore users collection for existing email
+      if (!isRegistered) {
+        const userQuery = query(collection(db, 'users'), where('email', '==', trimmedEmail));
+        const querySnapshot = await getDocs(userQuery);
+        if (!querySnapshot.empty) {
+          isRegistered = true;
+        }
+      }
+
+      if (isRegistered) {
+        setEmailExists(true);
+        setError(null);
+        setRedirectCountdown(3);
+        return;
+      }
+
+      setEmailExists(false);
+      setRedirectCountdown(null);
+      setStep(2);
+    } catch (err: any) {
+      console.error('Email verification error:', err);
+      setEmailExists(false);
+      setStep(2);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Step 2 Submission: Basic Info
@@ -178,7 +237,7 @@ export const SignupWizard: React.FC = () => {
     ];
 
     try {
-      const promptText = `Write a single creative, warm, authentic bio (between 60 and 260 characters, no quotes or meta commentary) for ${formData.name || 'a member'}, a ${formData.age || 25}-year-old who loves ${selectedInterestNames}. The bio MUST explicitly include their interests (${selectedInterestNames}).`;
+      const promptText = `Write a single creative, warm, authentic first-person bio (between 60 and 260 characters, no quotes, no title, no meta commentary) for ${formData.name || 'a member'} who loves ${selectedInterestNames}. DO NOT start the bio with their age or a number (e.g. NEVER start with "${formData.age || 22}," or "${formData.age || 22}-year-old"). Start naturally with an introduction or hook. Incorporate their interests (${selectedInterestNames}).`;
 
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -197,12 +256,46 @@ export const SignupWizard: React.FC = () => {
         throw new Error('Failed to generate bio with Scout');
       }
 
-      const text = await response.text();
-      const cleanedText = text
-        .replace(/^\d+:"/gm, '')
-        .replace(/"$/gm, '')
+      const rawText = await response.text();
+      let generatedBio = '';
+
+      // Parse SSE stream lines (data: {"type":"text-delta","delta":"..."}) and legacy formats
+      const lines = rawText.split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('data: ')) {
+          try {
+            const json = JSON.parse(trimmed.slice(6));
+            if (json.type === 'text-delta' && typeof json.delta === 'string') {
+              generatedBio += json.delta;
+            }
+          } catch {
+            // Ignore non-JSON lines
+          }
+        } else if (/^\d+:/.test(trimmed)) {
+          try {
+            const parsed = JSON.parse(trimmed.replace(/^\d+:/, ''));
+            if (typeof parsed === 'string') {
+              generatedBio += parsed;
+            }
+          } catch {
+            generatedBio += trimmed.replace(/^\d+:"?/, '').replace(/"$/, '');
+          }
+        }
+      }
+
+      if (!generatedBio.trim()) {
+        generatedBio = rawText
+          .replace(/^data:\s*/gm, '')
+          .replace(/\\n/g, ' ')
+          .trim();
+      }
+
+      const cleanedText = generatedBio
         .replace(/\\n/g, ' ')
         .replace(/^"|"$/g, '')
+        .replace(/^\d+\s*,\s*/, '') // Strip leading age/number prefix like "22, "
+        .replace(/^\d+\s*-?\s*year\s*-?\s*old\s*,?\s*/i, '') // Strip leading "22-year-old, "
         .trim()
         .slice(0, 300);
 
@@ -514,25 +607,47 @@ export const SignupWizard: React.FC = () => {
 
   const renderErrorAlert = () => (
     <>
-      {error && (
-        <motion.div
-          key={errorKey}
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{
-            opacity: 1,
-            scale: 1,
-            x: [0, -12, 12, -9, 9, -5, 5, -2, 2, 0],
-          }}
-          transition={{
-            duration: 0.35,
-            ease: 'easeInOut',
-          }}
-          className="flex items-start gap-3 p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs sm:text-sm shadow-sm my-1"
-        >
-          <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-          <span>{error}</span>
-        </motion.div>
-      )}
+      <AnimatePresence>
+        {redirectCountdown !== null ? (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-between text-rose-900 text-xs sm:text-sm font-semibold shadow-sm my-1"
+          >
+            <div className="flex items-center gap-2.5">
+              <LogIn className="w-5 h-5 text-rose-600 shrink-0" />
+              <div>
+                <div className="font-extrabold text-rose-900">Account already registered</div>
+                <div className="text-[11px] font-normal text-rose-700">
+                  Redirecting to Log In page...
+                </div>
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-md">
+              {redirectCountdown}s
+            </div>
+          </motion.div>
+        ) : error ? (
+          <motion.div
+            key={errorKey}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: [0, -12, 12, -9, 9, -5, 5, -2, 2, 0],
+            }}
+            transition={{
+              duration: 0.35,
+              ease: 'easeInOut',
+            }}
+            className="flex items-start gap-3 p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs sm:text-sm shadow-sm my-1"
+          >
+            <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </>
   );
 
@@ -544,7 +659,7 @@ export const SignupWizard: React.FC = () => {
       {/* Progress Bar Header */}
       <div className="space-y-3">
         <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-500">
-          <span className="flex items-center gap-1.5 text-blue-600">
+          <span className="flex items-center gap-1.5 text-[#00AAFF]">
             <Sparkles className="w-4 h-4" />
             Soloberty Onboarding
           </span>
@@ -553,7 +668,7 @@ export const SignupWizard: React.FC = () => {
 
         <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-blue-600 rounded-full"
+            className="h-full bg-[#00AAFF] rounded-full"
             initial={{ width: '0%' }}
             animate={{ width: `${(step / 7) * 100}%` }}
             transition={{ duration: 0.3 }}
@@ -571,6 +686,12 @@ export const SignupWizard: React.FC = () => {
             renderErrorAlert={renderErrorAlert}
             loading={loading}
             authLoading={authLoading}
+            emailExists={emailExists || redirectCountdown !== null}
+            onEmailChange={() => {
+              setEmailExists(false);
+              setRedirectCountdown(null);
+              setError(null);
+            }}
           />
         )}
 

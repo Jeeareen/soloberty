@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp, FieldValue } from 'firebase/firestore';
 
 export interface Interest {
   id: string;
@@ -29,16 +29,16 @@ export interface UserProfile {
   profilePhoto?: {
     url: string;
     publicId?: string;
-    uploadedAt?: string | Timestamp;
+    uploadedAt?: string | Timestamp | FieldValue;
   };
   interestImages?: Array<{
     slot?: number;
     url: string;
     publicId?: string;
-    uploadedAt?: string | Timestamp;
+    uploadedAt?: string | Timestamp | FieldValue;
   }>;
-  createdAt?: string | Timestamp;
-  updatedAt?: string | Timestamp;
+  createdAt?: string | Timestamp | FieldValue;
+  updatedAt?: string | Timestamp | FieldValue;
 }
 
 export const PREDEFINED_INTERESTS: Interest[] = [

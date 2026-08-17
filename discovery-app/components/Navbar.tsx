@@ -77,13 +77,13 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-screen max-w-none bg-blue-600 shadow-md h-14 sm:h-16">
+    <header className="sticky top-0 z-50 w-screen max-w-none bg-[#00AAFF] shadow-md h-14 sm:h-16">
       <div className="max-w-6xl mx-auto flex items-center justify-between px-3 sm:px-6 h-full min-w-0 w-full relative">
         {/* Brand Logo & Title */}
         <div className="flex items-center shrink-0 mr-2 sm:mr-6">
           <Link
             href="/feed"
-            className="flex items-center gap-2 text-lg sm:text-xl font-extrabold text-white tracking-tight hover:opacity-90"
+            className="flex items-center gap-2 text-lg sm:text-xl font-heading font-extrabold text-white tracking-tight hover:opacity-90"
           >
             <SolobertyLogo className="w-7 h-7" color="white" />
             Soloberty
@@ -106,9 +106,8 @@ export const Navbar: React.FC = () => {
                   initial="rest"
                   whileHover="hover"
                   animate="rest"
-                  className={`relative flex items-center justify-center px-3 sm:px-5 h-full text-xs sm:text-sm font-bold transition-colors whitespace-nowrap shrink-0 ${
-                    isActive ? 'text-blue-600' : 'text-white/90 hover:text-white'
-                  }`}
+                  className={`relative flex items-center justify-center px-3 sm:px-5 h-full text-xs sm:text-sm font-bold transition-colors whitespace-nowrap shrink-0 ${isActive ? 'text-[#00AAFF]' : 'text-white/90 hover:text-white'
+                    }`}
                 >
                   {isActive && (
                     <motion.div
@@ -142,7 +141,7 @@ export const Navbar: React.FC = () => {
             <button
               onClick={() => setMenuOpen((prev) => !prev)}
               aria-label="Settings"
-              className="p-2 text-white hover:bg-white/15 rounded-xl transition-colors active:scale-95 flex items-center justify-center"
+              className="p-2 text-white hover:bg-white/15 rounded-xl transition-colors active:scale-95 flex items-center justify-center cursor-pointer"
             >
               <motion.div
                 animate={{ rotate: menuOpen ? -60 : 0 }}
@@ -181,7 +180,7 @@ export const Navbar: React.FC = () => {
 
                   {/* Mail Info Tile */}
                   <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">
+                    <div className="w-8 h-8 rounded-xl bg-[#00AAFF] text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">
                       {user?.email?.[0]?.toUpperCase() || <Mail className="w-4 h-4" />}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -197,10 +196,10 @@ export const Navbar: React.FC = () => {
                   {/* Notifications Toggle Tile */}
                   <button
                     onClick={() => setNotificationsEnabled((prev) => !prev)}
-                    className="w-full p-3 bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-2xl flex items-center justify-between transition-colors text-left"
+                    className="w-full p-3 bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-2xl flex items-center justify-between transition-colors text-left cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-xl">
+                      <div className="p-1.5 bg-[#B8E7FF] text-[#00AAFF] rounded-xl">
                         <Bell className="w-4 h-4" />
                       </div>
                       <div>
@@ -211,9 +210,8 @@ export const Navbar: React.FC = () => {
                       </div>
                     </div>
                     <div
-                      className={`w-9 h-5 rounded-full p-0.5 transition-colors relative ${
-                        notificationsEnabled ? 'bg-blue-600' : 'bg-slate-300'
-                      }`}
+                      className={`w-9 h-5 rounded-full p-0.5 transition-colors relative ${notificationsEnabled ? 'bg-[#00AAFF]' : 'bg-slate-300'
+                        }`}
                     >
                       <motion.div
                         className="w-4 h-4 bg-white rounded-full shadow-sm"
@@ -223,7 +221,7 @@ export const Navbar: React.FC = () => {
                     </div>
                   </button>
 
-                  {/* Health Status Tile transferred to dropdown menu */}
+                  {/* Health Status Tile */}
                   <Link
                     href="/health"
                     onClick={() => setMenuOpen(false)}
@@ -267,7 +265,7 @@ export const Navbar: React.FC = () => {
                   {user ? (
                     <button
                       onClick={handleLogout}
-                      className="w-full py-2.5 px-3 bg-rose-600 hover:bg-rose-500 active:scale-[0.98] text-white font-bold text-xs rounded-2xl shadow-md shadow-rose-600/20 transition-all flex items-center justify-center gap-2"
+                      className="w-full py-2.5 px-3 bg-rose-600 hover:bg-rose-500 active:scale-[0.98] text-white font-bold text-xs rounded-2xl shadow-md shadow-rose-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <LogOut className="w-4 h-4" />
                       <span>Log Out</span>
@@ -276,7 +274,7 @@ export const Navbar: React.FC = () => {
                     <Link
                       href="/auth/login"
                       onClick={() => setMenuOpen(false)}
-                      className="w-full py-2.5 px-3 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-bold text-xs rounded-2xl shadow-md shadow-blue-600/20 transition-all flex items-center justify-center gap-2"
+                      className="w-full py-2.5 px-3 bg-[#00AAFF] hover:bg-[#0088CC] active:scale-[0.98] text-white font-bold text-xs rounded-2xl shadow-md shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2"
                     >
                       <LogIn className="w-4 h-4" />
                       <span>Log In / Sign Up</span>

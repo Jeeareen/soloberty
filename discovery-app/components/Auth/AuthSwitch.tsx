@@ -35,7 +35,7 @@ export const AuthSwitch: React.FC = () => {
             {item.active && (
               <motion.div
                 layoutId="authSwitchActivePill"
-                className="absolute inset-0 bg-blue-600 rounded-xl shadow-md"
+                className="absolute inset-0 bg-[#00AAFF] rounded-xl shadow-md"
                 transition={{
                   type: 'spring',
                   stiffness: 500,

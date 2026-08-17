@@ -113,9 +113,9 @@ export default function LoginPage() {
                 duration: 0.25,
                 ease: 'easeOut',
               }}
-              className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 mt-0 mb-2 shadow-sm"
+              className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#B8E7FF] text-[#00AAFF] border border-[#00AAFF]/30 mt-0 mb-2 shadow-md shadow-[#00AAFF]/15"
             >
-              <SolobertyLogo className="w-7 h-7 text-blue-600 fill-blue-600" color="#2563EB" />
+              <SolobertyLogo className="w-7 h-7 text-[#00AAFF] fill-[#00AAFF]" color="#00AAFF" />
             </motion.div>
             <motion.h1
               initial={{ opacity: 0, scale: 0.96, y: -4 }}
@@ -125,9 +125,9 @@ export default function LoginPage() {
                 ease: 'easeOut',
                 delay: 0.04,
               }}
-              className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 origin-center"
+              className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight text-slate-900 origin-center"
             >
-              Welcome back to <span className="text-blue-600 font-extrabold">Soloberty</span>
+              Welcome back to <span className="text-[#00AAFF] font-heading font-extrabold">Soloberty</span>
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, scale: 0.98, y: -2 }}
@@ -206,7 +206,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@example.com"
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#00AAFF] focus:bg-white focus:ring-2 focus:ring-[#B8E7FF] transition-all"
                   />
                 </div>
               </div>
@@ -223,7 +223,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#00AAFF] focus:bg-white focus:ring-2 focus:ring-[#B8E7FF] transition-all"
                   />
                 </div>
               </div>
@@ -231,7 +231,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading || redirectCountdown !== null}
-                className="w-full mt-2 py-3.5 px-4 bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full mt-2 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] active:scale-[0.99] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
