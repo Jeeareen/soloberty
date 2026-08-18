@@ -33,7 +33,9 @@ export const Navbar: React.FC = () => {
 
   // Initialize Dark Mode state from localStorage & documentElement
   useEffect(() => {
-    const isDark = localStorage.getItem('soloberty_theme') === 'dark';
+    const isDark =
+      document.documentElement.classList.contains('dark') ||
+      localStorage.getItem('soloberty_theme') === 'dark';
     setDarkMode(isDark);
     if (isDark) {
       document.documentElement.classList.add('dark');
@@ -89,8 +91,10 @@ export const Navbar: React.FC = () => {
 
   // Conditional tabs based on authentication status:
   // When NOT logged in: Show Login, hide Profile
-  // When logged in: Show Profile, hide Login
-  const authItem = user
+  // When logged in or on authenticated pages: Show Profile, hide Login
+  const showProfileTab = Boolean(user) || pathname === '/auth/changePassword';
+
+  const authItem = showProfileTab
     ? { name: 'Profile', href: '/profile' }
     : { name: 'Login', href: '/auth/login' };
 
@@ -115,7 +119,7 @@ export const Navbar: React.FC = () => {
             href="/feed"
             className="flex items-center gap-2 text-lg sm:text-xl font-heading font-extrabold text-white dark:text-slate-900 tracking-tight hover:opacity-90 transition-colors"
           >
-            <SolobertyLogo className="w-7 h-7 text-white dark:text-slate-900" color={darkMode ? '#0F172A' : 'white'} />
+            <SolobertyLogo className="w-7 h-7 fill-white dark:fill-slate-900" />
             Soloberty
           </Link>
         </div>
@@ -126,8 +130,8 @@ export const Navbar: React.FC = () => {
             {navItems.map((item) => {
               const isActive =
                 pathname === item.href ||
-                (item.href !== '/feed' && pathname?.startsWith(item.href)) ||
-                (item.href === '/auth/login' && pathname?.startsWith('/auth'));
+                (item.href === '/auth/login' && (pathname?.startsWith('/auth/login') || pathname?.startsWith('/auth/signup'))) ||
+                (item.href !== '/feed' && item.href !== '/auth/login' && pathname?.startsWith(item.href) && pathname !== '/auth/changePassword');
               const isAuthTab = item.name === 'Profile' || item.name === 'Login';
               return (
                 <MotionLink
@@ -235,7 +239,7 @@ export const Navbar: React.FC = () => {
                     className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="p-1.5 bg-[#B8E7FF] dark:bg-[#B8E7FF] text-[#00AAFF] dark:text-slate-900 rounded-xl">
+                      <div className="p-1.5 bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 rounded-xl">
                         <Bell className="w-4 h-4" />
                       </div>
                       <div>
@@ -263,7 +267,11 @@ export const Navbar: React.FC = () => {
                     className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="p-1.5 bg-[#B8E7FF] dark:bg-[#B8E7FF] text-[#00AAFF] dark:text-slate-900 rounded-xl">
+                      <div className={`p-1.5 rounded-xl ${
+                        darkMode
+                          ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400'
+                          : 'bg-amber-100 dark:bg-amber-950/60 text-amber-500 dark:text-amber-400'
+                      }`}>
                         {darkMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
                       </div>
                       <div>

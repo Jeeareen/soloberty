@@ -29,8 +29,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${outfit.variable} ${plusJakartaSans.variable} max-w-full overflow-x-hidden`}>
-      <body className="min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans antialiased max-w-full w-full overflow-x-hidden">
+    <html lang="en" suppressHydrationWarning className={`${outfit.variable} ${plusJakartaSans.variable} max-w-full overflow-x-hidden`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('soloberty_theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark');document.body&&document.body.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] text-[#0F172A] dark:text-slate-100 font-sans antialiased max-w-full w-full overflow-x-hidden transition-colors duration-200">
         <AuthProvider>
           <Navbar />
           <main className="w-full max-w-full overflow-x-hidden">{children}</main>

@@ -66,9 +66,9 @@ export const LoginPage: React.FC = () => {
             duration: 0.35,
             ease: 'easeInOut',
           }}
-          className="flex items-start gap-3 p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs sm:text-sm shadow-sm my-1"
+          className="flex items-start gap-3 p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-2xl text-rose-700 dark:text-rose-300 text-xs sm:text-sm shadow-sm my-1"
         >
-          <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-rose-500 dark:text-rose-400 shrink-0 mt-0.5" />
           <span>{error}</span>
         </motion.div>
       )}
@@ -76,20 +76,20 @@ export const LoginPage: React.FC = () => {
   );
 
   return (
-    <div className="w-full max-w-xl mx-auto h-[580px] bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col justify-between text-slate-900 overflow-hidden">
+    <div className="w-full max-w-xl mx-auto h-[580px] bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col justify-between text-slate-900 dark:text-white overflow-hidden">
       {/* Progress Bar Header */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-500">
-          <span className="flex items-center gap-1.5 text-blue-600">
+        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <span className="flex items-center gap-1.5 text-[#00AAFF] dark:text-[#B8E7FF]">
             <Sparkles className="w-4 h-4" />
             Soloberty Portal
           </span>
           <span>Log In</span>
         </div>
 
-        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+        <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-blue-600 rounded-full"
+            className="h-full bg-[#00AAFF] rounded-full"
             initial={{ width: '0%' }}
             animate={{ width: '100%' }}
             transition={{ duration: 0.3 }}
@@ -109,43 +109,43 @@ export const LoginPage: React.FC = () => {
           className="space-y-5"
         >
           <div className="space-y-1">
-            <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900">Welcome back</h2>
-            <p className="text-xs sm:text-sm text-slate-500">Enter your email and password to continue</p>
+            <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white">Welcome back</h2>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Enter your email and password to continue</p>
           </div>
 
           {renderErrorAlert()}
 
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-[#00AAFF] transition-colors"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-[#00AAFF] transition-colors"
                 />
               </div>
             </div>
@@ -154,7 +154,7 @@ export const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading || authLoading}
-            className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
           >
             {loading || authLoading ? (
               <>

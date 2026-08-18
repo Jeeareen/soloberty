@@ -40,19 +40,19 @@ export const Step1Credentials: React.FC<Step1CredentialsProps> = ({
       className="space-y-5"
     >
       <div className="space-y-1">
-        <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900">Create your account</h2>
-        <p className="text-xs sm:text-sm text-slate-500">Step 1: Enter your email and choose a secure password</p>
+        <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white">Create your account</h2>
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Step 1: Enter your email and choose a secure password</p>
       </div>
 
       {renderErrorAlert()}
 
       <div className="space-y-4">
         <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Email Address
           </label>
           <div className="relative">
-            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
             <input
               type="email"
               required
@@ -62,17 +62,17 @@ export const Step1Credentials: React.FC<Step1CredentialsProps> = ({
                 if (onEmailChange) onEmailChange();
               }}
               placeholder="you@example.com"
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-[#00AAFF] focus:bg-white focus:ring-2 focus:ring-[#B8E7FF]"
+              className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-[#00AAFF] transition-colors"
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Password (min 8 characters)
           </label>
           <div className="relative">
-            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
             <input
               type="password"
               required
@@ -80,24 +80,24 @@ export const Step1Credentials: React.FC<Step1CredentialsProps> = ({
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               placeholder="••••••••"
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-[#00AAFF] focus:bg-white focus:ring-2 focus:ring-[#B8E7FF]"
+              className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-[#00AAFF] transition-colors"
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Confirm Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
             <input
               type="password"
               required
               value={formData.confirmPassword}
               onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               placeholder="••••••••"
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-[#00AAFF] focus:bg-white focus:ring-2 focus:ring-[#B8E7FF]"
+              className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-[#00AAFF] transition-colors"
             />
           </div>
         </div>
@@ -106,7 +106,7 @@ export const Step1Credentials: React.FC<Step1CredentialsProps> = ({
       <button
         type="submit"
         disabled={loading || authLoading || emailExists}
-        className="w-full py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
       >
         {loading || authLoading ? (
           <>

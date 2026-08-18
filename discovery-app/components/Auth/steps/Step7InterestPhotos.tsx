@@ -33,12 +33,12 @@ export const Step7InterestPhotos: React.FC<Step7InterestPhotosProps> = ({
     >
       <div className="space-y-1">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900">Interest images</h2>
-          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#B8E7FF] text-[#00AAFF] border border-transparent">
+          <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white">Interest images</h2>
+          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#B8E7FF]/40 dark:bg-[#B8E7FF]/20 text-[#0088CC] dark:text-[#B8E7FF] border border-[#B8E7FF]/60 dark:border-[#B8E7FF]/30">
             {interestPreviews.length} / 3 images
           </span>
         </div>
-        <p className="text-xs sm:text-sm text-slate-500">
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
           Step 7: Add up to 3 optional images that represent your lifestyle or hobbies
         </p>
       </div>
@@ -46,13 +46,13 @@ export const Step7InterestPhotos: React.FC<Step7InterestPhotosProps> = ({
       {renderErrorAlert()}
 
       <div className="space-y-3">
-        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
           Upload Photos (Max 3)
         </label>
         
         <div className="grid grid-cols-3 gap-3">
           {interestPreviews.map((url, idx) => (
-            <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-200 group shadow-sm">
+            <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 group shadow-sm">
               <img src={url} alt={`Interest ${idx + 1}`} className="w-full h-full object-cover" />
               <button
                 type="button"
@@ -77,15 +77,15 @@ export const Step7InterestPhotos: React.FC<Step7InterestPhotosProps> = ({
           {interestPreviews.length < 3 && (
             <label
               htmlFor="interestImagesInput"
-              className={`aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center transition-all p-2 text-center ${
+              className={`aspect-square rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 flex flex-col items-center justify-center transition-all p-2 text-center ${
                 uploadingPhotos
                   ? 'cursor-not-allowed opacity-50'
                   : 'hover:border-[#00AAFF] cursor-pointer'
               }`}
             >
               <Upload className="w-5 h-5 text-[#00AAFF] mb-1" />
-              <span className="text-[11px] font-bold text-slate-700">Add Photo</span>
-              <span className="text-[9px] text-slate-400">Max 5MB</span>
+              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200">Add Photo</span>
+              <span className="text-[9px] text-slate-400 dark:text-slate-500">Max 5MB</span>
             </label>
           )}
         </div>
@@ -105,7 +105,8 @@ export const Step7InterestPhotos: React.FC<Step7InterestPhotosProps> = ({
         <button
           type="button"
           onClick={() => setStep(6)}
-          className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-1.5"
+          disabled={uploadingPhotos}
+          className="px-4 py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
@@ -114,17 +115,17 @@ export const Step7InterestPhotos: React.FC<Step7InterestPhotosProps> = ({
           type="button"
           onClick={handleFinishProfile}
           disabled={uploadingPhotos}
-          className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-95"
         >
           {uploadingPhotos ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Saving profile...
+              Saving Profile...
             </>
           ) : (
             <>
-              Launch Soloberty
               <Check className="w-4 h-4" />
+              Complete Registration
             </>
           )}
         </button>

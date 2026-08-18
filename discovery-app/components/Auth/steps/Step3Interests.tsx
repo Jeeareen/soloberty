@@ -28,13 +28,13 @@ export const Step3Interests: React.FC<Step3InterestsProps> = ({
     >
       <div className="space-y-1">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900">Select your interests</h2>
-          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#B8E7FF] text-[#00AAFF] border border-[#B8E7FF]">
+          <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white">Select your interests</h2>
+          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#B8E7FF]/40 dark:bg-[#B8E7FF]/20 text-[#0088CC] dark:text-[#B8E7FF] border border-[#B8E7FF]/60 dark:border-[#B8E7FF]/30">
             {interests.length} / 3 selected
           </span>
         </div>
-        <p className="text-xs sm:text-sm text-slate-500">
-          Step 3: Choose <span className="text-slate-900 font-bold">at most 3</span> hobbies or passions
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+          Step 3: Choose <span className="text-slate-900 dark:text-white font-bold">at most 3</span> hobbies or passions
         </p>
       </div>
 
@@ -46,16 +46,16 @@ export const Step3Interests: React.FC<Step3InterestsProps> = ({
               key={item.id}
               type="button"
               onClick={() => toggleInterest(item.id)}
-              className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all relative ${
+              className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all relative cursor-pointer ${
                 isSelected
-                  ? 'bg-[#B8E7FF] border-[#B8E7FF] text-[#0088CC] shadow-sm'
-                  : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-100'
+                  ? 'bg-[#B8E7FF]/60 dark:bg-[#B8E7FF]/25 border-[#00AAFF] text-[#0088CC] dark:text-[#B8E7FF] shadow-sm'
+                  : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <div className="flex items-center justify-between w-full mb-2">
                 <span className="text-2xl">{item.icon}</span>
                 {isSelected && (
-                  <CheckCircle2 className="w-4 h-4 text-[#00AAFF] absolute top-2.5 right-2.5" />
+                  <CheckCircle2 className="w-4 h-4 text-[#00AAFF] dark:text-[#B8E7FF] absolute top-2.5 right-2.5" />
                 )}
               </div>
               <span className="text-xs font-bold line-clamp-1">{item.name}</span>
@@ -68,7 +68,7 @@ export const Step3Interests: React.FC<Step3InterestsProps> = ({
         <button
           type="button"
           onClick={() => setStep(2)}
-          className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-1.5"
+          className="px-4 py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
@@ -77,7 +77,7 @@ export const Step3Interests: React.FC<Step3InterestsProps> = ({
           type="button"
           onClick={handleStep3Next}
           disabled={interests.length === 0 || interests.length > 3}
-          className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2"
+          className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
         >
           Continue to Bio
           <ArrowRight className="w-4 h-4" />

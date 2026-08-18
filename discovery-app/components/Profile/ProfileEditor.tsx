@@ -148,9 +148,9 @@ const ProfileMatchCardPreview: React.FC<{
                 </div>
               )}
 
-              {/* Gradient Overlay on lower part of PP with Name only (1.25x font size) */}
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent p-4 text-white">
-                <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight truncate drop-shadow-md">
+              {/* Profile Picture Name Overlay */}
+              <div className="absolute inset-x-0 bottom-0 p-4">
+                <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight truncate text-white">
                   {name || 'Soloberty Member'}
                 </h2>
               </div>
@@ -257,6 +257,8 @@ const ProfileMatchCardPreview: React.FC<{
 
 export const ProfileEditor: React.FC = () => {
   const { user, refreshProfileStatus } = useAuth();
+  const router = useRouter();
+
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
@@ -312,7 +314,27 @@ export const ProfileEditor: React.FC = () => {
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Fetch live UserProfile from Firestore
+  // 1. Instant Cache Hydration on Client Mount for current logged-in user
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    try {
+      const profileKey = `user_profile_${user.uid}`;
+      const cached = localStorage.getItem(profileKey);
+      if (cached) {
+        const loadedState: ProfileDraftState = JSON.parse(cached);
+        setProfileData(loadedState);
+        setSavedProfileData(loadedState);
+        setProfilePhotoPreview(loadedState.profilePhotoUrl || null);
+        setInterestPreviews([...loadedState.interestImageUrls]);
+        setLoading(false);
+      }
+    } catch (e) {
+      console.warn('Error hydrating profile from localStorage:', e);
+    }
+  }, [user?.uid]);
+
+  // 2. Fetch live UserProfile from Firestore
   useEffect(() => {
     async function fetchUserProfile() {
       if (!user?.uid) {
@@ -320,6 +342,9 @@ export const ProfileEditor: React.FC = () => {
         return;
       }
 
+      const cacheKey = `user_profile_${user.uid}`;
+
+      // Background Firestore Sync
       try {
         const userDocRef = doc(db, 'users', user.uid);
         const snapshot = await getDoc(userDocRef);
@@ -353,6 +378,11 @@ export const ProfileEditor: React.FC = () => {
               lat: data.location.coordinates.lat,
               lng: data.location.coordinates.lng,
             });
+          }
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify(loadedState));
+          } catch (e) {
+            console.warn('Error caching profile:', e);
           }
         } else {
           setProfileData((prev) => ({
@@ -798,6 +828,12 @@ export const ProfileEditor: React.FC = () => {
       setProfilePhotoFile(null);
       setInterestFiles([]);
 
+      try {
+        localStorage.setItem(`user_profile_${user.uid}`, JSON.stringify(committedState));
+      } catch (e) {
+        console.warn('Error updating profile cache:', e);
+      }
+
       if (refreshProfileStatus) {
         await refreshProfileStatus();
       }
@@ -815,9 +851,9 @@ export const ProfileEditor: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="w-full px-4 sm:px-8 my-12 p-12 bg-white/80 dark:bg-slate-900/80 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col items-center justify-center space-y-4">
-        <Loader2 className="w-8 h-8 text-[#00AAFF] animate-spin" />
-        <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Loading your profile...</p>
+      <div className="flex flex-col items-center justify-center min-h-[70vh] w-full space-y-4">
+        <Loader2 className="w-10 h-10 text-[#00AAFF] animate-[spin_0.8s_cubic-bezier(0.5,0.1,0.4,0.9)_infinite]" />
+        <p className="text-sm font-extrabold tracking-wide text-slate-500 dark:text-slate-400">Loading your profile...</p>
       </div>
     );
   }
@@ -1079,113 +1115,170 @@ export const ProfileEditor: React.FC = () => {
               {/* Location Editor */}
               <div className="space-y-3 relative">
                 <label className="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Location Privacy & Coordinates
+                  Location Sharing Privacy
                 </label>
 
-                {/* Location Type Tab Switcher */}
-                <div className="grid grid-cols-2 p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-2xl relative mb-3 border border-slate-200/50 dark:border-slate-700/50">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setProfileData((prev) => ({ ...prev, locationType: 'approximate' }));
-                      setIsGpsDetected(false);
-                    }}
-                    className={`py-2 text-xs font-bold rounded-xl transition-all relative z-10 ${
-                      profileData.locationType === 'approximate'
-                        ? 'text-[#00AAFF] shadow-sm bg-white dark:bg-slate-700'
-                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    Approximate City
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setProfileData((prev) => ({ ...prev, locationType: 'exact' }));
-                      setIsGpsDetected(false);
-                    }}
-                    className={`py-2 text-xs font-bold rounded-xl transition-all relative z-10 ${
-                      profileData.locationType === 'exact'
-                        ? 'text-[#00AAFF] shadow-sm bg-white dark:bg-slate-700'
-                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    Exact GPS
-                  </button>
+                {/* Location Sharing Privacy Pill Selector (Matching Signup Step 5) */}
+                <div className="relative p-1 bg-slate-100 dark:bg-slate-900/90 rounded-2xl flex items-center border border-slate-200/80 dark:border-slate-800 shadow-inner">
+                  {[
+                    { id: 'approximate', title: 'Approximate', desc: 'Displays city center only.' },
+                    { id: 'exact', title: 'Exact Location', desc: 'Allows precise distance matching.' },
+                  ].map((opt) => {
+                    const isActive = profileData.locationType === opt.id;
+                    return (
+                      <motion.button
+                        key={opt.id}
+                        type="button"
+                        initial="rest"
+                        whileHover="hover"
+                        animate="rest"
+                        onClick={() => {
+                          setProfileData((prev) => ({ ...prev, locationType: opt.id as 'approximate' | 'exact' }));
+                          setShowCityDropdown(false);
+                          setIsGpsDetected(false);
+                          setSelectedLocationData(null);
+                        }}
+                        className="relative flex-1 py-3 px-3.5 text-left transition-colors duration-200 z-10 rounded-xl cursor-pointer"
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="profileLocationPrivacyPill"
+                            className="absolute inset-0 bg-[#00AAFF] dark:bg-[#B8E7FF] rounded-xl shadow-md"
+                            transition={{
+                              type: 'spring',
+                              stiffness: 500,
+                              damping: 30,
+                              mass: 0.7,
+                            }}
+                          />
+                        )}
+                        <motion.div
+                          variants={{
+                            rest: { scale: 1 },
+                            hover: { scale: 1.02 },
+                          }}
+                          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                          className={`relative z-10 space-y-0.5 ${isActive ? 'text-white dark:text-slate-900' : 'text-slate-700 dark:text-white'}`}
+                        >
+                          <div className="font-bold text-xs sm:text-sm">{opt.title}</div>
+                          <p
+                            className={`text-[10px] sm:text-[11px] leading-snug ${
+                              isActive ? 'text-amber-100 dark:text-slate-700 font-semibold' : 'text-slate-500 dark:text-slate-300'
+                            }`}
+                          >
+                            {opt.desc}
+                          </p>
+                        </motion.div>
+                      </motion.button>
+                    );
+                  })}
                 </div>
 
-                {profileData.locationType === 'approximate' ? (
-                  <div className="relative">
-                    {/* Autocomplete Dropdown */}
-                    {showCityDropdown && citySuggestions.length > 0 && (
-                      <div className="absolute bottom-full mb-1.5 left-0 right-0 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-50 max-h-48 overflow-y-auto p-1.5 space-y-1">
-                        {citySuggestions.map((item, index) => (
-                          <button
-                            key={index}
-                            type="button"
-                            onClick={() => {
-                              const fullStr = `${item.city}, ${item.code}`;
-                              setProfileData((prev) => ({ ...prev, city: fullStr }));
-                              setSelectedLocationData(item);
-                              setIsCityValid(true);
-                              setShowCityDropdown(false);
-                            }}
-                            className="w-full text-left p-2.5 hover:bg-[#B8E7FF]/40 dark:hover:bg-slate-700/80 rounded-xl transition-colors flex items-center justify-between text-xs font-semibold text-slate-800 dark:text-slate-100"
-                          >
-                            <div className="flex items-center gap-2">
-                              <MapPin className="w-3.5 h-3.5 text-[#00AAFF] shrink-0" />
-                              <span>{item.city}</span>
-                            </div>
-                            <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded-md text-slate-600 dark:text-slate-300">
-                              {item.code}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                <div className="space-y-1.5 pt-1">
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    {profileData.locationType === 'approximate'
+                      ? 'City Name & Country Code'
+                      : 'GPS Live Location Detector'}
+                  </label>
 
-                    <input
-                      type="text"
-                      value={profileData.city}
-                      onChange={(e) => {
-                        setProfileData((prev) => ({ ...prev, city: e.target.value }));
-                        setIsCityValid(false);
-                      }}
-                      placeholder="Search city e.g. Vienna, AT"
-                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-[#00AAFF] transition-colors"
-                    />
-                  </div>
-                ) : (
-                  <div>
+                  {profileData.locationType === 'exact' ? (
                     <button
                       type="button"
                       onClick={handleDetectGpsLocation}
-                      disabled={detectingGps}
-                      className={`w-full py-3.5 px-4 font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 ${
-                        isGpsDetected || selectedLocationData?.lat
-                          ? 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 cursor-default'
-                          : 'bg-[#00AAFF] hover:bg-[#0088CC] text-white active:scale-95 cursor-pointer'
+                      disabled={detectingGps || isGpsDetected || Boolean(selectedLocationData?.lat)}
+                      className={`w-full h-[46px] px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 border shadow-sm ${
+                        detectingGps || isGpsDetected || Boolean(selectedLocationData?.lat)
+                          ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 opacity-90 cursor-not-allowed'
+                          : 'bg-rose-600 hover:bg-rose-500 text-white border-rose-600 shadow-rose-600/20 active:scale-95 cursor-pointer'
                       }`}
                     >
                       {detectingGps ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          Detecting GPS Location...
+                          Detecting exact GPS coordinates...
                         </>
                       ) : isGpsDetected || selectedLocationData?.lat ? (
                         <>
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                           Location Detected: {profileData.city}
                         </>
                       ) : (
                         <>
-                          <Navigation className="w-4 h-4" />
+                          <MapPin className="w-4 h-4 text-white animate-bounce" />
                           Detect Current Location via GPS
                         </>
                       )}
                     </button>
-                  </div>
-                )}
+                  ) : (
+                    <div className="relative">
+                      <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10" />
+                      <input
+                        type="text"
+                        required={profileData.locationType === 'approximate'}
+                        value={profileData.city}
+                        onChange={(e) => {
+                          setProfileData((prev) => ({ ...prev, city: e.target.value }));
+                          setIsCityValid(false);
+                        }}
+                        onFocus={() => {
+                          if (
+                            profileData.locationType === 'approximate' &&
+                            citySuggestions.length > 0 &&
+                            !profileData.city.includes(',')
+                          ) {
+                            setShowCityDropdown(true);
+                          }
+                        }}
+                        placeholder="Type city name (e.g. Vienna, London)..."
+                        className="w-full h-[46px] pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-[#00AAFF] transition-all"
+                      />
+
+                      {/* OpenFreeMap / Photon Geocoding City Autocomplete Dropdown */}
+                      <AnimatePresence>
+                        {showCityDropdown &&
+                          profileData.locationType === 'approximate' &&
+                          citySuggestions.length > 0 && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: 5 }}
+                              className="absolute left-0 right-0 bottom-full mb-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 max-h-44 overflow-y-auto p-1.5 space-y-0.5 ring-1 ring-slate-900/5"
+                            >
+                              {citySuggestions.map((item, idx) => (
+                                <button
+                                  key={`${item.city}-${item.code}-${idx}`}
+                                  type="button"
+                                  onClick={() => {
+                                    const selectedCityStr = `${item.city}, ${item.code}`;
+                                    setProfileData((prev) => ({ ...prev, city: selectedCityStr }));
+                                    setSelectedLocationData({
+                                      city: item.city,
+                                      country: item.country,
+                                      code: item.code,
+                                      lat: item.lat,
+                                      lng: item.lng,
+                                    });
+                                    setIsCityValid(true);
+                                    setCitySuggestions([]);
+                                    setShowCityDropdown(false);
+                                  }}
+                                  className="w-full px-3.5 py-2.5 rounded-xl hover:bg-blue-50 dark:hover:bg-slate-700 text-left flex items-center justify-between text-xs font-semibold text-slate-800 dark:text-slate-100 transition-colors group cursor-pointer"
+                                >
+                                  <span className="flex items-center gap-2 group-hover:text-blue-900 dark:group-hover:text-blue-300 font-bold">
+                                    <MapPin className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 shrink-0" />
+                                    {item.city}
+                                  </span>
+                                  <span className="px-2 py-0.5 bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-300 font-extrabold text-[10px] rounded-md border border-blue-100 dark:border-slate-600 shrink-0">
+                                    {item.code}
+                                  </span>
+                                </button>
+                              ))}
+                            </motion.div>
+                          )}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Bio Editor */}
@@ -1199,7 +1292,7 @@ export const ProfileEditor: React.FC = () => {
                   </span>
                 </div>
                 <textarea
-                  rows={4}
+                  rows={5}
                   value={profileData.bio}
                   onChange={(e) =>
                     setProfileData((prev) => ({ ...prev, bio: e.target.value.slice(0, 300) }))

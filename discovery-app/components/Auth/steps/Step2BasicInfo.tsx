@@ -31,17 +31,17 @@ export const Step2BasicInfo: React.FC<Step2BasicInfoProps> = ({
       className="space-y-5"
     >
       <div className="space-y-1">
-        <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900">Tell us about yourself</h2>
-        <p className="text-xs sm:text-sm text-slate-500">Step 2: Enter your name, age, and gender</p>
+        <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white">Basic Info</h2>
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Step 2: Tell us your name, age, and gender</p>
       </div>
 
       <div className="space-y-4">
         <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Full Name
           </label>
           <div className="relative">
-            <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
             <input
               type="text"
               required
@@ -54,17 +54,17 @@ export const Step2BasicInfo: React.FC<Step2BasicInfoProps> = ({
                 })
               }
               placeholder="Alex Morgan"
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+              className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-[#00AAFF] transition-colors"
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Age (18 - 130)
           </label>
           <div className="relative">
-            <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
             <input
               type="number"
               required
@@ -78,16 +78,16 @@ export const Step2BasicInfo: React.FC<Step2BasicInfoProps> = ({
                 })
               }
               placeholder="25"
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+              className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-[#00AAFF] transition-colors"
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Gender Identity
           </label>
-          <div className="relative p-1 bg-slate-100/90 rounded-2xl flex items-center border border-slate-200/80 shadow-inner">
+          <div className="relative p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl flex items-center border border-slate-200/80 dark:border-slate-700/80 shadow-inner">
             {[
               { id: 'male', label: 'Male' },
               { id: 'female', label: 'Female' },
@@ -101,13 +101,13 @@ export const Step2BasicInfo: React.FC<Step2BasicInfoProps> = ({
                   initial="rest"
                   whileHover="hover"
                   animate="rest"
-                  onClick={() => setFormData({ ...formData, gender: g.id as 'male' | 'female' | 'other' })}
-                  className="relative flex-1 py-2.5 text-xs font-extrabold text-center transition-colors duration-200 z-10 flex items-center justify-center"
+                  onClick={() => setFormData({ ...formData, gender: g.id as any })}
+                  className="relative flex-1 py-2.5 px-3 text-center transition-colors duration-200 z-10 rounded-xl cursor-pointer"
                 >
                   {isActive && (
                     <motion.div
-                      layoutId="genderSwitchPill"
-                      className="absolute inset-0 bg-[#00AAFF] rounded-xl shadow-md"
+                      layoutId="signupGenderPill"
+                      className="absolute inset-0 bg-[#00AAFF] dark:bg-[#B8E7FF] rounded-xl shadow-md"
                       transition={{
                         type: 'spring',
                         stiffness: 500,
@@ -119,11 +119,11 @@ export const Step2BasicInfo: React.FC<Step2BasicInfoProps> = ({
                   <motion.span
                     variants={{
                       rest: { scale: 1 },
-                      hover: { scale: 1.1 },
+                      hover: { scale: 1.03 },
                     }}
-                    transition={{ type: 'tween', ease: 'easeOut', duration: 0.15 }}
-                    className={`relative z-10 inline-block origin-center transition-colors duration-200 ${
-                      isActive ? 'text-white' : 'text-slate-600 hover:text-slate-900'
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    className={`relative z-10 font-bold text-xs sm:text-sm block ${
+                      isActive ? 'text-white dark:text-slate-900' : 'text-slate-700 dark:text-slate-200'
                     }`}
                   >
                     {g.label}
@@ -139,14 +139,14 @@ export const Step2BasicInfo: React.FC<Step2BasicInfoProps> = ({
         <button
           type="button"
           onClick={() => setStep(1)}
-          className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-1.5"
+          className="px-4 py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
         <button
           type="submit"
-          className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2"
+          className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           Continue to Interests
           <ArrowRight className="w-4 h-4" />

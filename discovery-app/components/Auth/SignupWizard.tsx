@@ -606,25 +606,26 @@ export const SignupWizard: React.FC = () => {
   };
 
   const renderErrorAlert = () => (
-    <>
-      <AnimatePresence>
+    <div className="min-h-[50px] flex items-center justify-center w-full">
+      <AnimatePresence mode="wait">
         {redirectCountdown !== null ? (
           <motion.div
+            key="redirectAlert"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-between text-rose-900 text-xs sm:text-sm font-semibold shadow-sm my-1"
+            className="w-full p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-2xl flex items-center justify-between text-rose-900 dark:text-rose-200 text-xs font-semibold shadow-sm"
           >
-            <div className="flex items-center gap-2.5">
-              <LogIn className="w-5 h-5 text-rose-600 shrink-0" />
+            <div className="flex items-center gap-2">
+              <LogIn className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
               <div>
-                <div className="font-extrabold text-rose-900">Account already registered</div>
-                <div className="text-[11px] font-normal text-rose-700">
+                <div className="font-extrabold text-rose-900 dark:text-rose-200 leading-tight">Account already registered</div>
+                <div className="text-[10px] font-normal text-rose-700 dark:text-rose-300 leading-tight">
                   Redirecting to Log In page...
                 </div>
               </div>
             </div>
-            <div className="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-md">
+            <div className="w-7 h-7 rounded-xl bg-rose-600 dark:bg-rose-500 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-md">
               {redirectCountdown}s
             </div>
           </motion.div>
@@ -637,41 +638,56 @@ export const SignupWizard: React.FC = () => {
               scale: 1,
               x: [0, -12, 12, -9, 9, -5, 5, -2, 2, 0],
             }}
+            exit={{ opacity: 0, scale: 0.98 }}
             transition={{
               duration: 0.35,
               ease: 'easeInOut',
             }}
-            className="flex items-start gap-3 p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs sm:text-sm shadow-sm my-1"
+            className="w-full flex items-start gap-2.5 p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-2xl text-rose-700 dark:text-rose-300 text-xs font-semibold shadow-sm"
           >
-            <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+            <AlertCircle className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0 mt-0.5" />
             <span>{error}</span>
           </motion.div>
         ) : null}
       </AnimatePresence>
-    </>
+    </div>
   );
 
   return (
     <div
-      className={`w-full max-w-xl mx-auto h-[580px] bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col justify-between text-slate-900 ${step === 5 ? 'overflow-visible' : 'overflow-hidden'
-        }`}
+      className={`w-full max-w-xl mx-auto h-[580px] bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col justify-between text-slate-900 dark:text-white ${
+        step === 5 ? 'overflow-visible' : 'overflow-hidden'
+      }`}
     >
       {/* Progress Bar Header */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-500">
-          <span className="flex items-center gap-1.5 text-[#00AAFF]">
-            <Sparkles className="w-4 h-4" />
+        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <span className="text-[#00AAFF] dark:text-[#B8E7FF]">
             Soloberty Onboarding
           </span>
           <span>Step {step} of 7</span>
         </div>
 
-        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+        <div className="w-full bg-slate-200/80 dark:bg-slate-800 h-2 rounded-full overflow-hidden relative border border-slate-200/50 dark:border-slate-700/50">
+          {/* Flowing shimmer wave on empty track portion */}
           <motion.div
-            className="h-full bg-[#00AAFF] rounded-full"
+            animate={{
+              x: ['-100%', '200%'],
+            }}
+            transition={{
+              repeat: Infinity,
+              duration: 2.0,
+              ease: 'easeInOut',
+            }}
+            className="absolute inset-0 w-full h-full bg-[linear-gradient(90deg,transparent_0%,rgba(0,170,255,0.65)_50%,transparent_100%)] pointer-events-none"
+          />
+
+          {/* Active filled progress bar */}
+          <motion.div
+            className="h-full bg-[#00AAFF] dark:bg-[#00AAFF] rounded-full relative z-10 shadow-sm"
             initial={{ width: '0%' }}
             animate={{ width: `${(step / 7) * 100}%` }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
           />
         </div>
       </div>

@@ -19,7 +19,7 @@ export const AuthSwitch: React.FC = () => {
   ];
 
   return (
-    <div className="w-full max-w-sm mx-auto mt-4 bg-white border border-slate-200 shadow-md p-1.5 rounded-2xl flex items-center gap-1.5 relative select-none">
+    <div className="w-full max-w-sm mx-auto mt-4 bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 shadow-md p-1.5 rounded-2xl flex items-center gap-1.5 relative select-none">
       {items.map((item) => {
         return (
           <MotionLink
@@ -29,13 +29,14 @@ export const AuthSwitch: React.FC = () => {
             initial="rest"
             whileHover="hover"
             animate="rest"
-            className={`relative flex-1 py-2.5 text-center text-xs sm:text-sm font-extrabold rounded-xl transition-colors shrink-0 flex items-center justify-center ${item.active ? 'text-white' : 'text-slate-600 hover:text-slate-900'
-              }`}
+            className={`relative flex-1 py-2.5 text-center text-xs sm:text-sm font-extrabold rounded-xl transition-colors shrink-0 flex items-center justify-center ${
+              item.active ? 'text-white dark:text-slate-900' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
           >
             {item.active && (
               <motion.div
                 layoutId="authSwitchActivePill"
-                className="absolute inset-0 bg-[#00AAFF] rounded-xl shadow-md"
+                className="absolute inset-0 bg-[#00AAFF] dark:bg-[#B8E7FF] rounded-xl shadow-md"
                 transition={{
                   type: 'spring',
                   stiffness: 500,

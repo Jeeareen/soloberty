@@ -34,9 +34,9 @@ export const Step4BioScout: React.FC<Step4BioScoutProps> = ({
       className="space-y-5"
     >
       <div className="space-y-1">
-        <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900">Create your bio</h2>
-        <p className="text-xs sm:text-sm text-slate-500">
-          Step 4: Write a short bio or let <span className="text-[#00AAFF] font-bold">Soloberty Scout</span> draft one for you!
+        <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white">Create your bio</h2>
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+          Step 4: Write a short bio or let <span className="text-[#00AAFF] dark:text-[#B8E7FF] font-bold">Soloberty Scout</span> draft one for you!
         </p>
       </div>
 
@@ -44,14 +44,14 @@ export const Step4BioScout: React.FC<Step4BioScoutProps> = ({
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Your Bio (30 - 300 characters)
           </label>
           <button
             type="button"
             onClick={handleGenerateBio}
             disabled={generatingBio}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#00AAFF] hover:bg-[#0088CC] text-white text-xs font-bold rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 text-xs font-extrabold rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             {generatingBio ? (
               <>
@@ -60,7 +60,7 @@ export const Step4BioScout: React.FC<Step4BioScoutProps> = ({
               </>
             ) : (
               <>
-                <Sparkles className="w-3.5 h-3.5 text-amber-200 animate-pulse" />
+                <Sparkles className="w-3.5 h-3.5 text-amber-200 dark:text-amber-500 animate-pulse" />
                 Auto-generate with Scout
               </>
             )}
@@ -69,19 +69,19 @@ export const Step4BioScout: React.FC<Step4BioScoutProps> = ({
 
         <div className="relative">
           <textarea
-            rows={4}
+            rows={5}
             minLength={30}
             maxLength={300}
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             placeholder="Share a little bit about what you love, your vibe, or what kind of connections you're hoping to make..."
-            className="w-full p-4 pb-10 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:border-[#00AAFF] focus:bg-white focus:ring-2 focus:ring-[#B8E7FF] resize-none leading-relaxed"
+            className="w-full p-4 pb-10 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-[#00AAFF] transition-colors resize-none leading-relaxed"
           />
           <div
             className={`absolute bottom-3 right-3 text-[11px] font-semibold px-2 py-0.5 rounded-full border pointer-events-none backdrop-blur-sm ${
               bioTrimmedLength >= 30 && bioTrimmedLength <= 300
-                ? 'text-emerald-700 bg-emerald-50/90 border-emerald-200'
-                : 'text-slate-500 bg-white/90 border-slate-200'
+                ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50/90 dark:bg-emerald-950/80 border-emerald-200 dark:border-emerald-800'
+                : 'text-slate-500 dark:text-slate-400 bg-white/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700'
             }`}
           >
             {bio.length} / 300 (min 30)
@@ -93,7 +93,7 @@ export const Step4BioScout: React.FC<Step4BioScoutProps> = ({
         <button
           type="button"
           onClick={() => setStep(3)}
-          className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-1.5"
+          className="px-4 py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
@@ -101,8 +101,7 @@ export const Step4BioScout: React.FC<Step4BioScoutProps> = ({
         <button
           type="button"
           onClick={handleStep4Next}
-          disabled={bioTrimmedLength < 30 || bioTrimmedLength > 300}
-          className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2"
+          className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           Continue to Location
           <ArrowRight className="w-4 h-4" />

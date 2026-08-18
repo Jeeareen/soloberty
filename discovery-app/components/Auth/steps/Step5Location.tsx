@@ -62,8 +62,8 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
       className="space-y-5"
     >
       <div className="space-y-1">
-        <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900">Your location</h2>
-        <p className="text-xs sm:text-sm text-slate-500">
+        <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white">Your location</h2>
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
           Step 5: Choose how you'd like to share your location with potential matches
         </p>
       </div>
@@ -75,7 +75,7 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
           <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
             Location Sharing Privacy
           </label>
-          <div className="relative p-1 bg-slate-100/90 rounded-2xl flex items-center border border-slate-200/80 shadow-inner">
+          <div className="relative p-1 bg-slate-100 dark:bg-slate-900/90 rounded-2xl flex items-center border border-slate-200/80 dark:border-slate-800 shadow-inner">
             {[
               { id: 'approximate', title: 'Approximate', desc: 'Displays city center only.' },
               { id: 'exact', title: 'Exact Location', desc: 'Allows precise distance matching.' },
@@ -93,17 +93,16 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
                       ...prev,
                       locationType: opt.id as 'approximate' | 'exact',
                     }));
-                    if (opt.id === 'approximate') {
-                      setShowCityDropdown(false);
-                    }
+                    setShowCityDropdown(false);
                     setIsGpsDetected(false);
+                    setSelectedLocationData(null);
                   }}
                   className="relative flex-1 py-3 px-3.5 text-left transition-colors duration-200 z-10 rounded-xl"
                 >
                   {isActive && (
                     <motion.div
                       layoutId="locationPrivacyPill"
-                      className="absolute inset-0 bg-[#00AAFF] rounded-xl shadow-md"
+                      className="absolute inset-0 bg-[#00AAFF] dark:bg-[#B8E7FF] rounded-xl shadow-md"
                       transition={{
                         type: 'spring',
                         stiffness: 500,
@@ -118,12 +117,12 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
                       hover: { scale: 1.03 },
                     }}
                     transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                    className={`relative z-10 space-y-0.5 ${isActive ? 'text-white' : 'text-slate-700'}`}
+                    className={`relative z-10 space-y-0.5 ${isActive ? 'text-white dark:text-slate-900' : 'text-slate-700 dark:text-white'}`}
                   >
                     <div className="font-bold text-xs sm:text-sm">{opt.title}</div>
                     <p
                       className={`text-[10px] sm:text-[11px] leading-snug ${
-                        isActive ? 'text-amber-100' : 'text-slate-500'
+                        isActive ? 'text-amber-100 dark:text-slate-700 font-semibold' : 'text-slate-500 dark:text-slate-300'
                       }`}
                     >
                       {opt.desc}
@@ -136,7 +135,7 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             {formData.locationType === 'approximate'
               ? 'City Name & Country Code'
               : 'GPS Live Location Detector'}
@@ -146,10 +145,10 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
             <button
               type="button"
               onClick={handleDetectGpsLocation}
-              disabled={detectingGps || isGpsDetected}
+              disabled={detectingGps || isGpsDetected || Boolean(selectedLocationData?.lat)}
               className={`w-full h-[46px] px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 border shadow-sm ${
-                detectingGps || isGpsDetected
-                  ? 'bg-emerald-50 border-emerald-300 text-emerald-800 opacity-90 cursor-not-allowed'
+                detectingGps || isGpsDetected || Boolean(selectedLocationData?.lat)
+                  ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 opacity-90 cursor-not-allowed'
                   : 'bg-rose-600 hover:bg-rose-500 text-white border-rose-600 shadow-rose-600/20 active:scale-95 cursor-pointer'
               }`}
             >
@@ -158,9 +157,9 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Detecting exact GPS coordinates...
                 </>
-              ) : isGpsDetected ? (
+              ) : isGpsDetected || selectedLocationData?.lat ? (
                 <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                   Location Detected: {formData.city}
                 </>
               ) : (
@@ -172,13 +171,13 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
             </button>
           ) : (
             <div className="relative">
-              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10" />
+              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none z-10" />
               <input
                 type="text"
                 required={formData.locationType === 'approximate'}
                 value={formData.city}
                 onChange={(e) => {
-                  setFormData({ ...formData, city: e.target.value });
+                  setFormData((prev: any) => ({ ...prev, city: e.target.value }));
                   setIsCityValid(false);
                 }}
                 onFocus={() => {
@@ -191,7 +190,7 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
                   }
                 }}
                 placeholder="Type city name (e.g. Vienna, London)..."
-                className="w-full h-[46px] pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
+                className="w-full h-[46px] pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-[#00AAFF] transition-all"
               />
 
               {/* OpenFreeMap / Photon Geocoding City Autocomplete Dropdown */}
@@ -203,7 +202,7 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
                       initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 5 }}
-                      className="absolute left-0 right-0 bottom-full mb-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 max-h-44 overflow-y-auto p-1.5 space-y-0.5 ring-1 ring-slate-900/5"
+                      className="absolute left-0 right-0 bottom-full mb-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 max-h-44 overflow-y-auto p-1.5 space-y-0.5 ring-1 ring-slate-900/5"
                     >
                       {citySuggestions.map((item, idx) => (
                         <button
@@ -223,13 +222,13 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
                             setCitySuggestions([]);
                             setShowCityDropdown(false);
                           }}
-                          className="w-full px-3.5 py-2.5 rounded-xl hover:bg-blue-50 text-left flex items-center justify-between text-xs font-semibold text-slate-800 transition-colors group"
+                          className="w-full px-3.5 py-2.5 rounded-xl hover:bg-blue-50 dark:hover:bg-slate-700 text-left flex items-center justify-between text-xs font-semibold text-slate-800 dark:text-slate-100 transition-colors group cursor-pointer"
                         >
-                          <span className="flex items-center gap-2 group-hover:text-blue-900 font-bold">
-                            <MapPin className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 shrink-0" />
+                          <span className="flex items-center gap-2 group-hover:text-blue-900 dark:group-hover:text-blue-300 font-bold">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 shrink-0" />
                             {item.city}
                           </span>
-                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 font-extrabold text-[10px] rounded-md border border-blue-100 shrink-0">
+                          <span className="px-2 py-0.5 bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-300 font-extrabold text-[10px] rounded-md border border-blue-100 dark:border-slate-600 shrink-0">
                             {item.code}
                           </span>
                         </button>
@@ -246,7 +245,7 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
         <button
           type="button"
           onClick={() => setStep(4)}
-          className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-1.5"
+          className="px-4 py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
@@ -259,7 +258,7 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
               ? !isGpsDetected
               : !isCityValid || !formData.city.trim())
           }
-          className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2"
+          className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
         >
           Continue to Photos
           <ArrowRight className="w-4 h-4" />
