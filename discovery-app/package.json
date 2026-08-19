@@ -11,11 +11,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ai-sdk/google": "^4.0.36",
-    "@ai-sdk/react": "^4.0.58",
+    "@ai-sdk/google": "^4.0.45",
+    "@ai-sdk/react": "^4.0.71",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.3",
-    "ai": "^7.0.55",
+    "ai": "^7.0.68",
     "cloudinary": "^2.10.0",
     "firebase": "^12.17.1",
     "lucide-react": "^1.29.0",
@@ -25,7 +25,8 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

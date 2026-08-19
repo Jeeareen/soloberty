@@ -1,75 +1,63 @@
-# React + TypeScript + Vite
+# Soloberty — Discovery App & Generative AI Icebreaker Tool
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Soloberty is an AI-native social discovery application built with Next.js, React, TailwindCSS, and Framer Motion, powered by Google's `gemini-3.5-flash-lite`.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## AI Server-Side Tool Contract
 
-## React Compiler
+### Tool Name
+`suggestIcebreakers`
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Tool Definition File
+[`discovery-app/lib/tools/suggestIcebreakers.ts`](file:///c:/dev/solibero-main/discovery-app/lib/tools/suggestIcebreakers.ts)
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Input Schema (Zod)
+```typescript
+import { z } from 'zod';
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+export const suggestIcebreakersSchema = z.object({
+  name: z.string().describe("The target person's first name"),
+  bio: z.string().describe("Their profile bio text"),
+  interests: z.array(z.string()).describe("List of their profile interest tags"),
+});
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+### Return Shape
+```typescript
+export interface IcebreakerResult {
+  questions: string[]; // Array of exactly 3 personalized icebreaker questions
+}
 ```
+
+---
+
+## Tool Lifecycle & Generative UI States
+
+The `suggestIcebreakers` tool handles the complete 4-state lifecycle using typed tool parts and smooth Framer Motion spring transitions:
+
+1. **State 1 — Input Streaming (`partial-call`)**:
+   - **UI**: `"Scout is generating icebreakers"` pill with staggered animated 3-dot pulse.
+   - **Role**: Indicates active background generation without layout shift.
+
+2. **State 2 — Input Available (`call`)**:
+   - **UI**: Styled profile card displaying target name and active `#interest` tags.
+   - **Role**: Renders structured input parameters clearly to the user for 1.1s before morphing.
+
+3. **State 3 — Output Available (`result`)**:
+   - **UI**: Designed Emerald result container featuring 3 interactive, tappable icebreaker question chips.
+   - **Role**: Tapping any question auto-populates the chat input bar.
+
+4. **State 4 — Output Error (`error`)**:
+   - **UI**: Designed Rose alert container with warning icon and an interactive **Retry** button.
+   - **Role**: Graceful failure recovery without application crashes.
+
+---
+
+## Model Mandate
+- Model: `gemini-3.5-flash-lite` via `@ai-sdk/google`
+- Governed by project rule: [`.agents/rules/AgentRules.md`](file:///c:/dev/solibero-main/.agents/rules/AgentRules.md)

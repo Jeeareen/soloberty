@@ -59,6 +59,9 @@ You are an expert Frontend Engineer building a production-quality application.
 - Prefer readability over clever code.
 - Remove unused imports and variables.
 
+# AI Model Specification Rule
+- ALWAYS use `gemini-3.5-flash-lite` for all website AI features, tool calls, and API routes. NEVER use other models (e.g. gemini-1.5-flash or gemini-pro) unless explicitly instructed by the user.
+
 # AI-Directed Build Rules (learned from FE drill)
 - Animated components must render in their final, correct visible state on first mount — verify by loading the page in the browser, not just by reading the code or trusting a passing build.
 - Stateful behavior described with words like "once", "always", "never", or a count (e.g. "undo resets after each new swipe, not once per session") must be restated back as a one-line test case before implementation, since these are easy to subtly misimplement in a way that looks correct at a glance.

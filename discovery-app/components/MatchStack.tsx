@@ -1,11 +1,23 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useAnimation, useMotionValue, useTransform, useSpring, useReducedMotion, animate, type PanInfo } from 'motion/react';
+import {
+  motion,
+  AnimatePresence,
+  useAnimation,
+  useMotionValue,
+  useTransform,
+  useSpring,
+  useReducedMotion,
+  animate,
+  type PanInfo,
+} from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { MapPin, MessageSquare, User } from 'lucide-react';
 import type { MatchCard, MatchStackProps } from '../types/matching';
 import { PREDEFINED_INTERESTS } from '../types/user';
+import { useProfiles } from '../hooks/useProfiles';
+import { useAuth } from '../lib/hooks/useAuth';
 
 const UI_TEXT = {
   NO_MORE_CARDS: 'No more profiles to review.',
@@ -14,6 +26,9 @@ const UI_TEXT = {
 };
 
 const SWIPE_THRESHOLD = 50;
+
+// Export defaultMockCards as empty array for backward compatibility
+export const defaultMockCards: MatchCard[] = [];
 
 // Gender Icon Symbol helper component
 const GenderSymbol: React.FC<{ gender?: string; className?: string }> = ({
@@ -66,40 +81,13 @@ const GenderSymbol: React.FC<{ gender?: string; className?: string }> = ({
   );
 };
 
-// Generate 50 mock cards
-export const defaultMockCards: MatchCard[] = Array.from({ length: 50 }, (_, i) => {
-  const names = [
-    'Alice, 28', 'Bob, 32', 'Charlie, 26', 'Diana, 30', 'Eve, 27',
-    'Frank, 29', 'Grace, 31', 'Hank, 25', 'Ivy, 28', 'Jack, 33',
-    'Karen, 29', 'Leo, 26', 'Mona, 34', 'Nate, 27', 'Olivia, 31',
-    'Paul, 30', 'Quinn, 28', 'Rachel, 26', 'Sam, 32', 'Tina, 29'
-  ];
-  const summaries = [
-    'Frontend Developer', 'UX Designer', 'Product Manager', 'DevOps Engineer', 'Data Scientist',
-    'Mobile Developer', 'QA Specialist', 'Backend Engineer', 'Full Stack Dev', 'AI Researcher'
-  ];
-  const baseName = names[i % names.length];
-  const summary = summaries[i % summaries.length];
-  const countSuffix = i >= 20 ? ` (${Math.floor(i / 20) + 1})` : '';
-
-  return {
-    id: `card-${i + 1}`,
-    name: `${baseName}${countSuffix}`,
-    summary,
-    details: `Passionate about building connections, working on innovative projects, and sharing experiences. Profile #${i + 1}.`,
-    gender: i % 2 === 0 ? 'female' : 'male',
-    location: 'Vienna, AT',
-    interests: ['outdoor', 'photography', 'movies'],
-  };
-});
-
 // Full Card Renderer component for all carousel card slots (Memoized for 60 FPS performance)
 const RenderCardFace: React.FC<{ card: MatchCard; isBackground?: boolean }> = React.memo(
   ({ card, isBackground = false }) => {
     const router = useRouter();
     const cardInterests = React.useMemo(
       () =>
-        (card.interests || ['sports', 'music', 'coffee']).map(
+        (card.interests || []).map(
           (id) => PREDEFINED_INTERESTS.find((i) => i.id === id) || { id, name: id, icon: '✨' }
         ),
       [card.interests]
@@ -110,8 +98,14 @@ const RenderCardFace: React.FC<{ card: MatchCard; isBackground?: boolean }> = Re
         {/* Front Face */}
         <div className="absolute inset-0 flex flex-col bg-white dark:bg-[#0F172A] rounded-xl overflow-hidden [backface-visibility:hidden]">
           <div className="relative w-full h-52 sm:h-56 shrink-0 bg-slate-100 dark:bg-slate-800 overflow-hidden">
-            {card.photoUrl ? (
-              <img src={card.photoUrl} alt={card.name} decoding="async" loading="lazy" className="w-full h-full object-cover" />
+            {card.avatarUrl ? (
+              <img
+                src={card.avatarUrl}
+                alt={card.name}
+                decoding="async"
+                loading="lazy"
+                className="w-full h-full object-cover"
+              />
             ) : (
               <div className="w-full h-full bg-[#B8E7FF] dark:bg-slate-800 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center">
                 <User className="w-20 h-20" />
@@ -120,20 +114,20 @@ const RenderCardFace: React.FC<{ card: MatchCard; isBackground?: boolean }> = Re
             {/* Profile Picture Name Overlay */}
             <div className="absolute inset-x-0 bottom-0 p-4">
               <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight truncate text-white">
-                {card.name.split(',')[0]}
+                {card.name}
               </h2>
             </div>
           </div>
 
           {/* Content Below PP */}
           <div className="flex-1 flex flex-col p-5 space-y-3.5">
-            {/* Location Tag right below PP (1.25x font size) */}
+            {/* Location Tag right below PP */}
             <div className="flex items-center gap-1.5 text-sm sm:text-base font-bold text-[#00AAFF] dark:text-[#B8E7FF]">
               <MapPin className="w-4 h-4 shrink-0 text-[#00AAFF]" />
-              <span>{card.location || 'Vienna, AT'}</span>
+              <span>{card.location?.city || 'Vienna, AT'}</span>
             </div>
 
-            {/* 3 Interests as Bulletpoints (1.25x font size) */}
+            {/* Interests as Bulletpoints */}
             <div className="space-y-1.5 flex-1">
               <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
                 Interests
@@ -180,7 +174,7 @@ const RenderCardFace: React.FC<{ card: MatchCard; isBackground?: boolean }> = Re
               <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1">
                 Bio
               </span>
-              <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{card.details || card.summary}</p>
+              <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{card.bio}</p>
             </div>
 
             {/* Bottom Section: Interest Photos & Chat Button */}
@@ -191,12 +185,18 @@ const RenderCardFace: React.FC<{ card: MatchCard; isBackground?: boolean }> = Re
                 </span>
                 {card.interestImages && card.interestImages.length > 0 ? (
                   <div className="grid grid-cols-3 gap-2">
-                    {card.interestImages.slice(0, 3).map((url, idx) => (
+                    {card.interestImages.slice(0, 3).map((item, idx) => (
                       <div
                         key={idx}
                         className="aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100"
                       >
-                        <img src={url} alt={`Interest ${idx + 1}`} decoding="async" loading="lazy" className="w-full h-full object-cover" />
+                        <img
+                          src={item.url}
+                          alt={`Interest ${idx + 1}`}
+                          decoding="async"
+                          loading="lazy"
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                     ))}
                   </div>
@@ -210,12 +210,15 @@ const RenderCardFace: React.FC<{ card: MatchCard; isBackground?: boolean }> = Re
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  router.push('/chat');
+                  const token = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+                  router.push(
+                    `/chat?name=${encodeURIComponent(card.name)}&age=${card.age}&bio=${encodeURIComponent(card.bio)}&interests=${encodeURIComponent((card.interests || []).join(','))}&uid=${card.uid}&generate=true&token=${token}&from=feed`
+                  );
                 }}
                 className="w-full py-3 px-4 bg-[#00AAFF] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs sm:text-sm font-extrabold rounded-xl shadow-md shadow-[#00AAFF]/20 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
               >
                 <MessageSquare className="w-4 h-4" />
-                Chat with {card.name.split(',')[0].split(' ')[0]}
+                Chat with {card.name.split(' ')[0]}
               </button>
             </div>
           </div>
@@ -226,12 +229,83 @@ const RenderCardFace: React.FC<{ card: MatchCard; isBackground?: boolean }> = Re
   (prevProps, nextProps) => prevProps.card.id === nextProps.card.id && prevProps.isBackground === nextProps.isBackground
 );
 
-export const MatchStack: React.FC<MatchStackProps> = ({ cards = defaultMockCards, onComplete }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
+export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComplete }) => {
+  const { profiles, loading, error } = useProfiles();
+  const { user } = useAuth();
+
+  // Restore swiping position from sessionStorage or default to 0
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedIndex = sessionStorage.getItem('soloberty_matchstack_index');
+      if (savedIndex !== null) {
+        const parsed = parseInt(savedIndex, 10);
+        if (!isNaN(parsed) && parsed >= 0) return parsed;
+      }
+    }
+    return 0;
+  });
+
   const [undoCount, setUndoCount] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isHeld, setIsHeld] = useState(false);
   const isDraggingRef = useRef(false);
+
+  // Save current swiping index to sessionStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('soloberty_matchstack_index', currentIndex.toString());
+    }
+  }, [currentIndex]);
+
+  // State to hold dynamically appended cards for endless swiping
+  const [appendedCardCount, setAppendedCardCount] = useState(0);
+
+  const baseCards: MatchCard[] = React.useMemo(() => {
+    if (propCards && propCards.length > 0) {
+      return propCards.filter((c) => !user || c.uid !== user.uid);
+    }
+    return (profiles || [])
+      .filter((p) => !user || p.uid !== user.uid)
+      .map((p) => ({
+        id: p.uid,
+        uid: p.uid,
+        name: p.name || 'Anonymous',
+        age: typeof p.age === 'number' ? p.age : 25,
+        gender: p.gender || 'other',
+        bio: p.bio || '',
+        interests: p.interests || [],
+        location: {
+          city: p.location?.city || 'Vienna, AT',
+        },
+        avatarUrl: p.avatarUrl || '',
+        interestImages: (p.interestImages || []).map((img) => ({
+          slot: img.slot || 1,
+          url: img.url,
+        })),
+      }));
+  }, [profiles, propCards, user]);
+
+  // Construct endless cards list by appending copies when needed
+  const cards: MatchCard[] = React.useMemo(() => {
+    if (baseCards.length === 0) return [];
+    let list = [...baseCards];
+
+    for (let loop = 1; loop <= appendedCardCount; loop++) {
+      const loopedCopies = baseCards.map((c, i) => ({
+        ...c,
+        id: `${c.id}_loop_${loop}_${i}`,
+      }));
+      list = [...list, ...loopedCopies];
+    }
+    return list;
+  }, [baseCards, appendedCardCount]);
+
+  // Endless swiping trigger: When user reaches cards.length - 2, append another set of DB profiles to the end
+  useEffect(() => {
+    if (baseCards.length > 0 && currentIndex >= cards.length - 2) {
+      setAppendedCardCount((prev) => prev + 1);
+    }
+  }, [currentIndex, cards.length, baseCards.length]);
 
   const shouldReduceMotion = useReducedMotion();
   const controls = useAnimation();
@@ -246,34 +320,29 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards = defaultMockCards
   }, [isHeld, centerScaleTarget]);
 
   const activeCardRef = useRef<HTMLDivElement>(null);
-  const isFinished = currentIndex >= cards.length;
+  const isFinished = cards.length > 0 && currentIndex >= cards.length;
 
   // Continuous 3-Slot Carousel with Depth Scaling, Dynamic Layering & Linear Opacity (20% to 100%)
-  // 1. Active card (Middle slot at 0px): resting center at 1.0x, smoothly spring-upscales to 1.05x when held, and linearly decreases to 0.8x at -320px / +320px
   const activeScale = useTransform([x, centerScaleSpring], ([latestX, latestCenterScale]: number[]) => {
     const dragRatio = Math.min(Math.abs(latestX) / 320, 1);
     return latestCenterScale - dragRatio * (latestCenterScale - 0.8);
   });
   const activeOpacity = useTransform(x, [-320, 0, 320], [0.2, 1, 0.2]);
 
-  // 2. Preview card (Right slot / next card at +320px): As active card swipes left, preview shifts left & scales up linearly to 1.0x (0.8 -> 1.0)
   const previewX = useTransform(x, [-320, 0, 320], [0, 320, 640]);
   const previewScale = useTransform(x, [-320, 0, 320], [1, 0.8, 0.65]);
   const previewOpacity = useTransform(x, [-320, 0, 320], [1, 0.2, 0.2]);
   const previewZIndex = useTransform(x, [-320, -160, 0, 320], [40, 20, 20, 10]);
 
-  // 2b. Next-Next card (Further Right slot at +640px): Shifts left towards preview slot as active card swipes left
   const nextNextX = useTransform(x, [-320, 0, 320], [320, 640, 960]);
   const nextNextScale = useTransform(x, [-320, 0, 320], [0.8, 0.65, 0.5]);
   const nextNextOpacity = useTransform(x, [-320, 0, 320], [0.2, 0.15, 0.1]);
 
-  // 3. Past card (Left slot / prev card at -320px): As active card swipes right for undo, past card shifts right & scales up linearly to 1.0x (0.8 -> 1.0)
   const pastX = useTransform(x, [-320, 0, 320], [-640, -320, 0]);
   const pastScale = useTransform(x, [-320, 0, 320], [0.65, 0.8, 1]);
   const pastOpacity = useTransform(x, [-320, 0, 320], [0.2, 0.2, 1]);
   const pastZIndex = useTransform(x, [-320, 0, 160, 320], [10, 20, 20, 40]);
 
-  // 3b. Prev-Prev card (Further Left slot at -640px): Shifts right towards past slot as active card swipes right
   const prevPrevX = useTransform(x, [-320, 0, 320], [-960, -640, -320]);
   const prevPrevScale = useTransform(x, [-320, 0, 320], [0.5, 0.65, 0.8]);
   const prevPrevOpacity = useTransform(x, [-320, 0, 320], [0.1, 0.15, 0.2]);
@@ -284,10 +353,10 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards = defaultMockCards
 
   // Ensure active card is rendered in final visible state on mount & index change
   useEffect(() => {
-    if (!isFinished) {
+    if (!isFinished && cards.length > 0) {
       controls.start({ scale: 1, opacity: 1, x: 0 });
     }
-  }, [currentIndex, isFinished, controls]);
+  }, [currentIndex, isFinished, cards.length, controls]);
 
   const handleSwipeLeft = async () => {
     setIsHeld(false);
@@ -309,7 +378,6 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards = defaultMockCards
 
   const handleSwipeRightUndo = async () => {
     if (undoCount <= 0 || currentIndex <= 0) {
-      // Undo is not available, spring back
       animate(x, 0, { type: 'spring', stiffness: 300, damping: 25 });
       return;
     }
@@ -331,7 +399,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards = defaultMockCards
     setCurrentIndex((prev) => prev - 1);
   };
 
-  // Global window keyboard navigation for continuous arrow-key swiping and 3D card flipping
+  // Global window keyboard navigation
   useEffect(() => {
     const handleGlobalKeyDown = (e: globalThis.KeyboardEvent) => {
       const targetTag = (e.target as HTMLElement)?.tagName;
@@ -378,11 +446,43 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards = defaultMockCards
     } else if (offset > SWIPE_THRESHOLD && undoCount > 0 && currentIndex > 0) {
       handleSwipeRightUndo();
     } else {
-      // Smooth spring back to 0 on release
       animate(x, 0, { type: 'spring', stiffness: 300, damping: 25 });
     }
   };
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center bg-[#F8FAFC] dark:bg-[#090D16] text-gray-500 dark:text-slate-200 space-y-3">
+        <div className="w-8 h-8 border-4 border-[#00AAFF] border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm font-medium">Loading profiles...</p>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-[#F8FAFC] dark:bg-[#090D16] text-rose-500 dark:text-rose-400 p-4 text-center">
+        <p role="alert" className="text-sm font-semibold">
+          Couldn't load profiles. Pull to refresh.
+        </p>
+      </div>
+    );
+  }
+
+  // Empty profiles state
+  if (!loading && cards.length === 0) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-[#F8FAFC] dark:bg-[#090D16] text-gray-500 dark:text-slate-200">
+        <p role="status" className="text-sm font-medium">
+          No profiles nearby yet.
+        </p>
+      </div>
+    );
+  }
+
+  // All cards swiped
   if (isFinished) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-[#F8FAFC] dark:bg-[#090D16] text-gray-500 dark:text-slate-200">
@@ -415,8 +515,8 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards = defaultMockCards
       {/* Stack Container */}
       <div className="relative h-full w-full flex items-center justify-center">
         <AnimatePresence>
-          {/* Prev-Prev Card (Far Left, -640px) - Only rendered if undoCount >= 2 */}
-          {currentIndex > 1 && undoCount >= 2 && (
+          {/* Prev-Prev Card (Far Left, -640px) */}
+          {currentIndex > 1 && undoCount >= 2 && cards[currentIndex - 2] && (
             <motion.div
               key={`prevprev-${cards[currentIndex - 2].id}`}
               style={{ x: prevPrevX, scale: prevPrevScale, opacity: prevPrevOpacity, zIndex: 5 }}
@@ -427,8 +527,8 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards = defaultMockCards
             </motion.div>
           )}
 
-          {/* Prev Card (Left, -320px) - Only rendered if undoCount >= 1 */}
-          {currentIndex > 0 && undoCount >= 1 && (
+          {/* Prev Card (Left, -320px) */}
+          {currentIndex > 0 && undoCount >= 1 && cards[currentIndex - 1] && (
             <motion.div
               key={`past-${cards[currentIndex - 1].id}`}
               style={{ x: pastX, scale: pastScale, opacity: pastOpacity, zIndex: pastZIndex }}
@@ -440,7 +540,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards = defaultMockCards
           )}
 
           {/* Next Card (Right, +320px) */}
-          {currentIndex + 1 < cards.length && (
+          {currentIndex + 1 < cards.length && cards[currentIndex + 1] && (
             <motion.div
               key={`preview-${cards[currentIndex + 1].id}`}
               style={{ x: previewX, scale: previewScale, opacity: previewOpacity, zIndex: previewZIndex }}
@@ -452,7 +552,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards = defaultMockCards
           )}
 
           {/* Next-Next Card (Far Right, +640px) */}
-          {currentIndex + 2 < cards.length && (
+          {currentIndex + 2 < cards.length && cards[currentIndex + 2] && (
             <motion.div
               key={`nextnext-${cards[currentIndex + 2].id}`}
               style={{ x: nextNextX, scale: nextNextScale, opacity: nextNextOpacity, zIndex: 5 }}
@@ -464,33 +564,35 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards = defaultMockCards
           )}
 
           {/* Active Card */}
-          <motion.div
-            key={`active-${currentCard.id}`}
-            ref={activeCardRef}
-            tabIndex={0}
-            role="button"
-            aria-label={`${currentCard.name}, ${currentCard.summary}. ${UI_TEXT.FLIP_ARIA}`}
-            onClick={() => {
-              if (!isDraggingRef.current) setIsFlipped((prev) => !prev);
-            }}
-            onPointerDown={() => setIsHeld(true)}
-            onPointerUp={() => setIsHeld(false)}
-            onPointerCancel={() => setIsHeld(false)}
-            drag="x"
-            dragConstraints={{ left: -320, right: undoCount > 0 && currentIndex > 0 ? 320 : 0 }}
-            dragElastic={0}
-            dragMomentum={false}
-            onDragStart={() => {
-              isDraggingRef.current = true;
-            }}
-            onDragEnd={handleDragEnd}
-            style={{ x, scale: activeScale, opacity: activeOpacity, zIndex: 30 }}
-            animate={{ rotateY: isFlipped ? 180 : 0 }}
-            transition={{ rotateY: { duration: 0.4, ease: 'easeInOut' } }}
-            className="absolute flex h-[600px] w-[420px] cursor-grab flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 active:cursor-grabbing focus:outline-none [transform-style:preserve-3d]"
-          >
-            <RenderCardFace card={currentCard} />
-          </motion.div>
+          {currentCard && (
+            <motion.div
+              key={`active-${currentCard.id}`}
+              ref={activeCardRef}
+              tabIndex={0}
+              role="button"
+              aria-label={`${currentCard.name}. ${UI_TEXT.FLIP_ARIA}`}
+              onClick={() => {
+                if (!isDraggingRef.current) setIsFlipped((prev) => !prev);
+              }}
+              onPointerDown={() => setIsHeld(true)}
+              onPointerUp={() => setIsHeld(false)}
+              onPointerCancel={() => setIsHeld(false)}
+              drag="x"
+              dragConstraints={{ left: -320, right: undoCount > 0 && currentIndex > 0 ? 320 : 0 }}
+              dragElastic={0}
+              dragMomentum={false}
+              onDragStart={() => {
+                isDraggingRef.current = true;
+              }}
+              onDragEnd={handleDragEnd}
+              style={{ x, scale: activeScale, opacity: activeOpacity, zIndex: 30 }}
+              animate={{ rotateY: isFlipped ? 180 : 0 }}
+              transition={{ rotateY: { duration: 0.4, ease: 'easeInOut' } }}
+              className="absolute flex h-[600px] w-[420px] cursor-grab flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 active:cursor-grabbing focus:outline-none [transform-style:preserve-3d]"
+            >
+              <RenderCardFace card={currentCard} />
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
     </div>

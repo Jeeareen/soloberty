@@ -5,15 +5,17 @@ export type SwipeDirection = 'left' | 'right';
 
 export interface MatchCard {
   id: string;
+  uid: string;
   name: string;
-  summary: string;
-  details?: string;
-  age?: number;
-  gender?: 'male' | 'female' | 'other';
-  location?: string;
-  interests?: string[];
-  photoUrl?: string;
-  interestImages?: string[];
+  age: number;
+  gender: 'male' | 'female' | 'other';
+  bio: string;
+  interests: string[];
+  location: {
+    city: string;
+  };
+  avatarUrl: string;
+  interestImages: { slot: number; url: string }[];
 }
 
 export interface SwipeAction {
