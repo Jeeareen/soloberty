@@ -5,8 +5,8 @@ import { suggestIcebreakersSchema, executeSuggestIcebreakers } from '../../../li
 export const maxDuration = 30;
 
 function parsePromptParams(promptText: string) {
-  const nameMatch = promptText.match(/questions for\s+([^,.]+)/i);
-  const bioMatch = promptText.match(/Bio:\s*([\s\S]*?)(?=\.?\s*Interests:|$)/i);
+  const nameMatch = promptText.match(/questions for\s+([^,]+)/i);
+  const bioMatch = promptText.match(/Bio:\s*([\s\S]*?)(?=\s*Interests:|$)/i);
   const interestsMatch = promptText.match(/Interests:\s*(.*)/i);
 
   const name = nameMatch ? nameMatch[1].trim() : 'User';
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
         tools: {
           suggestIcebreakers: tool({
             description:
-              'Generates 3 warm, personal icebreaker questions based on a user profile (name, bio, interests).',
+              'Generates 3 warm, personal icebreaker questions based on a user profile (name, bio, interests). MUST extract and pass the name, bio, and interests parameters accurately from the user message.',
             parameters: suggestIcebreakersSchema,
             execute: executeSuggestIcebreakers,
           }),

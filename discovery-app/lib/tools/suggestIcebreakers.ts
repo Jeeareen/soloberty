@@ -33,7 +33,15 @@ export async function executeSuggestIcebreakers(
       schema: z.object({
         questions: z.array(z.string()).length(3),
       }),
-      prompt: `Generate 3 personal icebreakers for ${safeName} based on bio: ${input.bio || 'no bio provided'} and interests: ${safeInterests.join(', ') || 'none listed'}`,
+      prompt:
+        `You are generating 3 warm icebreaker questions to start a friendly conversation with ${safeName}.\n\n` +
+        `Profile Details:\n` +
+        `- Name: ${safeName}\n` +
+        `- Bio: ${input.bio || 'none'}\n` +
+        `- Interests: ${safeInterests.join(', ') || 'none'}\n\n` +
+        `INSTRUCTIONS:\n` +
+        `- IF bio or interests are provided: Every single question MUST directly mention or relate to specific hobbies, details, or facts from their bio and interests (e.g. sourdough, climbing, dogs, synthwave, sci-fi, brewing). Do NOT ask generic questions like teleportation or favorite food when bio/interests are available.\n` +
+        `- IF no bio and no interests are provided: Generate fun, friendly generic conversation starters.`,
     });
 
     //FOR DEBUGGING PURPOSES; COMMENT IT AFTER USING
