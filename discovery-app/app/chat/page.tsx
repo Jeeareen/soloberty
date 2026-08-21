@@ -27,6 +27,19 @@ export function ToolInvocationBlock({
 }: ToolInvocationBlockProps) {
   const { state } = toolInvocation;
   const [showResult, setShowResult] = React.useState(false);
+  const [isRetrying, setIsRetrying] = React.useState(false);
+
+  const handleRetry = async () => {
+    if (isRetrying) return;
+    setIsRetrying(true);
+    try {
+      await reload();
+    } catch (e) {
+      console.warn('[ToolInvocationBlock Retry Error]:', e);
+    } finally {
+      setTimeout(() => setIsRetrying(false), 1000);
+    }
+  };
 
   React.useEffect(() => {
     if (state === 'result') {
@@ -97,64 +110,61 @@ export function ToolInvocationBlock({
   // State 3 — Output available (state === 'result' after 1.1s display window)
   if (state === 'result' && showResult) {
     const result = toolInvocation.result;
-    let questions: string[] = result?.questions || [];
+    const questions: string[] = result?.questions || [];
 
-    if (!questions || questions.length === 0) {
-      const firstInterest = interests[0] || 'your hobbies';
-      const secondInterest = interests[1] || 'exploring new places';
-
-      questions = [
-        `Hey ${name}! What's your absolute favorite thing about ${firstInterest}?`,
-        `I saw in your profile that you love ${secondInterest} — what's a recent story from that?`,
-        `Hi ${name}! If you could pick one perfect activity involving ${firstInterest}, what would it be?`,
-      ];
+    if (questions.length > 0) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="my-2 p-4 bg-white dark:bg-[#0F172A] border-l-4 border-l-emerald-500 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm space-y-3"
+        >
+          <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+            <span>Try one of these to start the conversation</span>
+            <span className="text-sm">👋</span>
+          </h3>
+          <div className="space-y-2">
+            {questions.map((question, idx) => (
+              <motion.button
+                key={idx}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, delay: idx * 0.1 }}
+                type="button"
+                onClick={() => setInput(question)}
+                className="w-full text-left p-3 bg-slate-50 dark:bg-slate-800/60 hover:bg-[#B8E7FF]/30 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700/60 hover:border-[#00AAFF]/40 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-200 transition-all cursor-pointer group flex items-start justify-between gap-2 active:scale-[0.99]"
+              >
+                <span>{question}</span>
+                <MessageSquare className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#00AAFF] shrink-0 mt-0.5" />
+              </motion.button>
+            ))}
+          </div>
+        </motion.div>
+      );
     }
-
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="my-2 p-4 bg-white dark:bg-[#0F172A] border-l-4 border-l-emerald-500 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm space-y-3"
-      >
-        <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-          <span>Try one of these to start the conversation</span>
-          <span className="text-sm">👋</span>
-        </h3>
-        <div className="space-y-2">
-          {questions.map((question, idx) => (
-            <motion.button
-              key={idx}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, delay: idx * 0.1 }}
-              type="button"
-              onClick={() => setInput(question)}
-              className="w-full text-left p-3 bg-slate-50 dark:bg-slate-800/60 hover:bg-[#B8E7FF]/30 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700/60 hover:border-[#00AAFF]/40 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-200 transition-all cursor-pointer group flex items-start justify-between gap-2 active:scale-[0.99]"
-            >
-              <span>{question}</span>
-              <MessageSquare className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#00AAFF] shrink-0 mt-0.5" />
-            </motion.button>
-          ))}
-        </div>
-      </motion.div>
-    );
   }
 
   // State 4 — Error
+  const errorMessage =
+    toolInvocation?.error?.message ||
+    toolInvocation?.error ||
+    "Couldn't generate suggestions right now.";
+
   return (
-    <div className="my-2 p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-2xl flex items-center justify-between text-xs text-rose-800 dark:text-rose-200">
+    <div className="my-2 p-3.5 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/40 rounded-2xl flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 shadow-sm">
       <div className="flex items-center gap-2">
-        <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
-        <span>Scout couldn't generate questions. Try refreshing.</span>
+        <RefreshCw className={`w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 ${isRetrying ? 'animate-spin' : ''}`} />
+        <span>{typeof errorMessage === 'string' ? errorMessage : "Couldn't generate suggestions right now."}</span>
       </div>
       <button
         type="button"
-        onClick={() => reload()}
-        className="flex items-center gap-1 px-2.5 py-1 bg-rose-100 dark:bg-rose-900/60 hover:bg-rose-200 text-rose-900 dark:text-rose-100 rounded-lg font-bold transition-colors cursor-pointer"
+        disabled={isRetrying}
+        onClick={handleRetry}
+        className="flex items-center gap-1 px-2.5 py-1 bg-amber-100 dark:bg-amber-900/50 hover:bg-amber-200 dark:hover:bg-amber-800/60 disabled:opacity-50 disabled:cursor-not-allowed text-amber-900 dark:text-amber-100 rounded-lg font-bold transition-colors cursor-pointer shrink-0 ml-2"
       >
-        <RefreshCw className="w-3 h-3" />
-        Retry
+        <RefreshCw className={`w-3 h-3 ${isRetrying ? 'animate-spin' : ''}`} />
+        {isRetrying ? 'Retrying...' : 'Retry'}
       </button>
     </div>
   );
@@ -376,6 +386,7 @@ function IndividualChat({
   rawParamName,
   searchParams,
 }: {
+
   rawParamName: string;
   searchParams: ReturnType<typeof useSearchParams>;
 }) {
@@ -400,7 +411,6 @@ function IndividualChat({
   });
 
   const [localInput, setLocalInput] = React.useState('');
-  const [fallbackTriggered, setFallbackTriggered] = React.useState(false);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const sentTokensRef = React.useRef<Set<string>>(new Set());
 
@@ -420,11 +430,26 @@ function IndividualChat({
     setLocalInput(e.target.value);
   };
 
+  const chatError = chat.error;
   const status = (chat as any).status;
   const chatIsLoading = (chat as any).isLoading;
   const isLoading = chatIsLoading ?? (status === 'streaming' || status === 'submitted');
   const reloadFn = (chat as any).reload || (chat as any).regenerate || (() => { });
   const stopFn = chat.stop;
+
+  const [isPageRetrying, setIsPageRetrying] = React.useState(false);
+
+  const handlePageRetry = async () => {
+    if (isPageRetrying) return;
+    setIsPageRetrying(true);
+    try {
+      await reloadFn();
+    } catch (e) {
+      console.warn('[Page Retry Error]:', e);
+    } finally {
+      setTimeout(() => setIsPageRetrying(false), 1000);
+    }
+  };
 
   // Firestore persistent message storage for individual conversations
   const [dbMessages, setDbMessages] = React.useState<any[]>([]);
@@ -497,6 +522,38 @@ function IndividualChat({
     if (Array.isArray(message.parts)) {
       const invocations: any[] = [];
       const toolResultsMap: Record<string, any> = {};
+
+      // Handler for newer Vercel AI SDK parts format (e.g., type: "tool-suggestIcebreakers")
+      message.parts.forEach((p: any) => {
+        if (
+          typeof p.type === 'string' &&
+          p.type.startsWith('tool-') &&
+          p.type !== 'tool-call' &&
+          p.type !== 'tool-result' &&
+          p.type !== 'tool-invocation'
+        ) {
+          const toolName = p.type.replace(/^tool-/, '');
+          let mappedState = p.state;
+
+          if (p.state === 'output-available') mappedState = 'result';
+          else if (p.state === 'input-streaming') mappedState = 'partial-call';
+          else if (p.state === 'input-available') mappedState = 'call';
+          else if (p.state === 'error') mappedState = 'error';
+
+          invocations.push({
+            state: mappedState,
+            toolCallId: p.toolCallId || p.id,
+            toolName: p.toolName || toolName,
+            args: p.input || p.args || {},
+            result: p.output || p.result,
+            error: p.error,
+          });
+        }
+      });
+
+      if (invocations.length > 0) {
+        return invocations;
+      }
 
       message.parts.forEach((p: any) => {
         if (p.type === 'tool-result' || p.type === 'tool-invocation') {
@@ -600,20 +657,10 @@ function IndividualChat({
     }
   }, [rawParamName, age, bio, interests, isSingleUseValid, tokenParam, chat]);
 
-  // Fallback timer: if after 1.8s no assistant message or tool invocation has rendered, show fallback result
-  useEffect(() => {
-    if (!isSingleUseValid) return;
-    const timer = setTimeout(() => {
-      setFallbackTriggered(true);
-    }, 1800);
-
-    return () => clearTimeout(timer);
-  }, [isSingleUseValid]);
-
   // Scroll to bottom on new messages or tool invocations
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [rawMessages, fallbackTriggered]);
+  }, [rawMessages]);
 
   // Save new sent message to Firestore database (bi-directional for both sender & target user)
   const saveMessageToDb = async (textMsg: string, role: string = 'user') => {
@@ -695,6 +742,43 @@ function IndividualChat({
 
       {/* 1. Top: Message Thread (Scrollable) */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Initial Skeleton UI when generate=true is present and chat messages are empty */}
+        {shouldGenerateParam === 'true' && (chat.messages || []).length === 0 && isLoading && (
+          <div className="w-full max-w-[90%] my-2 p-4 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm space-y-3 animate-pulse">
+            <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded-md w-2/3" />
+            <div className="space-y-2 pt-1">
+              <div className="h-11 bg-slate-100 dark:bg-slate-800/60 rounded-xl w-full" />
+              <div className="h-11 bg-slate-100 dark:bg-slate-800/60 rounded-xl w-full" />
+              <div className="h-11 bg-slate-100 dark:bg-slate-800/60 rounded-xl w-full" />
+            </div>
+          </div>
+        )}
+
+        {/* Empty State when no messages exist and not auto-generating */}
+        {rawMessages.length === 0 && !isLoading && shouldGenerateParam !== 'true' && (
+          <div className="flex flex-col items-center justify-center h-full text-center px-4 py-12 space-y-4">
+            <div className="w-12 h-12 rounded-full bg-[#B8E7FF]/40 dark:bg-slate-800 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center font-bold text-lg">
+              {name.charAt(0)}
+            </div>
+            <div className="space-y-1 max-w-xs">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                Start the conversation with {name}
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Say something, or go back to discover more people.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setInput(`Hey ${name}! How's your day going?`)}
+              className="px-4 py-2.5 bg-white dark:bg-[#0F172A] hover:bg-[#B8E7FF]/30 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-800 hover:border-[#00AAFF]/40 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-200 transition-all cursor-pointer shadow-sm active:scale-95 flex items-center gap-2"
+            >
+              <span>"Hey {name}! How's your day going?"</span>
+              <MessageSquare className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            </button>
+          </div>
+        )}
+
         {rawMessages.map((message: any, messageIdx: number) => {
           const textContent = getMessageText(message);
           const toolInvocations = getToolInvocations(message);
@@ -746,36 +830,30 @@ function IndividualChat({
           );
         })}
 
-        {/* State 1: Render single thinking indicator ONLY when single-use token is valid and unconsumed and no user message sent */}
-        {isSingleUseValid && !hasToolResults && !fallbackTriggered && !rawMessages.some((m) => m.role === 'user' && !getMessageText(m).startsWith('Suggest icebreaker questions')) && (
-          <div className="flex flex-col items-start w-full max-w-[90%]">
-            <ToolInvocationBlock
-              toolInvocation={{ state: 'partial-call' }}
-              name={name}
-              interests={interests}
-              setInput={setInput}
-              reload={reloadFn}
-            />
+        {/* Page-level error card for top-level stream POST failures */}
+        {chatError && !hasToolResults && !isLoading && shouldGenerateParam === 'true' && (
+          <div className="w-full max-w-[90%] my-2 p-3.5 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/40 rounded-2xl flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 shadow-sm">
+            <div className="flex items-center gap-2">
+              <RefreshCw className={`w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 ${isPageRetrying ? 'animate-spin' : ''}`} />
+              <span>Couldn't generate suggestions right now.</span>
+            </div>
+            <button
+              type="button"
+              disabled={isPageRetrying}
+              onClick={handlePageRetry}
+              className="flex items-center gap-1 px-2.5 py-1 bg-amber-100 dark:bg-amber-900/50 hover:bg-amber-200 dark:hover:bg-amber-800/60 disabled:opacity-50 disabled:cursor-not-allowed text-amber-900 dark:text-amber-100 rounded-lg font-bold transition-colors cursor-pointer shrink-0 ml-2"
+            >
+              <RefreshCw className={`w-3 h-3 ${isPageRetrying ? 'animate-spin' : ''}`} />
+              {isPageRetrying ? 'Retrying...' : 'Retry'}
+            </button>
           </div>
         )}
 
-        {/* Fallback output card: Hide immediately after user sends a message */}
-        {fallbackTriggered && !hasToolResults && !rawMessages.some((m) => m.role === 'user' && !getMessageText(m).startsWith('Suggest icebreaker questions')) && (
+        {/* State 1: Render single thinking indicator ONLY when single-use token is valid and unconsumed, no error, and no user message sent */}
+        {isSingleUseValid && !chatError && !hasToolResults && !rawMessages.some((m) => m.role === 'user' && !getMessageText(m).startsWith('Suggest icebreaker questions')) && (
           <div className="flex flex-col items-start w-full max-w-[90%]">
             <ToolInvocationBlock
-              toolInvocation={{
-                state: 'result',
-                toolCallId: 'fallback-result',
-                toolName: 'suggestIcebreakers',
-                args: { name, bio, interests },
-                result: {
-                  questions: [
-                    `Hey ${name}! What's your absolute favorite thing about ${interests[0] || 'your hobbies'}?`,
-                    `I saw in your bio that you love ${interests[1] || 'exploring new places'} — what's a recent story from that?`,
-                    `Hi ${name}! If you could pick one perfect activity involving ${interests[0] || 'your interests'}, what would it be?`,
-                  ],
-                },
-              }}
+              toolInvocation={{ state: 'partial-call' }}
               name={name}
               interests={interests}
               setInput={setInput}

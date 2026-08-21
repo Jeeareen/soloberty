@@ -19,6 +19,9 @@ function parsePromptParams(promptText: string) {
 }
 
 export async function POST(req: Request) {
+  //FOR DEV PURPOSES, simulating 429
+  //return new Response('Too many requests', { status: 429 });
+
   let userPrompt = '';
   try {
     const { messages } = await req.json();
@@ -77,11 +80,25 @@ export async function POST(req: Request) {
         },
       });
 
+      const getErrorMessage = (error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error || '');
+        if (message.includes('RATE_LIMIT')) {
+          return 'Too many requests right now — try again in a moment.';
+        }
+        if (message.includes('NETWORK_ERROR')) {
+          return "Couldn't reach the AI service.";
+        }
+        if (message.includes('MALFORMED_RESPONSE')) {
+          return 'Got an unexpected response.';
+        }
+        return "Couldn't generate suggestions right now.";
+      };
+
       if (typeof (result as any).toUIMessageStreamResponse === 'function') {
-        return (result as any).toUIMessageStreamResponse();
+        return (result as any).toUIMessageStreamResponse({ getErrorMessage });
       }
       if (typeof (result as any).toDataStreamResponse === 'function') {
-        return (result as any).toDataStreamResponse();
+        return (result as any).toDataStreamResponse({ getErrorMessage });
       }
       if (typeof (result as any).toTextStreamResponse === 'function') {
         return (result as any).toTextStreamResponse();

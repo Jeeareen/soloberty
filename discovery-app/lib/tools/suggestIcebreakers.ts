@@ -16,50 +16,59 @@ export interface IcebreakerResult {
   questions: string[]; // output: exactly 3 questions
 }
 
-// Execute function that calls Gemini via @ai-sdk/google using generateObject()
 export async function executeSuggestIcebreakers(
   input: SuggestIcebreakersInput
 ): Promise<IcebreakerResult> {
+  const safeInterests = Array.isArray(input?.interests) ? input.interests : [];
+  const safeName = input?.name || 'there';
+
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
+  const modelInstance = apiKey
+    ? google('gemini-3.5-flash-lite', { apiKey })
+    : google('gemini-3.5-flash-lite');
+
   try {
-    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
-    const modelInstance = apiKey
-      ? google('gemini-3.5-flash-lite', { apiKey })
-      : google('gemini-3.5-flash-lite');
-
-    const safeInterests = Array.isArray(input?.interests) ? input.interests : [];
-
     const { object } = await generateObject({
       model: modelInstance,
       schema: z.object({
-        questions: z
-          .array(z.string())
-          .length(3)
-          .describe('Exactly 3 warm, personal icebreaker questions referencing their bio and interests'),
+        questions: z.array(z.string()).length(3),
       }),
-      prompt:
-        `You are generating icebreaker questions to start a friendly, genuine conversation with ${input.name}.\n` +
-        `Profile Details:\n` +
-        `- Name: ${input.name}\n` +
-        `- Bio: ${input.bio}\n` +
-        `- Interests: ${safeInterests.join(', ')}\n\n` +
-        `Generate exactly 3 fun, personal, engaging icebreaker questions that directly mention or relate to their bio and interests.`,
+      prompt: `Generate 3 personal icebreakers for ${safeName} based on bio: ${input.bio || 'no bio provided'} and interests: ${safeInterests.join(', ') || 'none listed'}`,
     });
 
-    return {
-      questions: object.questions,
-    };
-  } catch (error) {
-    console.warn('[executeSuggestIcebreakers Fallback Triggered]:', error);
-    const safeInterests = Array.isArray(input?.interests) ? input.interests : [];
-    const firstInterest = safeInterests[0] || 'your hobbies';
-    const secondInterest = safeInterests[1] || 'exploring new activities';
+    //FOR DEBUGGING PURPOSES; COMMENT IT AFTER USING
+    //await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second delay
+    /*
+    await new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('NETWORK_ERROR')), 2000)
+    );
+    */
+    //return { questions: [] };
 
-    return {
-      questions: [
-        `Hey ${input.name}! What's your absolute favorite thing about ${firstInterest}?`,
-        `I saw in your bio that you love ${secondInterest} — what's a recent highlight or story from that?`,
-        `Hi ${input.name}! If you could plan the ultimate day out centered around ${firstInterest}, what would we do?`,
-      ],
-    };
+    return { questions: object.questions };
+  } catch (error) {
+    // Classify the failure — this is the important part.
+    const message = error instanceof Error ? error.message : String(error);
+    const isRateLimit = message.includes('429') || message.includes('rate limit') || message.includes('quota');
+    const isNetwork = message.includes('fetch failed') || message.includes('ECONNRESET') || message.includes('network');
+    const isMalformed = error?.name === 'AI_TypeValidationError' || message.includes('schema');
+
+    // These are real failures — let them throw so the tool call
+    // surfaces as state 'error' in the UI, with a retry.
+    if (isRateLimit || isNetwork || isMalformed) {
+      console.error('[suggestIcebreakers] hard failure:', { isRateLimit, isNetwork, isMalformed, message });
+      throw new Error(
+        isRateLimit
+          ? 'RATE_LIMIT'
+          : isNetwork
+            ? 'NETWORK_ERROR'
+            : 'MALFORMED_RESPONSE'
+      );
+    }
+
+    // Anything else unclassified: still treat as a real error rather
+    // than silently faking success. Better to surface it than hide it.
+    console.error('[suggestIcebreakers] unclassified failure:', message);
+    throw new Error('GENERATION_FAILED');
   }
 }
