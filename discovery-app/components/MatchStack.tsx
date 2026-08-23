@@ -14,7 +14,7 @@ import {
 } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
-import { MapPin, MessageSquare, User, Lightbulb, X, RefreshCw } from 'lucide-react';
+import { MapPin, MessageSquare, User, Lightbulb, X, RefreshCw, LogIn } from 'lucide-react';
 import type { MatchCard, MatchStackProps } from '../types/matching';
 import { PREDEFINED_INTERESTS } from '../types/user';
 import { useProfiles } from '../hooks/useProfiles';
@@ -83,8 +83,13 @@ const GenderSymbol: React.FC<{ gender?: string; className?: string }> = ({
 };
 
 // Full Card Renderer component for all carousel card slots (Memoized for 60 FPS performance)
-const RenderCardFace: React.FC<{ card: MatchCard; isBackground?: boolean; onWhyYouTwo?: (card: MatchCard) => void }> = React.memo(
-  ({ card, isBackground = false, onWhyYouTwo }) => {
+const RenderCardFace: React.FC<{
+  card: MatchCard;
+  isBackground?: boolean;
+  onWhyYouTwo?: (card: MatchCard) => void;
+  onRequireAuth?: (feature: 'chat' | 'whyYouTwo') => void;
+}> = React.memo(
+  ({ card, isBackground = false, onWhyYouTwo, onRequireAuth }) => {
     const router = useRouter();
     const cardInterests = React.useMemo(
       () =>
@@ -215,6 +220,10 @@ const RenderCardFace: React.FC<{ card: MatchCard; isBackground?: boolean; onWhyY
                   onTouchEnd={(e) => e.stopPropagation()}
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (onRequireAuth) {
+                      onRequireAuth('chat');
+                      return;
+                    }
                     const token = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
                     router.push(
                       `/chat?name=${encodeURIComponent(card.name)}&age=${card.age}&bio=${encodeURIComponent(card.bio)}&interests=${encodeURIComponent((card.interests || []).join(','))}&uid=${card.uid}&generate=true&token=${token}&from=feed`
@@ -233,6 +242,10 @@ const RenderCardFace: React.FC<{ card: MatchCard; isBackground?: boolean; onWhyY
                   onTouchEnd={(e) => e.stopPropagation()}
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (onRequireAuth) {
+                      onRequireAuth('whyYouTwo');
+                      return;
+                    }
                     if (onWhyYouTwo) {
                       onWhyYouTwo(card);
                     }
@@ -252,10 +265,12 @@ const RenderCardFace: React.FC<{ card: MatchCard; isBackground?: boolean; onWhyY
   (prevProps, nextProps) =>
     prevProps.card.id === nextProps.card.id &&
     prevProps.isBackground === nextProps.isBackground &&
-    prevProps.onWhyYouTwo === nextProps.onWhyYouTwo
+    prevProps.onWhyYouTwo === nextProps.onWhyYouTwo &&
+    prevProps.onRequireAuth === nextProps.onRequireAuth
 );
 
 export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComplete }) => {
+  const router = useRouter();
   const { profiles, loading, error } = useProfiles();
   const { user } = useAuth();
 
@@ -263,6 +278,15 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Auth modal state for unauthenticated users
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalFeature, setAuthModalFeature] = useState<'chat' | 'whyYouTwo'>('whyYouTwo');
+
+  const handleRequireAuth = (feature: 'chat' | 'whyYouTwo') => {
+    setAuthModalFeature(feature);
+    setAuthModalOpen(true);
+  };
 
   // Why You Two modal state
   const [whyYouTwoModalOpen, setWhyYouTwoModalOpen] = useState(false);
@@ -305,20 +329,21 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
     }
   };
 
-  // Close modal on Escape key press
+  // Close modals on Escape key press
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && whyYouTwoModalOpen) {
-        setWhyYouTwoModalOpen(false);
+      if (e.key === 'Escape') {
+        if (whyYouTwoModalOpen) setWhyYouTwoModalOpen(false);
+        if (authModalOpen) setAuthModalOpen(false);
       }
     };
-    if (whyYouTwoModalOpen) {
+    if (whyYouTwoModalOpen || authModalOpen) {
       window.addEventListener('keydown', handleEscape);
     }
     return () => {
       window.removeEventListener('keydown', handleEscape);
     };
-  }, [whyYouTwoModalOpen]);
+  }, [whyYouTwoModalOpen, authModalOpen]);
 
   // Restore swiping position from sessionStorage or default to 0
   const [currentIndex, setCurrentIndex] = useState(() => {
@@ -673,7 +698,11 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
               transition={{ rotateY: { duration: 0.4, ease: 'easeInOut' } }}
               className="absolute flex h-[600px] w-[420px] cursor-grab flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 active:cursor-grabbing focus:outline-none [transform-style:preserve-3d]"
             >
-              <RenderCardFace card={currentCard} onWhyYouTwo={handleWhyYouTwo} />
+              <RenderCardFace
+                card={currentCard}
+                onWhyYouTwo={handleWhyYouTwo}
+                onRequireAuth={!user ? handleRequireAuth : undefined}
+              />
             </motion.div>
           )}
         </AnimatePresence>
@@ -812,6 +841,62 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
                   </div>
                 </div>
               )}
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* Auth Notification Modal for Unauthenticated Users Portaled to Body */}
+      {mounted &&
+        authModalOpen &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+            onClick={() => setAuthModalOpen(false)}
+          >
+            <div
+              className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 text-slate-900 dark:text-slate-100 shadow-2xl space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-2">
+                  <LogIn className="w-5 h-5 text-[#00AAFF] dark:text-[#B8E7FF]" />
+                  <h3 className="text-base font-extrabold font-heading">
+                    Login Required
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAuthModalOpen(false)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  aria-label="Close modal"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Message */}
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                {authModalFeature === 'whyYouTwo'
+                  ? 'Please log in to generate AI "Why You Two?" compatibility insights.'
+                  : 'Please log in to start a direct conversation.'}
+              </p>
+
+              {/* Action Button */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthModalOpen(false);
+                    router.push('/auth/login');
+                  }}
+                  className="w-full py-3 px-4 bg-[#00AAFF] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs sm:text-sm font-extrabold rounded-xl shadow-md shadow-[#00AAFF]/20 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+                >
+                  <LogIn className="w-4 h-4 shrink-0" />
+                  <span>Go to Login Page</span>
+                </button>
+              </div>
             </div>
           </div>,
           document.body

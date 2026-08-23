@@ -353,10 +353,20 @@ Verifying `thinData` banner behavior on sparse profiles and confirming server-si
   ```
 - **`thinData` Banner Verification**: Because Test Zero Five had a sparse bio (*"Not really sure what to write here"*) and 0 shared/complementary overlaps with the match, Gemini set `thinData: true`. The UI rendered the italic disclaimer banner (*"Profile information is limited, but here are the best insights available from the profile data:"*) above the three sections, with fallback messages for empty interest lists and a grounded connection idea.
 
-**Spec Deviation Rationale**:
-- *Current User Profile*: Fetched live from Firestore (`doc(db, 'users', currentUserId)`) on every API request (verified in terminal log).
-- *Matched User Profile*: Passed directly in request body from active `MatchCard` memory in `MatchStack.tsx` to eliminate a redundant database read for data already displayed on screen.
+---
 
-**Status:**
-- All 5 FL-07 criteria completed and verified.
-- Ready for 2-minute raw screen capture recording.
+### [2026-08-23] Unauthenticated User Handling (Login Popup Modal)
+
+**What I was doing:**
+Making sure both action buttons ("Chat with..." and "Why You Two?") stay visible on match cards for logged-out users, while showing a login prompt modal if clicked without an active session.
+
+**What I did:**
+- **Button Visibility**: Kept both action buttons visible on the card back regardless of `user` auth status.
+- **Login Required Modal**:
+  - When an unauthenticated user (`!user`) clicks "Why You Two?" or "Chat with...", `onRequireAuth` opens a portaled notification modal.
+  - Features clear message text explaining that login is required to generate AI insights or start a chat.
+  - Features a direct **"Go to Login Page"** action button redirecting to `/auth/login`.
+  - Includes full accessibility controls: top-right **X** close button, dimmed backdrop click dismiss (`bg-slate-950/70 backdrop-blur-sm`), and **Escape key press** dismiss handler.
+
+**Verification:**
+- Ran `npx tsc --noEmit` — 0 errors.
