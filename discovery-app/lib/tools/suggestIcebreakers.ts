@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { generateObject } from 'ai';
-import { google } from '@ai-sdk/google';
+import { google, createGoogleGenerativeAI } from '@ai-sdk/google';
 
 // Zod schema for tool input
 export const suggestIcebreakersSchema = z.object({
@@ -23,9 +23,8 @@ export async function executeSuggestIcebreakers(
   const safeName = input?.name || 'there';
 
   const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
-  const modelInstance = apiKey
-    ? google('gemini-3.5-flash-lite', { apiKey })
-    : google('gemini-3.5-flash-lite');
+  const googleProvider = apiKey ? createGoogleGenerativeAI({ apiKey }) : google;
+  const modelInstance = googleProvider('gemini-3.5-flash-lite');
 
   try {
     const { object } = await generateObject({

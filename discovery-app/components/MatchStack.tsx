@@ -13,7 +13,8 @@ import {
   type PanInfo,
 } from 'motion/react';
 import { useRouter } from 'next/navigation';
-import { MapPin, MessageSquare, User } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { MapPin, MessageSquare, User, Lightbulb, X, RefreshCw } from 'lucide-react';
 import type { MatchCard, MatchStackProps } from '../types/matching';
 import { PREDEFINED_INTERESTS } from '../types/user';
 import { useProfiles } from '../hooks/useProfiles';
@@ -82,8 +83,8 @@ const GenderSymbol: React.FC<{ gender?: string; className?: string }> = ({
 };
 
 // Full Card Renderer component for all carousel card slots (Memoized for 60 FPS performance)
-const RenderCardFace: React.FC<{ card: MatchCard; isBackground?: boolean }> = React.memo(
-  ({ card, isBackground = false }) => {
+const RenderCardFace: React.FC<{ card: MatchCard; isBackground?: boolean; onWhyYouTwo?: (card: MatchCard) => void }> = React.memo(
+  ({ card, isBackground = false, onWhyYouTwo }) => {
     const router = useRouter();
     const cardInterests = React.useMemo(
       () =>
@@ -177,7 +178,7 @@ const RenderCardFace: React.FC<{ card: MatchCard; isBackground?: boolean }> = Re
               <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{card.bio}</p>
             </div>
 
-            {/* Bottom Section: Interest Photos & Chat Button */}
+            {/* Bottom Section: Interest Photos & Action Buttons */}
             <div className="mt-auto pt-3 border-t border-gray-100 dark:border-slate-800 space-y-2.5 shrink-0">
               <div className="space-y-1">
                 <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
@@ -205,33 +206,119 @@ const RenderCardFace: React.FC<{ card: MatchCard; isBackground?: boolean }> = Re
                 )}
               </div>
 
-              {/* Chat Button */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const token = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-                  router.push(
-                    `/chat?name=${encodeURIComponent(card.name)}&age=${card.age}&bio=${encodeURIComponent(card.bio)}&interests=${encodeURIComponent((card.interests || []).join(','))}&uid=${card.uid}&generate=true&token=${token}&from=feed`
-                  );
-                }}
-                className="w-full py-3 px-4 bg-[#00AAFF] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs sm:text-sm font-extrabold rounded-xl shadow-md shadow-[#00AAFF]/20 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
-              >
-                <MessageSquare className="w-4 h-4" />
-                Chat with {card.name.split(' ')[0]}
-              </button>
+              {/* Action Buttons Row */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onPointerUp={(e) => e.stopPropagation()}
+                  onTouchEnd={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const token = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+                    router.push(
+                      `/chat?name=${encodeURIComponent(card.name)}&age=${card.age}&bio=${encodeURIComponent(card.bio)}&interests=${encodeURIComponent((card.interests || []).join(','))}&uid=${card.uid}&generate=true&token=${token}&from=feed`
+                    );
+                  }}
+                  className="flex-1 py-3 px-3 bg-[#00AAFF] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs font-extrabold rounded-xl shadow-md shadow-[#00AAFF]/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                >
+                  <MessageSquare className="w-4 h-4 shrink-0" />
+                  <span className="truncate">Chat with {card.name.split(' ')[0]}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onPointerUp={(e) => e.stopPropagation()}
+                  onTouchEnd={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onWhyYouTwo) {
+                      onWhyYouTwo(card);
+                    }
+                  }}
+                  className="flex-1 py-3 px-3 bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold rounded-xl shadow-md shadow-purple-600/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                >
+                  <Lightbulb className="w-4 h-4 shrink-0" />
+                  <span className="truncate">Why You Two?</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
       </div>
     );
   },
-  (prevProps, nextProps) => prevProps.card.id === nextProps.card.id && prevProps.isBackground === nextProps.isBackground
+  (prevProps, nextProps) =>
+    prevProps.card.id === nextProps.card.id &&
+    prevProps.isBackground === nextProps.isBackground &&
+    prevProps.onWhyYouTwo === nextProps.onWhyYouTwo
 );
 
 export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComplete }) => {
   const { profiles, loading, error } = useProfiles();
   const { user } = useAuth();
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Why You Two modal state
+  const [whyYouTwoModalOpen, setWhyYouTwoModalOpen] = useState(false);
+  const [whyYouTwoLoading, setWhyYouTwoLoading] = useState(false);
+  const [whyYouTwoResult, setWhyYouTwoResult] = useState<any>(null);
+  const [whyYouTwoError, setWhyYouTwoError] = useState<string | null>(null);
+  const [whyYouTwoCard, setWhyYouTwoCard] = useState<MatchCard | null>(null);
+
+  const handleWhyYouTwo = async (matchedCard: MatchCard) => {
+    setWhyYouTwoCard(matchedCard);
+    setWhyYouTwoModalOpen(true);
+    setWhyYouTwoLoading(true);
+    setWhyYouTwoResult(null);
+    setWhyYouTwoError(null);
+
+    try {
+      const res = await fetch('/api/why-you-two', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentUserId: user?.uid,
+          matchedUserId: matchedCard.uid,
+          matchedUser: {
+            bio: matchedCard.bio,
+            interests: matchedCard.interests,
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setWhyYouTwoError(data?.message || 'Error generating Why You Two analysis');
+      } else {
+        setWhyYouTwoResult(data);
+      }
+    } catch (err: any) {
+      setWhyYouTwoError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setWhyYouTwoLoading(false);
+    }
+  };
+
+  // Close modal on Escape key press
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && whyYouTwoModalOpen) {
+        setWhyYouTwoModalOpen(false);
+      }
+    };
+    if (whyYouTwoModalOpen) {
+      window.addEventListener('keydown', handleEscape);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [whyYouTwoModalOpen]);
 
   // Restore swiping position from sessionStorage or default to 0
   const [currentIndex, setCurrentIndex] = useState(() => {
@@ -419,10 +506,6 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
           e.preventDefault();
           setIsFlipped((prev) => !prev);
           break;
-        case 'Escape':
-          e.preventDefault();
-          setIsFlipped(false);
-          break;
       }
     };
 
@@ -590,11 +673,149 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
               transition={{ rotateY: { duration: 0.4, ease: 'easeInOut' } }}
               className="absolute flex h-[600px] w-[420px] cursor-grab flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 active:cursor-grabbing focus:outline-none [transform-style:preserve-3d]"
             >
-              <RenderCardFace card={currentCard} />
+              <RenderCardFace card={currentCard} onWhyYouTwo={handleWhyYouTwo} />
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+
+      {/* Why You Two Modal Portaled to Body */}
+      {mounted &&
+        whyYouTwoModalOpen &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+            onClick={() => setWhyYouTwoModalOpen(false)}
+          >
+            <div
+              className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 text-slate-900 dark:text-slate-100 shadow-2xl max-h-[85vh] overflow-y-auto space-y-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-2">
+                  <Lightbulb className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  <h3 className="text-lg font-extrabold font-heading">
+                    Why You Two?
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setWhyYouTwoModalOpen(false)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  aria-label="Close modal"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Loading State */}
+              {whyYouTwoLoading && (
+                <div className="py-12 flex flex-col items-center justify-center space-y-3">
+                  <RefreshCw className="w-7 h-7 text-purple-600 dark:text-purple-400 animate-spin" />
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                    Analyzing shared interests & possibilities...
+                  </p>
+                </div>
+              )}
+
+              {/* Amber Error Card with Retry Button */}
+              {!whyYouTwoLoading && whyYouTwoError && (
+                <div className="p-3.5 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/40 rounded-2xl flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <RefreshCw className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <span>{typeof whyYouTwoError === 'string' ? whyYouTwoError : "Couldn't generate comparison right now."}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => whyYouTwoCard && handleWhyYouTwo(whyYouTwoCard)}
+                    className="flex items-center gap-1 px-2.5 py-1 bg-amber-100 dark:bg-amber-900/50 hover:bg-amber-200 dark:hover:bg-amber-800/60 text-amber-900 dark:text-amber-100 rounded-lg font-bold transition-colors cursor-pointer shrink-0 ml-2"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              {/* Structured Result Sections */}
+              {!whyYouTwoLoading && !whyYouTwoError && whyYouTwoResult && (
+                <div className="space-y-4">
+                  {whyYouTwoResult.thinData && (
+                    <div className="px-3 py-2 bg-slate-100 dark:bg-slate-800/60 rounded-xl text-xs text-slate-500 dark:text-slate-400 italic">
+                      Profile information is limited, but here are the best insights available from the profile data:
+                    </div>
+                  )}
+
+                  {/* Section 1: Shared Interests */}
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                      1. Shared Interests
+                    </h4>
+                    {whyYouTwoResult.sharedInterests && whyYouTwoResult.sharedInterests.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {whyYouTwoResult.sharedInterests.map((interest: string, idx: number) => (
+                          <span
+                            key={idx}
+                            className="px-3 py-1 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/40 rounded-full text-xs font-bold"
+                          >
+                            {interest}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+                        No direct interest overlap found between profiles.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Section 2: Complementary Interests */}
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                      2. Complementary Interests
+                    </h4>
+                    {whyYouTwoResult.complementaryInterests && whyYouTwoResult.complementaryInterests.length > 0 ? (
+                      <div className="space-y-2">
+                        {whyYouTwoResult.complementaryInterests.map((item: any, idx: number) => (
+                          <div
+                            key={idx}
+                            className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1"
+                          >
+                            <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
+                              <span>{item.mine}</span>
+                              <span className="text-purple-500 font-extrabold">↔</span>
+                              <span>{item.theirs}</span>
+                            </div>
+                            {item.why && (
+                              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                                {item.why}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+                        No complementary pairings found.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Section 3: Connection Idea */}
+                  <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                      3. Connection Idea
+                    </h4>
+                    <div className="p-3.5 bg-purple-500/10 border border-purple-500/20 rounded-xl text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200 leading-relaxed">
+                      {whyYouTwoResult.connectionIdea || 'No connection idea available.'}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

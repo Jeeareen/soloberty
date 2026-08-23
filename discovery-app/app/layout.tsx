@@ -41,7 +41,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] text-[#0F172A] dark:text-slate-100 font-sans antialiased max-w-full w-full overflow-x-hidden transition-colors duration-200">
+      <body suppressHydrationWarning className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] text-[#0F172A] dark:text-slate-100 font-sans antialiased max-w-full w-full overflow-x-hidden transition-colors duration-200">
         <AuthProvider>
           <Navbar />
           <main className="w-full max-w-full overflow-x-hidden">{children}</main>

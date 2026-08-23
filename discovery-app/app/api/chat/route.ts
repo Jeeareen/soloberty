@@ -1,5 +1,5 @@
 import { streamText, tool } from 'ai';
-import { google } from '@ai-sdk/google';
+import { google, createGoogleGenerativeAI } from '@ai-sdk/google';
 import { suggestIcebreakersSchema, executeSuggestIcebreakers } from '../../../lib/tools/suggestIcebreakers';
 
 export const maxDuration = 30;
@@ -59,9 +59,8 @@ export async function POST(req: Request) {
     });
 
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
-    const modelInstance = apiKey
-      ? google('gemini-3.5-flash-lite', { apiKey })
-      : google('gemini-3.5-flash-lite');
+    const googleProvider = apiKey ? createGoogleGenerativeAI({ apiKey }) : google;
+    const modelInstance = googleProvider('gemini-3.5-flash-lite');
 
     try {
       const result = streamText({
@@ -76,9 +75,9 @@ export async function POST(req: Request) {
               'Generates 3 warm, personal icebreaker questions based on a user profile (name, bio, interests). MUST extract and pass the name, bio, and interests parameters accurately from the user message.',
             parameters: suggestIcebreakersSchema,
             execute: executeSuggestIcebreakers,
-          }),
+          } as any),
         },
-      });
+      } as any);
 
       const getErrorMessage = (error: unknown) => {
         const message = error instanceof Error ? error.message : String(error || '');
