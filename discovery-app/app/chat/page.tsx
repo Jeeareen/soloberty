@@ -3,8 +3,8 @@
 import React, { useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useChat } from '@ai-sdk/react';
-import { motion } from 'motion/react';
-import { Send, ArrowLeft, Sparkles, AlertTriangle, RefreshCw, MessageSquare } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Send, ArrowLeft, Sparkles, AlertTriangle, RefreshCw, MessageSquare, X } from 'lucide-react';
 import Link from 'next/link';
 import { collection, addDoc, query, orderBy, getDocs, limit, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../../lib/firebase/config';
@@ -191,23 +191,26 @@ function ChatList() {
             { uid: 'mock_2', name: 'Test Zero Seven', age: 27, bio: 'Gamer, photographer & digital artist', interests: ['gaming', 'photography', 'art'] },
           ];
 
-        const updated = await Promise.all(
-          baseList.map(async (p, idx) => {
-            const uid = p.uid || `user_${idx}`;
-            const key = `chat_${uid}`;
-            let lastMessageText = p.bio ? `Hey! Saw you like ${p.interests?.[0] || 'exploring'}!` : 'Start a conversation...';
-            let lastTimestamp: number = 0;
+        const updated = (
+          await Promise.all(
+            baseList.map(async (p, idx) => {
+              const uid = p.uid || `user_${idx}`;
+              const key = `chat_${uid}`;
 
-            try {
-              const msgRef = collection(db, 'chats', key, 'messages');
-              const q = query(msgRef, orderBy('createdAt', 'desc'), limit(1));
-              const snap = await getDocs(q);
+              try {
+                const msgRef = collection(db, 'chats', key, 'messages');
+                const q = query(msgRef, orderBy('createdAt', 'desc'), limit(1));
+                const snap = await getDocs(q);
 
-              if (!snap.empty) {
-                const data = snap.docs[0].data();
-                if (data.content) {
-                  lastMessageText = data.content;
+                // Show ONLY chats that have stored messages in them
+                if (snap.empty) {
+                  return null;
                 }
+
+                const data = snap.docs[0].data();
+                const lastMessageText = data.content || '';
+                let lastTimestamp: number = 0;
+
                 if (data.createdAt?.toDate) {
                   lastTimestamp = data.createdAt.toDate().getTime();
                 } else if (data.createdAt?.seconds) {
@@ -215,47 +218,47 @@ function ChatList() {
                 } else if (data.createdAt instanceof Date) {
                   lastTimestamp = data.createdAt.getTime();
                 }
+
+                // Helper to format relative time
+                let formattedTime = 'New';
+                if (lastTimestamp > 0) {
+                  const diffMs = Date.now() - lastTimestamp;
+                  const diffSec = Math.floor(diffMs / 1000);
+                  const diffMin = Math.floor(diffSec / 60);
+                  const diffHour = Math.floor(diffMin / 60);
+                  const diffDay = Math.floor(diffHour / 24);
+
+                  if (diffSec < 45) {
+                    formattedTime = 'Just now';
+                  } else if (diffMin < 60) {
+                    formattedTime = `${Math.max(1, diffMin)}m ago`;
+                  } else if (diffHour < 24) {
+                    formattedTime = `${diffHour}h ago`;
+                  } else {
+                    formattedTime = `${diffDay}d ago`;
+                  }
+                }
+
+                return {
+                  uid: uid,
+                  name: p.name || 'Anonymous',
+                  age: p.age || 25,
+                  bio: p.bio || '',
+                  interests: p.interests || [],
+                  lastMessage: lastMessageText,
+                  lastTimestamp: lastTimestamp,
+                  time: formattedTime,
+                  avatarColor: idx % 2 === 0 ? 'bg-[#B8E7FF] text-[#00AAFF]' : 'bg-emerald-100 text-emerald-600',
+                };
+              } catch (e) {
+                return null;
               }
-            } catch (e) {
-              // ignore per-chat fetch error fallback
-            }
-
-            // Helper to format relative time
-            let formattedTime = 'New';
-            if (lastTimestamp > 0) {
-              const diffMs = Date.now() - lastTimestamp;
-              const diffSec = Math.floor(diffMs / 1000);
-              const diffMin = Math.floor(diffSec / 60);
-              const diffHour = Math.floor(diffMin / 60);
-              const diffDay = Math.floor(diffHour / 24);
-
-              if (diffSec < 45) {
-                formattedTime = 'Just now';
-              } else if (diffMin < 60) {
-                formattedTime = `${Math.max(1, diffMin)}m ago`;
-              } else if (diffHour < 24) {
-                formattedTime = `${diffHour}h ago`;
-              } else {
-                formattedTime = `${diffDay}d ago`;
-              }
-            }
-
-            return {
-              uid: uid,
-              name: p.name || 'Anonymous',
-              age: p.age || 25,
-              bio: p.bio || '',
-              interests: p.interests || [],
-              lastMessage: lastMessageText,
-              lastTimestamp: lastTimestamp,
-              time: formattedTime,
-              avatarColor: idx % 2 === 0 ? 'bg-[#B8E7FF] text-[#00AAFF]' : 'bg-emerald-100 text-emerald-600',
-            };
-          })
-        );
+            })
+          )
+        ).filter(Boolean);
 
         // Sort chat items in descending order (most recently active chat first)
-        updated.sort((a, b) => b.lastTimestamp - a.lastTimestamp);
+        updated.sort((a: any, b: any) => b.lastTimestamp - a.lastTimestamp);
 
         if (isMounted) {
           setChatItems(updated);
@@ -295,14 +298,7 @@ function ChatList() {
         }
       }
 
-      setChatItems((prev) =>
-        prev.map((item) => ({
-          ...item,
-          lastMessage: 'Start a conversation...',
-          lastTimestamp: 0,
-          time: 'New',
-        }))
-      );
+      setChatItems([]);
       alert('All chat history cleared successfully!');
     } catch (e) {
       console.error('Error clearing chat history:', e);
@@ -318,7 +314,7 @@ function ChatList() {
       <header className="flex items-center justify-between px-5 py-4 bg-white dark:bg-[#0F172A] border-b border-slate-200 dark:border-slate-800 shrink-0">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900 dark:text-white">Messages</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Your conversations & AI icebreakers</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Your active conversations</p>
         </div>
         <button
           type="button"
@@ -334,6 +330,18 @@ function ChatList() {
         {loading || loadingChats ? (
           <div className="flex justify-center items-center h-48">
             <div className="w-8 h-8 border-4 border-[#00AAFF] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : chatItems.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 text-center px-4 space-y-3">
+            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center">
+              <MessageSquare className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">No active conversations yet</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs">
+                Start chatting with your matches from the Feed or Discover page to see them here!
+              </p>
+            </div>
           </div>
         ) : (
           chatItems.map((chatItem, idx) => (
@@ -471,6 +479,8 @@ function IndividualChat({
           loaded.push({
             id: docSnap.id,
             role: data.role || 'user',
+            senderUid: data.senderUid || '',
+            targetUid: data.targetUid || '',
             content: data.content || '',
             toolInvocations: data.toolInvocations || [],
             createdAt: data.createdAt,
@@ -697,6 +707,8 @@ function IndividualChat({
     const textToSend = input?.trim();
     if (!textToSend) return;
 
+    const currentUid = auth.currentUser?.uid || 'guest';
+
     // Save user message to Firestore persistent storage
     saveMessageToDb(textToSend, 'user');
 
@@ -706,6 +718,7 @@ function IndividualChat({
       {
         id: `local-${Date.now()}_${Math.random().toString(36).substring(2, 5)}`,
         role: 'user',
+        senderUid: currentUid,
         content: textToSend,
         createdAt: new Date(),
       },
@@ -717,26 +730,119 @@ function IndividualChat({
 
   const hasToolResults = rawMessages.some((m: any) => getToolInvocations(m).length > 0);
 
+  const [showProfileModal, setShowProfileModal] = React.useState(false);
+  const profileDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  // Close profile dropdown menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+        setShowProfileModal(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
     <div className="flex flex-col h-[calc(100vh-56px)] sm:h-[calc(100vh-64px)] w-full max-w-4xl mx-auto bg-slate-50 dark:bg-[#090D16] border-x border-slate-200 dark:border-slate-800">
       {/* Top Navigation Header */}
-      <header className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-[#0F172A] border-b border-slate-200 dark:border-slate-800 shrink-0">
+      <header className="relative flex items-center gap-3 px-4 py-3 bg-white dark:bg-[#0F172A] border-b border-slate-200 dark:border-slate-800 shrink-0 z-30">
         <Link
           href={backTargetHref}
           className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <div className="w-10 h-10 rounded-full bg-[#B8E7FF] dark:bg-slate-800 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center font-bold text-sm shrink-0">
-          {name.charAt(0)}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-base font-bold text-slate-900 dark:text-white truncate">
-            {name}{age ? `, ${age}` : ''}
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-            {interests.length > 0 ? interests.join(' • ') : 'Soloberty Member'}
-          </p>
+
+        {/* Clickable Target User Name/Bio Info Area (With dropdown container) */}
+        <div ref={profileDropdownRef} className="relative flex-1 min-w-0">
+          <div
+            onClick={() => setShowProfileModal((prev) => !prev)}
+            className="flex items-center gap-3 w-full cursor-pointer group hover:opacity-90 transition-all"
+          >
+            <div className="w-10 h-10 rounded-full bg-[#B8E7FF] dark:bg-slate-800 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center font-bold text-sm shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+              {name.charAt(0)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-base font-bold text-slate-900 dark:text-white truncate group-hover:text-[#00AAFF] dark:group-hover:text-[#B8E7FF] transition-colors">
+                {name}{age ? `, ${age}` : ''}
+              </h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                {interests.length > 0 ? interests.join(' • ') : 'Click to view profile'}
+              </p>
+            </div>
+          </div>
+
+          {/* Profile Dropdown Menu extending DOWN & RIGHT from user header */}
+          <AnimatePresence>
+            {showProfileModal && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.85, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.85, y: -10 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 450,
+                  damping: 28,
+                }}
+                style={{ transformOrigin: 'top left' }}
+                className="absolute top-full left-0 mt-3 w-72 sm:w-80 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-5 z-50 text-slate-900 dark:text-white space-y-3.5 overflow-hidden"
+              >
+                {/* User Avatar & Name */}
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-full bg-[#B8E7FF] dark:bg-slate-800 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center font-extrabold text-xl shrink-0 shadow-md border-2 border-white dark:border-slate-700">
+                    {name.charAt(0)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-base font-extrabold font-heading text-slate-900 dark:text-white truncate">
+                      {name}{age ? `, ${age}` : ''}
+                    </h2>
+                    <p className="text-[11px] font-semibold text-[#00AAFF] dark:text-[#B8E7FF] tracking-wide uppercase">
+                      Soloberty Member
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowProfileModal(false)}
+                    className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                    aria-label="Close profile menu"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Bio Section */}
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 rounded-2xl space-y-1">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                    About
+                  </span>
+                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
+                    {bio || `Exploring new connections and great vibes on Soloberty!`}
+                  </p>
+                </div>
+
+                {/* Interests Section */}
+                {interests.length > 0 && (
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                      Interests
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {interests.map((interest, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2.5 py-0.5 bg-[#B8E7FF]/30 dark:bg-slate-800 text-[#0088CC] dark:text-[#B8E7FF] border border-[#00AAFF]/20 dark:border-slate-700 rounded-xl text-[11px] font-bold"
+                        >
+                          #{interest}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </header>
 
@@ -795,19 +901,27 @@ function IndividualChat({
               !getMessageText(m).startsWith('Suggest icebreaker questions for')
           );
 
+          // Determine if message was sent by the current user or by the other user (match)
+          const currentUid = auth.currentUser?.uid;
+          const isOtherUser = message.senderUid
+            ? message.senderUid !== currentUid
+            : (message.role === 'assistant' || message.role === 'other');
+          const isOwnMessage = !isOtherUser;
+
           // If prompt message, do NOT render text bubble, but DO render toolInvocations!
           return (
             <div
               key={message.id || messageIdx}
-              className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}
+              className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}
             >
               {/* Message text bubble (never render prompt text) */}
               {textContent && !isPromptMessage ? (
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${message.role === 'user'
-                    ? 'bg-[#00AAFF] text-white rounded-br-none'
-                    : 'bg-white dark:bg-[#0F172A] text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 rounded-bl-none shadow-sm'
-                    }`}
+                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
+                    isOwnMessage
+                      ? 'bg-white dark:bg-[#0F172A] text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 rounded-br-none'
+                      : 'bg-[#00AAFF] dark:bg-[#B8E7FF] text-white dark:text-slate-900 rounded-bl-none'
+                  }`}
                 >
                   {textContent}
                 </div>

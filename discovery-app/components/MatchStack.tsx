@@ -14,7 +14,7 @@ import {
 } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
-import { MapPin, MessageSquare, User, Lightbulb, X, RefreshCw, LogIn } from 'lucide-react';
+import { MapPin, MessageSquare, User, Lightbulb, X, RefreshCw, LogIn, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { MatchCard, MatchStackProps } from '../types/matching';
 import { PREDEFINED_INTERESTS } from '../types/user';
 import { useProfiles } from '../hooks/useProfiles';
@@ -470,45 +470,60 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
     }
   }, [currentIndex, isFinished, cards.length, controls]);
 
+  const isAnimatingRef = useRef<boolean>(false);
+
   const handleSwipeLeft = async () => {
-    setIsHeld(false);
-    centerScaleTarget.set(1.0);
-    centerScaleSpring.jump(1.0);
+    if (isAnimatingRef.current) return;
+    isAnimatingRef.current = true;
 
-    const isTest = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
-    const duration = shouldReduceMotion || isTest ? 0 : 0.22;
+    try {
+      setIsHeld(false);
+      centerScaleTarget.set(1.0);
+      centerScaleSpring.jump(1.0);
 
-    if (duration > 0) {
-      await animate(x, -320, { duration, ease: 'easeOut' });
+      const isTest = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+      const duration = shouldReduceMotion || isTest ? 0 : 0.2;
+
+      if (duration > 0) {
+        await animate(x, -320, { duration, ease: 'easeOut' });
+      }
+
+      x.set(0);
+      setUndoCount((prev) => Math.min(prev + 1, 2));
+      setIsFlipped(false);
+      setCurrentIndex((prev) => prev + 1);
+    } finally {
+      isAnimatingRef.current = false;
     }
-
-    x.set(0);
-    setUndoCount((prev) => Math.min(prev + 1, 2));
-    setIsFlipped(false);
-    setCurrentIndex((prev) => prev + 1);
   };
 
   const handleSwipeRightUndo = async () => {
+    if (isAnimatingRef.current) return;
     if (undoCount <= 0 || currentIndex <= 0) {
       animate(x, 0, { type: 'spring', stiffness: 300, damping: 25 });
       return;
     }
+    isAnimatingRef.current = true;
 
-    setIsHeld(false);
-    centerScaleTarget.set(1.0);
-    centerScaleSpring.jump(1.0);
+    try {
+      setIsHeld(false);
+      centerScaleTarget.set(1.0);
+      centerScaleSpring.jump(1.0);
 
-    const isTest = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
-    const duration = shouldReduceMotion || isTest ? 0 : 0.22;
+      const isTest = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+      const duration = shouldReduceMotion || isTest ? 0 : 0.2;
 
-    if (duration > 0) {
-      await animate(x, 320, { duration, ease: 'easeOut' });
+      if (duration > 0) {
+        await animate(x, 320, { duration, ease: 'easeOut' });
+      }
+
+      x.set(0);
+      setUndoCount((prev) => Math.max(prev - 1, 0));
+      setIsFlipped(false);
+      setCurrentIndex((prev) => prev - 1);
+    } finally {
+      isAnimatingRef.current = false;
     }
-
-    x.set(0);
-    setUndoCount((prev) => Math.max(prev - 1, 0));
-    setIsFlipped(false);
-    setCurrentIndex((prev) => prev - 1);
   };
 
   // Global window keyboard navigation
@@ -516,15 +531,16 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
     const handleGlobalKeyDown = (e: globalThis.KeyboardEvent) => {
       const targetTag = (e.target as HTMLElement)?.tagName;
       if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT') return;
+      if (e.repeat) return;
 
       switch (e.key) {
         case 'ArrowLeft':
           e.preventDefault();
-          handleSwipeLeft();
+          handleSwipeRightUndo();
           break;
         case 'ArrowRight':
           e.preventDefault();
-          handleSwipeRightUndo();
+          handleSwipeLeft();
           break;
         case 'Enter':
         case ' ':
@@ -622,6 +638,26 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
 
       {/* Stack Container */}
       <div className="relative h-full w-full flex items-center justify-center">
+        {/* Floating Navigation Controls (< and >) with 50px gap from middle card on desktop, hidden on mobile */}
+        <button
+          type="button"
+          onClick={handleSwipeRightUndo}
+          disabled={undoCount <= 0 || currentIndex <= 0}
+          aria-label="Previous profile"
+          className="hidden md:flex absolute left-[calc(50%-284px)] top-1/2 -translate-y-1/2 z-40 w-12 h-12 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700/80 text-slate-800 dark:text-slate-100 shadow-xl items-center justify-center hover:bg-white dark:hover:bg-slate-800 active:scale-95 transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+        >
+          <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
+        </button>
+
+        <button
+          type="button"
+          onClick={handleSwipeLeft}
+          aria-label="Next profile"
+          className="hidden md:flex absolute right-[calc(50%-284px)] top-1/2 -translate-y-1/2 z-40 w-12 h-12 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700/80 text-slate-800 dark:text-slate-100 shadow-xl items-center justify-center hover:bg-white dark:hover:bg-slate-800 active:scale-95 transition-all cursor-pointer"
+        >
+          <ChevronRight className="w-6 h-6 stroke-[2.5]" />
+        </button>
+
         <AnimatePresence>
           {/* Prev-Prev Card (Far Left, -640px) */}
           {currentIndex > 1 && undoCount >= 2 && cards[currentIndex - 2] && (

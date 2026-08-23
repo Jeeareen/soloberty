@@ -237,18 +237,12 @@ export const SignupWizard: React.FC = () => {
     ];
 
     try {
-      const promptText = `Write a single creative, warm, authentic first-person bio (between 60 and 260 characters, no quotes, no title, no meta commentary) for ${formData.name || 'a member'} who loves ${selectedInterestNames}. DO NOT start the bio with their age or a number (e.g. NEVER start with "${formData.age || 22}," or "${formData.age || 22}-year-old"). Start naturally with an introduction or hook. Incorporate their interests (${selectedInterestNames}).`;
-
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/bio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [
-            {
-              role: 'user',
-              content: promptText,
-            },
-          ],
+          name: formData.name || 'a member',
+          interests: selectedInterestNames,
         }),
       });
 
@@ -256,48 +250,8 @@ export const SignupWizard: React.FC = () => {
         throw new Error('Failed to generate bio with Scout');
       }
 
-      const rawText = await response.text();
-      let generatedBio = '';
-
-      // Parse SSE stream lines (data: {"type":"text-delta","delta":"..."}) and legacy formats
-      const lines = rawText.split('\n');
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith('data: ')) {
-          try {
-            const json = JSON.parse(trimmed.slice(6));
-            if (json.type === 'text-delta' && typeof json.delta === 'string') {
-              generatedBio += json.delta;
-            }
-          } catch {
-            // Ignore non-JSON lines
-          }
-        } else if (/^\d+:/.test(trimmed)) {
-          try {
-            const parsed = JSON.parse(trimmed.replace(/^\d+:/, ''));
-            if (typeof parsed === 'string') {
-              generatedBio += parsed;
-            }
-          } catch {
-            generatedBio += trimmed.replace(/^\d+:"?/, '').replace(/"$/, '');
-          }
-        }
-      }
-
-      if (!generatedBio.trim()) {
-        generatedBio = rawText
-          .replace(/^data:\s*/gm, '')
-          .replace(/\\n/g, ' ')
-          .trim();
-      }
-
-      const cleanedText = generatedBio
-        .replace(/\\n/g, ' ')
-        .replace(/^"|"$/g, '')
-        .replace(/^\d+\s*,\s*/, '') // Strip leading age/number prefix like "22, "
-        .replace(/^\d+\s*-?\s*year\s*-?\s*old\s*,?\s*/i, '') // Strip leading "22-year-old, "
-        .trim()
-        .slice(0, 300);
+      const data = await response.json();
+      const cleanedText = (data.bio || '').trim().slice(0, 300);
 
       if (cleanedText.length >= 30) {
         setFormData((prev) => ({ ...prev, bio: cleanedText }));

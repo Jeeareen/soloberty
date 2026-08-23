@@ -41,11 +41,11 @@ describe('MatchStack Component', () => {
     expect(screen.queryByText('Eve')).not.toBeInTheDocument();
   });
 
-  it('2. Left swipe rejects current card and advances to next card', async () => {
+  it('2. Right swipe rejects current card and advances to next card', async () => {
     render(<MatchStack cards={mockCards} />);
 
     const activeCard = screen.getByRole('button', { name: /Alice/i });
-    fireEvent.keyDown(activeCard, { key: 'ArrowLeft' });
+    fireEvent.keyDown(activeCard, { key: 'ArrowRight' });
 
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: /Alice/i })).not.toBeInTheDocument();
@@ -53,15 +53,15 @@ describe('MatchStack Component', () => {
     });
   });
 
-  it('3. Right swipe acts as Undo after a left swipe, restoring previous card', async () => {
+  it('3. Left swipe acts as Undo after a right swipe, restoring previous card', async () => {
     render(<MatchStack cards={mockCards} />);
 
-    // Left swipe on Alice -> advances to Bob
-    fireEvent.keyDown(screen.getByRole('button', { name: /Alice/i }), { key: 'ArrowLeft' });
+    // Right swipe on Alice -> advances to Bob
+    fireEvent.keyDown(screen.getByRole('button', { name: /Alice/i }), { key: 'ArrowRight' });
     const bobCard = await screen.findByRole('button', { name: /Bob/i });
 
-    // Right swipe on Bob -> Undo back to Alice
-    fireEvent.keyDown(bobCard, { key: 'ArrowRight' });
+    // Left swipe on Bob -> Undo back to Alice
+    fireEvent.keyDown(bobCard, { key: 'ArrowLeft' });
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Alice/i })).toBeInTheDocument();
@@ -69,26 +69,26 @@ describe('MatchStack Component', () => {
     });
   });
 
-  it('4. Swiping left multiple times allows exactly ONE right swipe undo (restoring 1 card), not multiple consecutive undos', async () => {
+  it('4. Swiping right multiple times allows right swipe undo (restoring 1 card)', async () => {
     render(<MatchStack cards={mockCards} />);
 
-    // Swipe left 4 times: Alice -> Bob -> Charlie -> Diana -> Eve
+    // Swipe right 4 times: Alice -> Bob -> Charlie -> Diana -> Eve
     for (const cardName of ['Alice', 'Bob', 'Charlie', 'Diana']) {
       const activeCard = await screen.findByRole('button', { name: new RegExp(cardName, 'i') });
-      fireEvent.keyDown(activeCard, { key: 'ArrowLeft' });
+      fireEvent.keyDown(activeCard, { key: 'ArrowRight' });
     }
 
     // Now on Eve (card #5)
     const eveCard = await screen.findByRole('button', { name: /Eve/i });
     expect(eveCard).toBeInTheDocument();
 
-    // 1st Right swipe (Undo): goes back to Diana (card #4)
-    fireEvent.keyDown(eveCard, { key: 'ArrowRight' });
+    // 1st Left swipe (Undo): goes back to Diana (card #4)
+    fireEvent.keyDown(eveCard, { key: 'ArrowLeft' });
     const dianaCard = await screen.findByRole('button', { name: /Diana/i });
     expect(dianaCard).toBeInTheDocument();
 
-    // 2nd Right swipe attempt: MUST BE BLOCKED! Stays on Diana (card #4)
-    fireEvent.keyDown(dianaCard, { key: 'ArrowRight' });
+    // 2nd Left swipe attempt: MUST BE BLOCKED! Stays on Diana (card #4)
+    fireEvent.keyDown(dianaCard, { key: 'ArrowLeft' });
     expect(screen.getByRole('button', { name: /Diana/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Charlie/i })).not.toBeInTheDocument();
   });
@@ -107,7 +107,7 @@ describe('MatchStack Component', () => {
   it('6. Reaching end of cards displays empty status state', async () => {
     render(<MatchStack cards={[mockCards[0]]} />); // Only 1 card
 
-    fireEvent.keyDown(screen.getByRole('button', { name: /Alice/i }), { key: 'ArrowLeft' });
+    fireEvent.keyDown(screen.getByRole('button', { name: /Alice/i }), { key: 'ArrowRight' });
 
     expect(await screen.findByRole('status')).toHaveTextContent(/No more profiles/i);
   });
