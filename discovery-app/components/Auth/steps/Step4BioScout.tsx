@@ -50,15 +50,17 @@ export const Step4BioScout: React.FC<Step4BioScoutProps> = ({
       {renderErrorAlert()}
 
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-2">
           <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Your Bio (30 - 300 characters)
           </label>
-          <ScoutBioButton
-            onClick={handleGenerateBio}
-            disabled={generatingBio}
-            overrideState={generatingBio ? 'loading' : null}
-          />
+          <div className="self-start sm:self-auto">
+            <ScoutBioButton
+              onClick={handleGenerateBio}
+              disabled={generatingBio}
+              overrideState={generatingBio ? 'loading' : null}
+            />
+          </div>
         </div>
 
         <div className="relative">
