@@ -14,7 +14,7 @@ import { Sparkles, AlertCircle, LogIn } from 'lucide-react';
 import { Step1Credentials } from './steps/Step1Credentials';
 import { Step2BasicInfo } from './steps/Step2BasicInfo';
 import { Step3Interests } from './steps/Step3Interests';
-import { Step4BioScout } from './steps/Step4BioScout';
+import { Step4BioScout, getBioCharCount } from './steps/Step4BioScout';
 import { Step5Location } from './steps/Step5Location';
 import { Step6PhotoUpload } from './steps/Step6PhotoUpload';
 import { Step7InterestPhotos } from './steps/Step7InterestPhotos';
@@ -228,14 +228,6 @@ export const SignupWizard: React.FC = () => {
       .map((i) => i.name)
       .join(', ');
 
-    const fallbackBios = [
-      `Hey, I'm ${formData.name || 'Alex'}! I'm really passionate about ${selectedInterestNames || 'exploring new things'}. Always excited to meet new people and share great experiences on Soloberty!`,
-      `Passionate about ${selectedInterestNames || 'great vibes'}. Looking to connect with awesome people who share the same energy and love for good conversations!`,
-      `Living life to the fullest with a deep love for ${selectedInterestNames || 'adventures'}. Excited to meet friendly faces and build genuine connections here on Soloberty.`,
-      `Hi there! Big fan of ${selectedInterestNames || 'good vibes'}. Let's connect, share awesome stories, and explore new hobbies together!`,
-      `Exploring the world through ${selectedInterestNames || 'fun activities'}. Can't wait to meet people who bring great energy and positive vibes!`,
-    ];
-
     try {
       const response = await fetch('/api/bio', {
         method: 'POST',
@@ -256,25 +248,23 @@ export const SignupWizard: React.FC = () => {
       if (cleanedText.length >= 30) {
         setFormData((prev) => ({ ...prev, bio: cleanedText }));
       } else {
-        const randomFallback = fallbackBios[Math.floor(Math.random() * fallbackBios.length)];
-        setFormData((prev) => ({ ...prev, bio: randomFallback }));
+        throw new Error('Generated bio was too short');
       }
     } catch (err: any) {
-      console.warn('Bio auto-generation fallback:', err);
-      const randomFallback = fallbackBios[Math.floor(Math.random() * fallbackBios.length)];
-      setFormData((prev) => ({ ...prev, bio: randomFallback }));
+      console.error('[Scout Bio Generation Error]:', err);
+      throw err; // Propagate to ScoutBioButton so only the button displays the error micro-interaction
     } finally {
       setGeneratingBio(false);
     }
   };
 
   const handleStep4Next = () => {
-    const bioTrimmed = formData.bio.trim();
-    if (!bioTrimmed || bioTrimmed.length < 30) {
-      setError('Bio must be at least 30 characters long.');
+    const charCount = getBioCharCount(formData.bio);
+    if (charCount < 30) {
+      setError('Bio must be at least 30 characters long (excluding spaces).');
       return;
     }
-    if (bioTrimmed.length > 300) {
+    if (charCount > 300) {
       setError('Bio must be at most 300 characters long.');
       return;
     }

@@ -4,6 +4,8 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Sparkles, Loader2, ArrowRight, ArrowLeft } from 'lucide-react';
 
+import { ScoutBioButton } from '../ScoutBioButton';
+
 interface Step4BioScoutProps {
   bio: string;
   setBio: (bio: string) => void;
@@ -14,6 +16,11 @@ interface Step4BioScoutProps {
   setStep: (step: number) => void;
 }
 
+/** Counts characters excluding all whitespace (spaces, tabs, newlines) */
+export const getBioCharCount = (text: string): number => {
+  return (text || '').replace(/\s+/g, '').length;
+};
+
 export const Step4BioScout: React.FC<Step4BioScoutProps> = ({
   bio,
   setBio,
@@ -23,7 +30,7 @@ export const Step4BioScout: React.FC<Step4BioScoutProps> = ({
   renderErrorAlert,
   setStep,
 }) => {
-  const bioTrimmedLength = bio.trim().length;
+  const bioCharCount = getBioCharCount(bio);
 
   return (
     <motion.div
@@ -47,31 +54,17 @@ export const Step4BioScout: React.FC<Step4BioScoutProps> = ({
           <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Your Bio (30 - 300 characters)
           </label>
-          <button
-            type="button"
+          <ScoutBioButton
             onClick={handleGenerateBio}
             disabled={generatingBio}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 text-xs font-extrabold rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
-          >
-            {generatingBio ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Scout is drafting...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-3.5 h-3.5 text-amber-200 dark:text-amber-500 animate-pulse" />
-                Auto-generate with Scout
-              </>
-            )}
-          </button>
+            overrideState={generatingBio ? 'loading' : null}
+          />
         </div>
 
         <div className="relative">
           <textarea
             rows={5}
-            minLength={30}
-            maxLength={300}
+            maxLength={400}
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             placeholder="Share a little bit about what you love, your vibe, or what kind of connections you're hoping to make..."
@@ -79,12 +72,12 @@ export const Step4BioScout: React.FC<Step4BioScoutProps> = ({
           />
           <div
             className={`absolute bottom-3 right-3 text-[11px] font-semibold px-2 py-0.5 rounded-full border pointer-events-none backdrop-blur-sm ${
-              bioTrimmedLength >= 30 && bioTrimmedLength <= 300
+              bioCharCount >= 30 && bioCharCount <= 300
                 ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50/90 dark:bg-emerald-950/80 border-emerald-200 dark:border-emerald-800'
                 : 'text-slate-500 dark:text-slate-400 bg-white/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700'
             }`}
           >
-            {bio.length} / 300 (min 30)
+            {bioCharCount} / 300 (min 30)
           </div>
         </div>
       </div>

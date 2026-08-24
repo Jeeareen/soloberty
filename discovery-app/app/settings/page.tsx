@@ -125,6 +125,29 @@ export default function SettingsPage() {
               </div>
               <ChevronRight className="w-4 h-4 text-slate-400" />
             </div>
+
+            <Link
+              href="/demo/motion-button"
+              className="py-3 flex items-center justify-between hover:bg-sky-50/80 px-2 rounded-xl transition-colors cursor-pointer group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-sky-100 text-[#00AAFF] rounded-xl group-hover:scale-105 transition-transform">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                    FE-AA1: Motion & State Lab
+                    <span className="text-[10px] font-bold px-2 py-0.5 bg-[#00AAFF]/10 text-[#00AAFF] rounded-full border border-[#00AAFF]/20">
+                      Assignment Demo
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    Interactive triggers for 5 button states & reduced motion
+                  </div>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-[#00AAFF] group-hover:translate-x-0.5 transition-transform" />
+            </Link>
           </div>
         </div>
 

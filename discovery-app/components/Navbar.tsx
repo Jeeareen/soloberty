@@ -354,6 +354,31 @@ export const Navbar: React.FC = () => {
                       <span className="text-xs text-slate-400 font-bold">→</span>
                     </Link>
 
+                    {/* FE-AA1 Assignment Lab Option */}
+                    <Link
+                      href="/demo/motion-button"
+                      onClick={() => setMenuOpen(false)}
+                      className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 bg-yellow-100 dark:bg-yellow-950/50 text-yellow-500 dark:text-yellow-400 rounded-xl">
+                          <Sparkles className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            Motion Lab
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 bg-slate-200/60 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md">
+                              FE-AA1
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                            5-State Micro-interactions
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-xs text-slate-400 font-bold">→</span>
+                    </Link>
+
                     {/* Change Password Option */}
                     {user && (
                       <Link
