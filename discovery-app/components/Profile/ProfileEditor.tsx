@@ -110,14 +110,15 @@ const ProfileMatchCardPreview: React.FC<{
   );
 
   return (
-    <div className="flex flex-col items-center justify-center w-full sticky top-4 sm:top-6 [perspective:1000px]">
+    <div className="flex flex-col items-center justify-center w-full sticky top-4 sm:top-6 [perspective:1000px] overflow-hidden">
       <div className="flex items-center justify-between w-full max-w-[420px] mb-3 px-1">
         <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
           Your Live MatchCard
         </span>
       </div>
+      <div className="w-full max-w-[420px] flex justify-center overflow-hidden py-1">
 
-      {/* Active Card Container (Matches feed active card geometry: w-[420px] h-[600px]) */}
+      {/* Active Card Container (Fluid responsive width on mobile, locked 2:3 aspect ratio) */}
       <motion.div
         role="button"
         tabIndex={0}
@@ -128,7 +129,7 @@ const ProfileMatchCardPreview: React.FC<{
         onPointerCancel={() => setIsHeld(false)}
         animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{ rotateY: { duration: 0.4, ease: 'easeInOut' } }}
-        className="relative flex h-[600px] w-[420px] max-w-full cursor-pointer flex-col rounded-xl bg-white dark:bg-[#0F172A] shadow-xl border border-gray-100 dark:border-slate-800 [transform-style:preserve-3d] focus:outline-none"
+        className="relative flex w-full max-w-[400px] aspect-[2/3] h-auto max-h-[75vh] cursor-pointer flex-col rounded-xl bg-white dark:bg-[#0F172A] shadow-xl border border-gray-100 dark:border-slate-800 [transform-style:preserve-3d] focus:outline-none"
       >
         {/* Inner Tap/Hold Scale Container */}
         <motion.div
@@ -206,7 +207,7 @@ const ProfileMatchCardPreview: React.FC<{
             </div>
 
             {/* Middle: Bio (1x font size, auto-wrapping without horizontal scrolling) */}
-            <div className="mt-3 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 leading-relaxed overflow-y-auto flex-1 space-y-1 pr-1">
+            <div className="mt-3 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 leading-relaxed overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex-1 space-y-1 pr-1">
               <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1">
                 Bio
               </span>
@@ -251,6 +252,7 @@ const ProfileMatchCardPreview: React.FC<{
           </div>
         </motion.div>
       </motion.div>
+      </div>
     </div>
   );
 };

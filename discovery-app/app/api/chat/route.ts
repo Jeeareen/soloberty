@@ -66,13 +66,13 @@ export async function POST(req: Request) {
       const result = streamText({
         model: modelInstance,
         system:
-          'You are Soloberty Scout. Your ONLY task when given a profile is to call the suggestIcebreakers tool. Do NOT write any conversational text messages or chat responses yourself.',
+          'You are Soloberty Scout, an enthusiastic and friendly AI discovery assistant for Soloberty. Help users find matches, explore hobbies, discuss shared interests, and give personalized recommendations. If a user asks for icebreaker questions or provides a profile to get icebreakers for, use the suggestIcebreakers tool. Otherwise, engage in natural, helpful conversation.',
         messages: formattedMessages,
         maxSteps: 5,
         tools: {
           suggestIcebreakers: tool({
             description:
-              'Generates 3 warm, personal icebreaker questions based on a user profile (name, bio, interests). MUST extract and pass the name, bio, and interests parameters accurately from the user message.',
+              'Generates 3 warm, personal icebreaker questions based on a user profile (name, bio, interests). Use this tool when the user asks for icebreaker suggestions or provides profile info for icebreakers.',
             parameters: suggestIcebreakersSchema,
             execute: executeSuggestIcebreakers,
           } as any),

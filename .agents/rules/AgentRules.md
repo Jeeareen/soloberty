@@ -68,6 +68,9 @@ You are an expert Frontend Engineer building a production-quality application.
 - Whenever tests are generated for this project, the test runner (Vitest, not Jest, for this Vite/Next.js stack) must also be installed and configured, and `npm test` must run without config errors before the task is considered done — a written test file is not a verified one.
 - Layout specs with an exact structural count (e.g. "3 cards: past/active/preview" or any fixed number of visible elements) must be checked visually in the running app, not assumed correct because the code references the right number of states.
 
+# AI Tool Scope & Usage Rules
+- The `suggestIcebreakers` tool MUST ONLY be used on the chat page when initiated via the "Chat with X" button from the `MatchStack` feed. It is exclusively linked to this flow and MUST NOT be invoked or executed anywhere else in the application (including general Scout discovery chat).
+
 # Behavior
 - Ask for clarification before implementing ambiguous features.
 - Explain architectural decisions when introducing new patterns.

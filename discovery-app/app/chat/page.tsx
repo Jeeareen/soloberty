@@ -4,7 +4,7 @@ import React, { useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useChat } from '@ai-sdk/react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, ArrowLeft, Sparkles, AlertTriangle, RefreshCw, MessageSquare, X } from 'lucide-react';
+import { Send, ArrowLeft, Sparkles, AlertTriangle, RefreshCw, MessageSquare, X, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { collection, addDoc, query, orderBy, getDocs, limit, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../../lib/firebase/config';
@@ -184,12 +184,7 @@ function ChatList() {
     async function loadLatestMessages() {
       setLoadingChats(true);
       try {
-        const baseList = profiles.length > 0
-          ? profiles
-          : [
-            { uid: 'mock_1', name: 'Test Zero Three', age: 23, bio: 'Cooking enthusiast & foodie exploring Vienna', interests: ['cooking', 'foodie', 'travel'] },
-            { uid: 'mock_2', name: 'Test Zero Seven', age: 27, bio: 'Gamer, photographer & digital artist', interests: ['gaming', 'photography', 'art'] },
-          ];
+        const baseList = profiles;
 
         const updated = (
           await Promise.all(
@@ -202,25 +197,34 @@ function ChatList() {
                 const q = query(msgRef, orderBy('createdAt', 'desc'), limit(1));
                 const snap = await getDocs(q);
 
-                // Show ONLY chats that have stored messages in them
-                if (snap.empty) {
+                const currentAuthUid = auth.currentUser?.uid || 'guest';
+                const isCleared = typeof window !== 'undefined' && localStorage.getItem(`chat_cleared_${currentAuthUid}_${uid}`) === 'true';
+
+                // Skip profile if there's no message history and it was never engaged with
+                if (snap.empty && !isCleared) {
                   return null;
                 }
 
-                const data = snap.docs[0].data();
-                const lastMessageText = data.content || '';
+                let lastMessageText = isCleared ? 'Chat cleared' : 'New conversation';
                 let lastTimestamp: number = 0;
 
-                if (data.createdAt?.toDate) {
-                  lastTimestamp = data.createdAt.toDate().getTime();
-                } else if (data.createdAt?.seconds) {
-                  lastTimestamp = data.createdAt.seconds * 1000;
-                } else if (data.createdAt instanceof Date) {
-                  lastTimestamp = data.createdAt.getTime();
+                if (!snap.empty && !isCleared) {
+                  const data = snap.docs[0].data();
+                  lastMessageText = data.content || '';
+                  if (data.createdAt?.toDate) {
+                    lastTimestamp = data.createdAt.toDate().getTime();
+                  } else if (data.createdAt?.seconds) {
+                    lastTimestamp = data.createdAt.seconds * 1000;
+                  } else if (data.createdAt instanceof Date) {
+                    lastTimestamp = data.createdAt.getTime();
+                  }
+                } else if (isCleared) {
+                  const savedTime = localStorage.getItem(`chat_cleared_time_${uid}`);
+                  if (savedTime) lastTimestamp = parseInt(savedTime, 10);
                 }
 
                 // Helper to format relative time
-                let formattedTime = 'New';
+                let formattedTime = isCleared ? 'Cleared' : 'New';
                 if (lastTimestamp > 0) {
                   const diffMs = Date.now() - lastTimestamp;
                   const diffSec = Math.floor(diffMs / 1000);
@@ -248,6 +252,7 @@ function ChatList() {
                   lastMessage: lastMessageText,
                   lastTimestamp: lastTimestamp,
                   time: formattedTime,
+                  isCleared: isCleared,
                   avatarColor: idx % 2 === 0 ? 'bg-[#B8E7FF] text-[#00AAFF]' : 'bg-emerald-100 text-emerald-600',
                 };
               } catch (e) {
@@ -281,49 +286,106 @@ function ChatList() {
     };
   }, [profiles, loading]);
 
+  const [showClearConfirmModal, setShowClearConfirmModal] = React.useState(false);
+
   // Function to delete all message history from Firestore
   const handleClearAllHistory = async () => {
-    if (!window.confirm('Are you sure you want to clear all message history for all users?')) return;
+    setShowClearConfirmModal(false);
     setLoadingChats(true);
     try {
-      const baseList = profiles.length > 0 ? profiles : [{ uid: 'mock_1' }, { uid: 'mock_2' }];
-
-      for (const p of baseList) {
-        const uid = p.uid || 'mock';
-        const key = `chat_${uid}`;
+      // Delete messages from Firestore for all active chat items
+      for (const item of chatItems) {
+        const key = `chat_${item.uid}`;
         const msgRef = collection(db, 'chats', key, 'messages');
         const snap = await getDocs(msgRef);
         for (const docSnap of snap.docs) {
           await deleteDoc(docSnap.ref);
         }
+
+        if (typeof window !== 'undefined') {
+          const currentAuthUid = auth.currentUser?.uid || 'guest';
+          localStorage.setItem(`chat_cleared_${currentAuthUid}_${item.uid}`, 'true');
+          localStorage.setItem(`chat_cleared_time_${currentAuthUid}_${item.uid}`, Date.now().toString());
+        }
       }
 
-      setChatItems([]);
-      alert('All chat history cleared successfully!');
+      // Keep all cleared chat items visible in list with "Chat cleared" indicator
+      setChatItems((prev) =>
+        prev.map((item) => ({
+          ...item,
+          isCleared: true,
+          lastMessage: 'Chat cleared',
+          time: 'Just now',
+        }))
+      );
     } catch (e) {
       console.error('Error clearing chat history:', e);
-      alert('Failed to clear some chat history.');
     } finally {
       setLoadingChats(false);
     }
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-56px)] sm:h-[calc(100vh-64px)] w-full max-w-4xl mx-auto bg-slate-50 dark:bg-[#090D16] border-x border-slate-200 dark:border-slate-800">
+    <div className="flex flex-col h-[calc(100vh-56px-60px)] md:h-[calc(100vh-64px)] w-full max-w-full bg-[#F8FAFC] dark:bg-[#090D16]">
       {/* Header */}
-      <header className="flex items-center justify-between px-5 py-4 bg-white dark:bg-[#0F172A] border-b border-slate-200 dark:border-slate-800 shrink-0">
+      <header className="h-16 flex items-center justify-between px-5 bg-white dark:bg-[#0F172A] border-b border-slate-200 dark:border-slate-800 shrink-0">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900 dark:text-white">Messages</h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">Your active conversations</p>
         </div>
         <button
           type="button"
-          onClick={handleClearAllHistory}
+          onClick={() => setShowClearConfirmModal(true)}
           className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-300 text-xs font-bold rounded-xl border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer flex items-center gap-1.5"
         >
-          <span>Clear All History</span>
+          <Trash2 className="w-3.5 h-3.5" />
+          <span>Clear All</span>
         </button>
       </header>
+
+      {/* Confirmation Modal for Clear All */}
+      <AnimatePresence>
+        {showClearConfirmModal && (
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+            onClick={() => setShowClearConfirmModal(false)}
+          >
+            <div
+              className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 text-slate-900 dark:text-slate-100 shadow-2xl space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400">
+                <div className="p-2.5 bg-rose-100 dark:bg-rose-950/60 rounded-xl">
+                  <Trash2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold font-heading">Clear All Conversations?</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">This action cannot be undone.</p>
+                </div>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                Are you sure you want to permanently delete all messages and active chat conversations?
+              </p>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowClearConfirmModal(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearAllHistory}
+                  className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md transition-colors cursor-pointer"
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Chat List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
@@ -367,7 +429,7 @@ function ChatList() {
                   </h3>
                   <span className="text-[11px] text-slate-400">{chatItem.time}</span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate font-medium">
+                <p className={`text-xs truncate ${chatItem.isCleared ? 'text-slate-400 italic font-normal' : 'text-slate-500 dark:text-slate-400 font-medium'}`}>
                   {chatItem.lastMessage}
                 </p>
               </div>
@@ -394,15 +456,26 @@ function IndividualChat({
   rawParamName,
   searchParams,
 }: {
-
   rawParamName: string;
   searchParams: ReturnType<typeof useSearchParams>;
 }) {
+  const router = useRouter();
   const name = rawParamName;
   const age = searchParams.get('age') || '';
   const bio = searchParams.get('bio') || '';
   const fromSource = searchParams.get('from'); // 'feed' or 'chatlist'
   const backTargetHref = fromSource === 'feed' ? '/feed' : '/chat';
+
+  // Handle Escape key press to activate back button navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        router.push(backTargetHref);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [router, backTargetHref]);
 
   const rawInterests = searchParams.get('interests');
   const interests =
@@ -744,107 +817,205 @@ function IndividualChat({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const [showIndividualClearModal, setShowIndividualClearModal] = React.useState(false);
+
+  const handleClearIndividualChat = async () => {
+    setShowIndividualClearModal(false);
+    try {
+      // Clear Firestore documents for this chat
+      const chatsRef = collection(db, 'chats', chatKey, 'messages');
+      const snap = await getDocs(chatsRef);
+      for (const docSnap of snap.docs) {
+        await deleteDoc(docSnap.ref);
+      }
+
+      // Also clear currentUser's copy if present
+      const currentUid = auth.currentUser?.uid;
+      if (currentUid) {
+        const myKey = `chat_${currentUid}`;
+        const myRef = collection(db, 'chats', myKey, 'messages');
+        const mySnap = await getDocs(myRef);
+        for (const docSnap of mySnap.docs) {
+          await deleteDoc(docSnap.ref);
+        }
+      }
+
+      // Mark chat as cleared in localStorage so it stays visible in chat list for this user
+      if (typeof window !== 'undefined' && uid) {
+        const currentAuthUid = auth.currentUser?.uid || 'guest';
+        localStorage.setItem(`chat_cleared_${currentAuthUid}_${uid}`, 'true');
+        localStorage.setItem(`chat_cleared_time_${currentAuthUid}_${uid}`, Date.now().toString());
+      }
+
+      setDbMessages([]);
+      if (typeof (chat as any).setMessages === 'function') {
+        (chat as any).setMessages([]);
+      }
+
+      // Remove generate & token query params from URL so reloads don't re-trigger icebreakers
+      router.replace(`/chat?name=${encodeURIComponent(rawParamName)}&age=${age}&bio=${encodeURIComponent(bio)}&interests=${encodeURIComponent(interests.join(','))}&uid=${uid}&from=${fromSource || 'chatlist'}`);
+    } catch (e) {
+      console.warn('[Clear Individual Chat Warning]:', e);
+    }
+  };
+
   return (
-    <div className="flex flex-col h-[calc(100vh-56px)] sm:h-[calc(100vh-64px)] w-full max-w-4xl mx-auto bg-slate-50 dark:bg-[#090D16] border-x border-slate-200 dark:border-slate-800">
+    <div className="flex flex-col h-[calc(100vh-56px-60px)] md:h-[calc(100vh-64px)] w-full max-w-full bg-[#F8FAFC] dark:bg-[#090D16]">
       {/* Top Navigation Header */}
-      <header className="relative flex items-center gap-3 px-4 py-3 bg-white dark:bg-[#0F172A] border-b border-slate-200 dark:border-slate-800 shrink-0 z-30">
-        <Link
-          href={backTargetHref}
-          className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-
-        {/* Clickable Target User Name/Bio Info Area (With dropdown container) */}
-        <div ref={profileDropdownRef} className="relative flex-1 min-w-0">
-          <div
-            onClick={() => setShowProfileModal((prev) => !prev)}
-            className="flex items-center gap-3 w-full cursor-pointer group hover:opacity-90 transition-all"
+      <header className="relative h-16 flex items-center justify-between gap-3 px-4 bg-white dark:bg-[#0F172A] border-b border-slate-200 dark:border-slate-800 shrink-0 z-30">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <Link
+            href={backTargetHref}
+            className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
-            <div className="w-10 h-10 rounded-full bg-[#B8E7FF] dark:bg-slate-800 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center font-bold text-sm shrink-0 shadow-sm group-hover:scale-105 transition-transform">
-              {name.charAt(0)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-base font-bold text-slate-900 dark:text-white truncate group-hover:text-[#00AAFF] dark:group-hover:text-[#B8E7FF] transition-colors">
-                {name}{age ? `, ${age}` : ''}
-              </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                {interests.length > 0 ? interests.join(' • ') : 'Click to view profile'}
-              </p>
-            </div>
-          </div>
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
 
-          {/* Profile Dropdown Menu extending DOWN & RIGHT from user header */}
-          <AnimatePresence>
-            {showProfileModal && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.85, y: -10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.85, y: -10 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 450,
-                  damping: 28,
-                }}
-                style={{ transformOrigin: 'top left' }}
-                className="absolute top-full left-0 mt-3 w-72 sm:w-80 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-5 z-50 text-slate-900 dark:text-white space-y-3.5 overflow-hidden"
-              >
-                {/* User Avatar & Name */}
-                <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 rounded-full bg-[#B8E7FF] dark:bg-slate-800 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center font-extrabold text-xl shrink-0 shadow-md border-2 border-white dark:border-slate-700">
-                    {name.charAt(0)}
+          {/* Clickable Target User Name/Bio Info Area (With dropdown container) */}
+          <div ref={profileDropdownRef} className="relative flex-1 min-w-0">
+            <div
+              onClick={() => setShowProfileModal((prev) => !prev)}
+              className="flex items-center gap-3 w-full cursor-pointer group hover:opacity-90 transition-all"
+            >
+              <div className="w-10 h-10 rounded-full bg-[#B8E7FF] dark:bg-slate-800 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center font-bold text-sm shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                {name.charAt(0)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-base font-bold text-slate-900 dark:text-white truncate group-hover:text-[#00AAFF] dark:group-hover:text-[#B8E7FF] transition-colors">
+                  {name}{age ? `, ${age}` : ''}
+                </h1>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                  {interests.length > 0 ? interests.join(' • ') : 'Click to view profile'}
+                </p>
+              </div>
+            </div>
+
+            {/* Profile Dropdown Menu extending DOWN & RIGHT from user header */}
+            <AnimatePresence>
+              {showProfileModal && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.85, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.85, y: -10 }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 450,
+                    damping: 28,
+                  }}
+                  style={{ transformOrigin: 'top left' }}
+                  className="absolute top-full left-0 mt-3 w-72 sm:w-80 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-5 z-50 text-slate-900 dark:text-white space-y-3.5 overflow-hidden"
+                >
+                  {/* User Avatar & Name */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 rounded-full bg-[#B8E7FF] dark:bg-slate-800 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center font-extrabold text-xl shrink-0 shadow-md border-2 border-white dark:border-slate-700">
+                      {name.charAt(0)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-base font-extrabold font-heading text-slate-900 dark:text-white truncate">
+                        {name}{age ? `, ${age}` : ''}
+                      </h2>
+                      <p className="text-[11px] font-semibold text-[#00AAFF] dark:text-[#B8E7FF] tracking-wide uppercase">
+                        Soloberty Member
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowProfileModal(false)}
+                      className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                      aria-label="Close profile menu"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <h2 className="text-base font-extrabold font-heading text-slate-900 dark:text-white truncate">
-                      {name}{age ? `, ${age}` : ''}
-                    </h2>
-                    <p className="text-[11px] font-semibold text-[#00AAFF] dark:text-[#B8E7FF] tracking-wide uppercase">
-                      Soloberty Member
+
+                  {/* Bio Section */}
+                  <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 rounded-2xl space-y-1">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                      About
+                    </span>
+                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
+                      {bio || `Exploring new connections and great vibes on Soloberty!`}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowProfileModal(false)}
-                    className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-                    aria-label="Close profile menu"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
 
-                {/* Bio Section */}
-                <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 rounded-2xl space-y-1">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-                    About
-                  </span>
-                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
-                    {bio || `Exploring new connections and great vibes on Soloberty!`}
-                  </p>
-                </div>
-
-                {/* Interests Section */}
-                {interests.length > 0 && (
-                  <div className="space-y-1.5">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-                      Interests
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {interests.map((interest, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2.5 py-0.5 bg-[#B8E7FF]/30 dark:bg-slate-800 text-[#0088CC] dark:text-[#B8E7FF] border border-[#00AAFF]/20 dark:border-slate-700 rounded-xl text-[11px] font-bold"
-                        >
-                          #{interest}
-                        </span>
-                      ))}
+                  {/* Interests Section */}
+                  {interests.length > 0 && (
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                        Interests
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {interests.map((interest, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2.5 py-0.5 bg-[#B8E7FF]/30 dark:bg-slate-800 text-[#0088CC] dark:text-[#B8E7FF] border border-[#00AAFF]/20 dark:border-slate-700 rounded-xl text-[11px] font-bold"
+                          >
+                            #{interest}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
+
+        {/* Clear Chat Button */}
+        <button
+          type="button"
+          onClick={() => setShowIndividualClearModal(true)}
+          className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-300 text-xs font-bold rounded-xl border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+          <span>Clear Chat</span>
+        </button>
       </header>
+
+      {/* Confirmation Modal for Individual Clear Chat */}
+      <AnimatePresence>
+        {showIndividualClearModal && (
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+            onClick={() => setShowIndividualClearModal(false)}
+          >
+            <div
+              className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 text-slate-900 dark:text-slate-100 shadow-2xl space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400">
+                <div className="p-2.5 bg-rose-100 dark:bg-rose-950/60 rounded-xl">
+                  <Trash2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold font-heading">Clear Conversation?</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">This action cannot be undone.</p>
+                </div>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                Are you sure you want to delete your entire chat history with <span className="font-bold text-slate-900 dark:text-white">{name}</span>?
+              </p>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowIndividualClearModal(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearIndividualChat}
+                  className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md transition-colors cursor-pointer"
+                >
+                  Clear Chat
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* 1. Top: Message Thread (Scrollable) */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -874,14 +1045,6 @@ function IndividualChat({
                 Say something, or go back to discover more people.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setInput(`Hey ${name}! How's your day going?`)}
-              className="px-4 py-2.5 bg-white dark:bg-[#0F172A] hover:bg-[#B8E7FF]/30 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-800 hover:border-[#00AAFF]/40 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-200 transition-all cursor-pointer shadow-sm active:scale-95 flex items-center gap-2"
-            >
-              <span>"Hey {name}! How's your day going?"</span>
-              <MessageSquare className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            </button>
           </div>
         )}
 

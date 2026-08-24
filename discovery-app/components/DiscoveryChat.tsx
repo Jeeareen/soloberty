@@ -183,32 +183,7 @@ export const DiscoveryChat: React.FC = () => {
       (lastMessage?.role === 'assistant' && !lastMessageText));
 
   return (
-    <div className="flex flex-col h-[calc(100vh-170px)] sm:h-[650px] min-h-[480px] max-h-[88vh] w-full max-w-3xl mx-auto bg-white dark:bg-[#0F172A] border border-gray-200 dark:border-slate-800 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden min-w-0 max-w-full font-sans transition-all duration-200">
-      {/* Header */}
-      <header className="flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-3.5 bg-[#00AAFF] dark:bg-[#B8E7FF] text-white dark:text-slate-900 shadow-sm w-full min-w-0 gap-2 transition-colors duration-200">
-        <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
-          <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-amber-200 dark:text-amber-600 animate-pulse shrink-0" />
-          <div className="min-w-0 flex-1">
-            <h2 className="text-sm sm:text-base font-heading font-bold tracking-tight text-white dark:text-slate-900 truncate leading-tight">
-              Soloberty Scout
-            </h2>
-            <p className="text-[10px] sm:text-[11px] text-amber-100/90 dark:text-slate-700 font-semibold tracking-wider uppercase truncate">
-              AI DISCOVERY
-            </p>
-          </div>
-        </div>
-
-        {messages.length > 0 && (
-          <button
-            onClick={handleClear}
-            title="Reset Chat"
-            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs font-semibold bg-white/10 dark:bg-slate-900/10 hover:bg-white/20 dark:hover:bg-slate-900/20 text-white dark:text-slate-900 rounded-lg transition-colors border border-white/15 dark:border-slate-900/20 shrink-0"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Reset</span>
-          </button>
-        )}
-      </header>
+    <div className="flex flex-col h-full w-full max-w-full mx-auto bg-transparent overflow-hidden min-w-0 font-sans transition-all duration-200">
 
       {/* Messages Scroll Area Wrapper */}
       <div className="relative flex-1 min-h-0 overflow-hidden bg-slate-50/50 dark:bg-[#0F172A] w-full max-w-full min-w-0">
@@ -222,30 +197,30 @@ export const DiscoveryChat: React.FC = () => {
         >
           {/* Welcome State (Directly rendered in outer component box, inner box removed) */}
           {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center min-h-[320px] text-center p-4 sm:p-6 my-auto">
-              <div className="w-14 h-14 bg-[#00AAFF] dark:bg-[#B8E7FF] rounded-2xl flex items-center justify-center text-white dark:text-slate-900 shadow-md mb-4">
-                <Compass className="w-8 h-8 animate-spin-slow" />
+            <div className="flex flex-col items-center justify-center text-center p-1.5 sm:p-4 mt-auto mb-2 w-full max-w-full">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#00AAFF] dark:bg-[#B8E7FF] rounded-2xl flex items-center justify-center text-white dark:text-slate-900 shadow-md mb-1.5 shrink-0">
+                <Compass className="w-6 h-6 sm:w-7 sm:h-7 animate-spin-slow" />
               </div>
-              <h3 className="text-lg font-heading font-bold tracking-tight text-gray-800 dark:text-white">
+              <h3 className="text-base sm:text-lg font-heading font-bold tracking-tight text-gray-800 dark:text-white truncate max-w-full">
                 Welcome to Soloberty Scout!
               </h3>
-              <p className="text-sm text-gray-500 dark:text-slate-300 max-w-md mt-1 mb-6 leading-relaxed">
+              <p className="text-[11px] sm:text-xs text-gray-500 dark:text-slate-300 max-w-xs sm:max-w-md mt-1 mb-2.5 leading-relaxed break-words [overflow-wrap:anywhere] px-2">
                 Describe who or what you are looking for in natural language. I'll help you explore matching profiles, shared interests, and discovery ideas!
               </p>
 
               {/* Suggestion Chips */}
-              <div className="w-full max-w-lg space-y-2">
-                <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-wider mb-2">
-                  <Lightbulb className="w-3.5 h-3.5 text-amber-500" /> Try asking:
+              <div className="w-full max-w-lg space-y-1">
+                <div className="flex items-center justify-center gap-1.5 text-[10px] sm:text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-wider mb-1">
+                  <Lightbulb className="w-3.5 h-3.5 text-amber-500 shrink-0" /> Try asking:
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left">
+                <div className="grid grid-cols-2 gap-1.5 sm:gap-2 text-left w-full">
                   {SUGGESTED_PROMPTS.map((prompt, idx) => (
                     <button
                       key={idx}
                       onClick={() => handleSelectSuggestion(prompt)}
-                      className="p-3 text-xs text-gray-700 dark:text-slate-200 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-[#B8E7FF] dark:hover:bg-[#B8E7FF] hover:text-[#0088CC] dark:hover:text-slate-900 hover:border-[#B8E7FF] dark:hover:border-[#B8E7FF] border border-slate-200/80 dark:border-slate-700/80 rounded-xl transition-all duration-150 font-medium active:scale-[0.98]"
+                      className="p-2 sm:p-2.5 text-[11px] sm:text-xs leading-snug text-gray-700 dark:text-slate-200 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-[#B8E7FF] dark:hover:bg-[#B8E7FF] hover:text-[#0088CC] dark:hover:text-slate-900 hover:border-[#B8E7FF] dark:hover:border-[#B8E7FF] border border-slate-200/80 dark:border-slate-700/80 rounded-xl transition-all duration-150 font-medium active:scale-[0.98] break-words [overflow-wrap:anywhere] min-h-[50px] sm:min-h-[56px] flex items-center justify-start text-left"
                     >
-                      {prompt}
+                      <span className="line-clamp-2">{prompt}</span>
                     </button>
                   ))}
                 </div>
@@ -366,7 +341,7 @@ export const DiscoveryChat: React.FC = () => {
       </div>
 
       {/* Input Footer */}
-      <footer className="p-3 sm:p-4 bg-white dark:bg-[#0F172A] border-t border-gray-200 dark:border-slate-800">
+      <footer className="p-3 sm:p-4 bg-white dark:bg-[#0F172A] border-t border-gray-200 dark:border-slate-800 rounded-b-2xl">
         <form onSubmit={onSubmit} className="flex items-center gap-2">
           <input
             type="text"

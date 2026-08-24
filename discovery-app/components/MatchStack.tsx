@@ -86,10 +86,11 @@ const GenderSymbol: React.FC<{ gender?: string; className?: string }> = ({
 const RenderCardFace: React.FC<{
   card: MatchCard;
   isBackground?: boolean;
+  activeBackFocus?: 'chat' | 'whyYouTwo';
   onWhyYouTwo?: (card: MatchCard) => void;
   onRequireAuth?: (feature: 'chat' | 'whyYouTwo') => void;
 }> = React.memo(
-  ({ card, isBackground = false, onWhyYouTwo, onRequireAuth }) => {
+  ({ card, isBackground = false, activeBackFocus = 'chat', onWhyYouTwo, onRequireAuth }) => {
     const router = useRouter();
     const cardInterests = React.useMemo(
       () =>
@@ -229,7 +230,8 @@ const RenderCardFace: React.FC<{
                       `/chat?name=${encodeURIComponent(card.name)}&age=${card.age}&bio=${encodeURIComponent(card.bio)}&interests=${encodeURIComponent((card.interests || []).join(','))}&uid=${card.uid}&generate=true&token=${token}&from=feed`
                     );
                   }}
-                  className="flex-1 py-3 px-3 bg-[#00AAFF] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs font-extrabold rounded-xl shadow-md shadow-[#00AAFF]/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                  className={`flex-1 py-3 px-3 bg-[#00AAFF] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs font-extrabold rounded-xl shadow-md shadow-[#00AAFF]/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer ${activeBackFocus === 'chat' ? 'ring-4 ring-[#00AAFF]/50 outline-none scale-[1.02]' : 'opacity-80'
+                    }`}
                 >
                   <MessageSquare className="w-4 h-4 shrink-0" />
                   <span className="truncate">Chat with {card.name.split(' ')[0]}</span>
@@ -250,7 +252,8 @@ const RenderCardFace: React.FC<{
                       onWhyYouTwo(card);
                     }
                   }}
-                  className="flex-1 py-3 px-3 bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold rounded-xl shadow-md shadow-purple-600/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                  className={`flex-1 py-3 px-3 bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold rounded-xl shadow-md shadow-purple-600/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer ${activeBackFocus === 'whyYouTwo' ? 'ring-4 ring-purple-500/50 outline-none scale-[1.02]' : 'opacity-80'
+                    }`}
                 >
                   <Lightbulb className="w-4 h-4 shrink-0" />
                   <span className="truncate">Why You Two?</span>
@@ -265,6 +268,7 @@ const RenderCardFace: React.FC<{
   (prevProps, nextProps) =>
     prevProps.card.id === nextProps.card.id &&
     prevProps.isBackground === nextProps.isBackground &&
+    prevProps.activeBackFocus === nextProps.activeBackFocus &&
     prevProps.onWhyYouTwo === nextProps.onWhyYouTwo &&
     prevProps.onRequireAuth === nextProps.onRequireAuth
 );
@@ -359,8 +363,14 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
 
   const [undoCount, setUndoCount] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [activeBackFocus, setActiveBackFocus] = useState<'chat' | 'whyYouTwo' | null>(null);
   const [isHeld, setIsHeld] = useState(false);
   const isDraggingRef = useRef(false);
+
+  // Reset back face button focus to null whenever card flips or changes
+  useEffect(() => {
+    setActiveBackFocus(null);
+  }, [currentIndex, isFlipped]);
 
   // Save current swiping index to sessionStorage
   useEffect(() => {
@@ -402,7 +412,13 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
     if (baseCards.length === 0) return [];
     let list = [...baseCards];
 
-    for (let loop = 1; loop <= appendedCardCount; loop++) {
+    // Ensure we append enough loops to comfortably cover currentIndex + 5
+    const requiredLoops = Math.max(
+      appendedCardCount,
+      Math.ceil((currentIndex + 5) / baseCards.length)
+    );
+
+    for (let loop = 1; loop <= requiredLoops; loop++) {
       const loopedCopies = baseCards.map((c, i) => ({
         ...c,
         id: `${c.id}_loop_${loop}_${i}`,
@@ -410,14 +426,14 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
       list = [...list, ...loopedCopies];
     }
     return list;
-  }, [baseCards, appendedCardCount]);
+  }, [baseCards, appendedCardCount, currentIndex]);
 
-  // Endless swiping trigger: When user reaches cards.length - 2, append another set of DB profiles to the end
-  useEffect(() => {
-    if (baseCards.length > 0 && currentIndex >= cards.length - 2) {
+  // Helper to trigger endless card loop when user swipes near the end of available stack
+  const checkAndExpandEndlessStack = (nextIndex: number) => {
+    if (baseCards.length > 0 && nextIndex >= cards.length - 2) {
       setAppendedCardCount((prev) => prev + 1);
     }
-  }, [currentIndex, cards.length, baseCards.length]);
+  };
 
   const shouldReduceMotion = useReducedMotion();
   const controls = useAnimation();
@@ -434,30 +450,56 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
   const activeCardRef = useRef<HTMLDivElement>(null);
   const isFinished = cards.length > 0 && currentIndex >= cards.length;
 
+  const stepX = 260;
+
   // Continuous 3-Slot Carousel with Depth Scaling, Dynamic Layering & Linear Opacity (20% to 100%)
+  // Hold scale effect (e.g., 1.05 boost when pressed) decreases to 0% boost as drag progresses to stepX (260px)
   const activeScale = useTransform([x, centerScaleSpring], ([latestX, latestCenterScale]: number[]) => {
-    const dragRatio = Math.min(Math.abs(latestX) / 320, 1);
-    return latestCenterScale - dragRatio * (latestCenterScale - 0.8);
+    const dragRatio = Math.min(Math.abs(latestX) / stepX, 1);
+    // Effective hold boost fades from full (1.0) at rest to zero (0.0) at full slide distance (stepX)
+    const effectiveHoldBoost = (latestCenterScale - 1.0) * (1 - dragRatio);
+    // Target base scale transitions linearly from 1.0 down to 0.8 during drag
+    const baseScale = 1.0 - dragRatio * 0.2;
+    return baseScale + effectiveHoldBoost;
   });
-  const activeOpacity = useTransform(x, [-320, 0, 320], [0.2, 1, 0.2]);
 
-  const previewX = useTransform(x, [-320, 0, 320], [0, 320, 640]);
-  const previewScale = useTransform(x, [-320, 0, 320], [1, 0.8, 0.65]);
-  const previewOpacity = useTransform(x, [-320, 0, 320], [1, 0.2, 0.2]);
-  const previewZIndex = useTransform(x, [-320, -160, 0, 320], [40, 20, 20, 10]);
+  const previewX = useTransform(x, [-stepX, 0, stepX], [0, stepX, stepX * 2]);
+  const previewScale = useTransform(x, [-stepX, 0, stepX], [1, 0.8, 0.65]);
+  const previewOpacity = useTransform(x, [-stepX, 0, stepX], [1, 1, 1]);
 
-  const nextNextX = useTransform(x, [-320, 0, 320], [320, 640, 960]);
-  const nextNextScale = useTransform(x, [-320, 0, 320], [0.8, 0.65, 0.5]);
-  const nextNextOpacity = useTransform(x, [-320, 0, 320], [0.2, 0.15, 0.1]);
+  const nextNextX = useTransform(x, [-stepX, 0, stepX], [stepX, stepX * 2, stepX * 3]);
+  const nextNextScale = useTransform(x, [-stepX, 0, stepX], [0.8, 0.65, 0.5]);
+  const nextNextOpacity = useTransform(x, [-stepX, 0, stepX], [1, 1, 1]);
 
-  const pastX = useTransform(x, [-320, 0, 320], [-640, -320, 0]);
-  const pastScale = useTransform(x, [-320, 0, 320], [0.65, 0.8, 1]);
-  const pastOpacity = useTransform(x, [-320, 0, 320], [0.2, 0.2, 1]);
-  const pastZIndex = useTransform(x, [-320, 0, 160, 320], [10, 20, 20, 40]);
+  const pastX = useTransform(x, [-stepX, 0, stepX], [-stepX * 2, -stepX, 0]);
+  const pastScale = useTransform(x, [-stepX, 0, stepX], [0.65, 0.8, 1]);
+  const pastOpacity = useTransform(x, [-stepX, 0, stepX], [1, 1, 1]);
 
-  const prevPrevX = useTransform(x, [-320, 0, 320], [-960, -640, -320]);
-  const prevPrevScale = useTransform(x, [-320, 0, 320], [0.5, 0.65, 0.8]);
-  const prevPrevOpacity = useTransform(x, [-320, 0, 320], [0.1, 0.15, 0.2]);
+  const prevPrevX = useTransform(x, [-stepX, 0, stepX], [-stepX * 3, -stepX * 2, -stepX]);
+  const prevPrevScale = useTransform(x, [-stepX, 0, stepX], [0.5, 0.65, 0.8]);
+  const prevPrevOpacity = useTransform(x, [-stepX, 0, stepX], [1, 1, 1]);
+
+  // Dynamic Z-Index transforms: whichever adjacent card is visually larger in scale stays on top
+  const activeZIndex = useTransform([activeScale, pastScale, previewScale, x], ([actS, pastS, prevS, latestX]: any[]) => {
+    // If dragging left (x < 0) towards next card (preview), compare active vs preview
+    if (latestX < 0 && prevS > actS) return 20;
+    // If dragging right (x > 0) towards past card (past), compare active vs past
+    if (latestX > 0 && pastS > actS) return 20;
+    return 30;
+  });
+
+  const previewZIndex = useTransform([activeScale, previewScale, x], ([actS, prevS, latestX]: any[]) => {
+    if (latestX < 0 && prevS > actS) return 35;
+    return 20;
+  });
+
+  const pastZIndex = useTransform([activeScale, pastScale, x], ([actS, pastS, latestX]: any[]) => {
+    if (latestX > 0 && pastS > actS) return 35;
+    return 20;
+  });
+
+  const nextNextZIndex = useTransform(x, [-stepX, 0, stepX], [20, 10, 5]);
+  const prevPrevZIndex = useTransform(x, [-stepX, 0, stepX], [5, 10, 20]);
 
   useEffect(() => {
     if (isFinished && onComplete) onComplete();
@@ -472,7 +514,20 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
 
   const isAnimatingRef = useRef<boolean>(false);
 
+  const [flipWarning, setFlipWarning] = useState(false);
+
+  const triggerFlipWarning = () => {
+    setFlipWarning(true);
+    setTimeout(() => {
+      setFlipWarning(false);
+    }, 2000);
+  };
+
   const handleSwipeLeft = async () => {
+    if (isFlipped) {
+      triggerFlipWarning();
+      return;
+    }
     if (isAnimatingRef.current) return;
     isAnimatingRef.current = true;
 
@@ -485,19 +540,27 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
       const duration = shouldReduceMotion || isTest ? 0 : 0.2;
 
       if (duration > 0) {
-        await animate(x, -320, { duration, ease: 'easeOut' });
+        await animate(x, -stepX, { duration, ease: 'easeOut' });
       }
 
       x.set(0);
       setUndoCount((prev) => Math.min(prev + 1, 2));
       setIsFlipped(false);
-      setCurrentIndex((prev) => prev + 1);
+      setCurrentIndex((prev) => {
+        const next = prev + 1;
+        checkAndExpandEndlessStack(next);
+        return next;
+      });
     } finally {
       isAnimatingRef.current = false;
     }
   };
 
   const handleSwipeRightUndo = async () => {
+    if (isFlipped) {
+      triggerFlipWarning();
+      return;
+    }
     if (isAnimatingRef.current) return;
     if (undoCount <= 0 || currentIndex <= 0) {
       animate(x, 0, { type: 'spring', stiffness: 300, damping: 25 });
@@ -514,7 +577,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
       const duration = shouldReduceMotion || isTest ? 0 : 0.2;
 
       if (duration > 0) {
-        await animate(x, 320, { duration, ease: 'easeOut' });
+        await animate(x, stepX, { duration, ease: 'easeOut' });
       }
 
       x.set(0);
@@ -533,26 +596,71 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
       if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT') return;
       if (e.repeat) return;
 
-      switch (e.key) {
-        case 'ArrowLeft':
-          e.preventDefault();
-          handleSwipeRightUndo();
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          handleSwipeLeft();
-          break;
-        case 'Enter':
-        case ' ':
-          e.preventDefault();
-          setIsFlipped((prev) => !prev);
-          break;
+      if (isFlipped) {
+        // Backside focused: Arrow keys navigate between Chat and Why You Two buttons without swiping cards
+        switch (e.key) {
+          case 'ArrowLeft':
+            e.preventDefault();
+            setActiveBackFocus('chat');
+            break;
+          case 'ArrowRight':
+            e.preventDefault();
+            setActiveBackFocus('whyYouTwo');
+            break;
+          case 'Enter':
+            e.preventDefault();
+            const card = cards[currentIndex];
+            if (!card) break;
+            if (!activeBackFocus) {
+              setIsFlipped(false);
+              break;
+            }
+            if (activeBackFocus === 'chat') {
+              if (!user) {
+                handleRequireAuth('chat');
+              } else {
+                const token = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+                router.push(
+                  `/chat?name=${encodeURIComponent(card.name)}&age=${card.age}&bio=${encodeURIComponent(card.bio)}&interests=${encodeURIComponent((card.interests || []).join(','))}&uid=${card.uid}&generate=true&token=${token}&from=feed`
+                );
+              }
+            } else if (activeBackFocus === 'whyYouTwo') {
+              if (!user) {
+                handleRequireAuth('whyYouTwo');
+              } else {
+                handleWhyYouTwo(card);
+              }
+            }
+            break;
+          case ' ':
+          case 'Escape':
+            e.preventDefault();
+            setIsFlipped(false);
+            break;
+        }
+      } else {
+        // Frontside focused: Arrow keys slide through cards
+        switch (e.key) {
+          case 'ArrowLeft':
+            e.preventDefault();
+            handleSwipeRightUndo();
+            break;
+          case 'ArrowRight':
+            e.preventDefault();
+            handleSwipeLeft();
+            break;
+          case 'Enter':
+          case ' ':
+            e.preventDefault();
+            setIsFlipped(true);
+            break;
+        }
       }
     };
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [currentIndex, undoCount, isFinished]);
+  }, [currentIndex, undoCount, isFinished, isFlipped, activeBackFocus, cards, user, router]);
 
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     setIsHeld(false);
@@ -627,13 +735,13 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
       {/* Left Fixed Page Curtain */}
       <div
         aria-hidden="true"
-        className="absolute top-0 bottom-0 left-0 w-[calc(50%-499px)] bg-[#F8FAFC] dark:bg-[#090D16] z-25 pointer-events-none transition-colors duration-200"
+        className="absolute top-0 bottom-0 left-0 w-[calc(50%-420px)] bg-[#F8FAFC] dark:bg-[#090D16] z-25 pointer-events-none transition-colors duration-200"
       />
 
       {/* Right Fixed Page Curtain */}
       <div
         aria-hidden="true"
-        className="absolute top-0 bottom-0 right-0 w-[calc(50%-499px)] bg-[#F8FAFC] dark:bg-[#090D16] z-25 pointer-events-none transition-colors duration-200"
+        className="absolute top-0 bottom-0 right-0 w-[calc(50%-420px)] bg-[#F8FAFC] dark:bg-[#090D16] z-25 pointer-events-none transition-colors duration-200"
       />
 
       {/* Stack Container */}
@@ -663,8 +771,8 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
           {currentIndex > 1 && undoCount >= 2 && cards[currentIndex - 2] && (
             <motion.div
               key={`prevprev-${cards[currentIndex - 2].id}`}
-              style={{ x: prevPrevX, scale: prevPrevScale, opacity: prevPrevOpacity, zIndex: 5 }}
-              className="absolute h-[600px] w-[420px] rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 overflow-hidden pointer-events-none will-change-transform"
+              style={{ x: prevPrevX, scale: prevPrevScale, opacity: prevPrevOpacity, zIndex: prevPrevZIndex }}
+              className="absolute h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 overflow-hidden pointer-events-none will-change-transform"
               aria-hidden="true"
             >
               <RenderCardFace card={cards[currentIndex - 2]} isBackground={true} />
@@ -676,7 +784,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
             <motion.div
               key={`past-${cards[currentIndex - 1].id}`}
               style={{ x: pastX, scale: pastScale, opacity: pastOpacity, zIndex: pastZIndex }}
-              className="absolute h-[600px] w-[420px] rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 overflow-hidden pointer-events-none will-change-transform"
+              className="absolute h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 overflow-hidden pointer-events-none will-change-transform"
               aria-hidden="true"
             >
               <RenderCardFace card={cards[currentIndex - 1]} isBackground={true} />
@@ -688,7 +796,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
             <motion.div
               key={`preview-${cards[currentIndex + 1].id}`}
               style={{ x: previewX, scale: previewScale, opacity: previewOpacity, zIndex: previewZIndex }}
-              className="absolute h-[600px] w-[420px] rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 overflow-hidden pointer-events-none will-change-transform"
+              className="absolute h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 overflow-hidden pointer-events-none will-change-transform"
               aria-hidden="true"
             >
               <RenderCardFace card={cards[currentIndex + 1]} isBackground={true} />
@@ -699,8 +807,8 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
           {currentIndex + 2 < cards.length && cards[currentIndex + 2] && (
             <motion.div
               key={`nextnext-${cards[currentIndex + 2].id}`}
-              style={{ x: nextNextX, scale: nextNextScale, opacity: nextNextOpacity, zIndex: 5 }}
-              className="absolute h-[600px] w-[420px] rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 overflow-hidden pointer-events-none will-change-transform"
+              style={{ x: nextNextX, scale: nextNextScale, opacity: nextNextOpacity, zIndex: nextNextZIndex }}
+              className="absolute h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 overflow-hidden pointer-events-none will-change-transform"
               aria-hidden="true"
             >
               <RenderCardFace card={cards[currentIndex + 2]} isBackground={true} />
@@ -721,21 +829,27 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
               onPointerDown={() => setIsHeld(true)}
               onPointerUp={() => setIsHeld(false)}
               onPointerCancel={() => setIsHeld(false)}
-              drag="x"
-              dragConstraints={{ left: -320, right: undoCount > 0 && currentIndex > 0 ? 320 : 0 }}
+              drag={isFlipped ? false : "x"}
+              dragConstraints={{ left: -stepX, right: undoCount > 0 && currentIndex > 0 ? stepX : 0 }}
               dragElastic={0}
               dragMomentum={false}
               onDragStart={() => {
+                if (isFlipped) {
+                  triggerFlipWarning();
+                  return;
+                }
                 isDraggingRef.current = true;
               }}
               onDragEnd={handleDragEnd}
-              style={{ x, scale: activeScale, opacity: activeOpacity, zIndex: 30 }}
+              style={{ x, scale: activeScale, opacity: 1, zIndex: activeZIndex }}
               animate={{ rotateY: isFlipped ? 180 : 0 }}
-              transition={{ rotateY: { duration: 0.4, ease: 'easeInOut' } }}
-              className="absolute flex h-[600px] w-[420px] cursor-grab flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 active:cursor-grabbing focus:outline-none [transform-style:preserve-3d]"
+              transition={{ rotateY: { duration: 0.5, ease: 'easeInOut' } }}
+              className={`absolute flex h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 focus:outline-none [transform-style:preserve-3d] ${isFlipped ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'
+                }`}
             >
               <RenderCardFace
                 card={currentCard}
+                activeBackFocus={activeBackFocus}
                 onWhyYouTwo={handleWhyYouTwo}
                 onRequireAuth={!user ? handleRequireAuth : undefined}
               />
@@ -743,6 +857,22 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
           )}
         </AnimatePresence>
       </div>
+
+      {/* Amber Warning Popup Toast when trying to swipe on back of card (Top to Down animation) */}
+      <AnimatePresence>
+        {flipWarning && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="absolute top-6 z-50 px-4 py-2.5 bg-amber-500/15 dark:bg-amber-500/20 backdrop-blur-md border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-bold rounded-2xl shadow-lg shadow-amber-500/5 flex items-center gap-2 pointer-events-none"
+          >
+            <span>Flip card back to front to swipe</span>
+            <span>🔄</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Why You Two Modal Portaled to Body */}
       {mounted &&
