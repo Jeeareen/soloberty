@@ -593,6 +593,8 @@ export const SignupWizard: React.FC = () => {
           step === 7 ? (
             <motion.div
               key={errorKey}
+              role="alert"
+              aria-live="assertive"
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}

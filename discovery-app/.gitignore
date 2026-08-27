@@ -31,3 +31,9 @@ dist-ssr/
 *.sln
 *.sw?
 .vercel
+
+# Test output & reports
+playwright-report/
+test-results/
+.last-run.json
+*.last-run.json

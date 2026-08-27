@@ -64,6 +64,8 @@ export const DiscoveryChat: React.FC = () => {
     status,
     stop,
     setMessages,
+    reload,
+    error,
   } = useChat();
 
   const isLoading = status === 'submitted' || status === 'streaming';
@@ -305,7 +307,7 @@ export const DiscoveryChat: React.FC = () => {
 
           {/* Smooth Thinking Indicator (Before First Token) */}
           {isAssistantThinking && (
-            <div className="flex gap-3 mr-auto max-w-[88%] sm:max-w-[82%] items-center">
+            <div role="status" aria-live="polite" className="flex gap-3 mr-auto max-w-[88%] sm:max-w-[82%] items-center">
               <div className="w-8 h-8 rounded-full bg-[#00AAFF] dark:bg-[#B8E7FF] text-white dark:text-slate-900 flex items-center justify-center shrink-0 shadow-sm">
                 <Bot className="w-4 h-4 animate-bounce" />
               </div>
@@ -319,6 +321,29 @@ export const DiscoveryChat: React.FC = () => {
                   <span className="w-1.5 h-1.5 bg-[#00AAFF] dark:bg-[#B8E7FF] rounded-full animate-ping delay-300" />
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Error Banner */}
+          {error && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/60 rounded-2xl flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 shadow-sm"
+            >
+              <div className="flex items-center gap-2 overflow-hidden pr-1">
+                <span className="font-semibold truncate">{error.message || 'Failed to generate response'}</span>
+              </div>
+              {reload && (
+                <button
+                  type="button"
+                  onClick={() => reload()}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-amber-200 dark:bg-amber-900 hover:bg-amber-300 dark:hover:bg-amber-800 text-amber-950 dark:text-amber-100 rounded-xl font-bold transition-colors cursor-pointer shrink-0 ml-2"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Retry
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -345,6 +370,7 @@ export const DiscoveryChat: React.FC = () => {
         <form onSubmit={onSubmit} className="flex items-center gap-2">
           <input
             type="text"
+            aria-label="Chat input message"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={

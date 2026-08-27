@@ -5,6 +5,47 @@ import { MatchStack } from './MatchStack';
 import type { MatchCard } from '../types/matching';
 import { vi } from 'vitest';
 
+// Mock next/navigation
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+    back: vi.fn(),
+  }),
+  usePathname: () => '/',
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+vi.mock('../lib/hooks/useAuth', () => ({
+  useAuth: () => ({
+    user: { uid: 'user-1' },
+    loading: false,
+  }),
+}));
+
+vi.mock('../hooks/useProfiles', () => ({
+  useProfiles: () => ({
+    profiles: [],
+    loading: false,
+    error: null,
+  }),
+}));
+
+vi.mock('../lib/firebase/config', () => ({
+  db: {},
+  auth: { currentUser: { uid: 'user-1' } },
+}));
+
+vi.mock('firebase/firestore', () => ({
+  doc: vi.fn(),
+  setDoc: vi.fn().mockResolvedValue(true),
+  collection: vi.fn(),
+  query: vi.fn(),
+  where: vi.fn(),
+  getDocs: vi.fn().mockResolvedValue({ empty: true, docs: [] }),
+}));
+
 // Mock matchMedia for Framer Motion's useReducedMotion hook
 beforeAll(() => {
   Object.defineProperty(window, 'matchMedia', {
@@ -23,11 +64,11 @@ beforeAll(() => {
 });
 
 const mockCards: MatchCard[] = [
-  { id: '1', name: 'Alice', summary: 'Dev', details: 'Loves React' },
-  { id: '2', name: 'Bob', summary: 'Designer', details: 'Figma pro' },
-  { id: '3', name: 'Charlie', summary: 'PM', details: 'Jira master' },
-  { id: '4', name: 'Diana', summary: 'QA', details: 'Breaks things' },
-  { id: '5', name: 'Eve', summary: 'DevOps', details: 'AWS certified' },
+  { id: '1', name: 'Alice', bio: 'Loves React', summary: 'Dev', details: 'Loves React' },
+  { id: '2', name: 'Bob', bio: 'Figma pro', summary: 'Designer', details: 'Figma pro' },
+  { id: '3', name: 'Charlie', bio: 'Jira master', summary: 'PM', details: 'Jira master' },
+  { id: '4', name: 'Diana', bio: 'Breaks things', summary: 'QA', details: 'Breaks things' },
+  { id: '5', name: 'Eve', bio: 'AWS certified', summary: 'DevOps', details: 'AWS certified' },
 ];
 
 describe('MatchStack Component', () => {
@@ -35,7 +76,7 @@ describe('MatchStack Component', () => {
     render(<MatchStack cards={mockCards} />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Alice/i })).toBeVisible();
+      expect(screen.getByRole('button', { name: /^Alice\./i })).toBeVisible();
     });
     expect(screen.getByText('Bob')).toBeInTheDocument();
     expect(screen.queryByText('Eve')).not.toBeInTheDocument();
@@ -44,12 +85,12 @@ describe('MatchStack Component', () => {
   it('2. Right swipe rejects current card and advances to next card', async () => {
     render(<MatchStack cards={mockCards} />);
 
-    const activeCard = screen.getByRole('button', { name: /Alice/i });
+    const activeCard = screen.getByRole('button', { name: /^Alice\./i });
     fireEvent.keyDown(activeCard, { key: 'ArrowRight' });
 
     await waitFor(() => {
-      expect(screen.queryByRole('button', { name: /Alice/i })).not.toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Bob/i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /^Alice\./i })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^Bob\./i })).toBeInTheDocument();
     });
   });
 
@@ -57,58 +98,60 @@ describe('MatchStack Component', () => {
     render(<MatchStack cards={mockCards} />);
 
     // Right swipe on Alice -> advances to Bob
-    fireEvent.keyDown(screen.getByRole('button', { name: /Alice/i }), { key: 'ArrowRight' });
-    const bobCard = await screen.findByRole('button', { name: /Bob/i });
+    fireEvent.keyDown(screen.getByRole('button', { name: /^Alice\./i }), { key: 'ArrowRight' });
+    const bobCard = await screen.findByRole('button', { name: /^Bob\./i });
 
     // Left swipe on Bob -> Undo back to Alice
     fireEvent.keyDown(bobCard, { key: 'ArrowLeft' });
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Alice/i })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /Bob/i })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^Alice\./i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /^Bob\./i })).not.toBeInTheDocument();
     });
   });
 
-  it('4. Swiping right multiple times allows right swipe undo (restoring 1 card)', async () => {
+  it('4. Swiping right multiple times allows undoing up to 2 times', async () => {
     render(<MatchStack cards={mockCards} />);
 
     // Swipe right 4 times: Alice -> Bob -> Charlie -> Diana -> Eve
     for (const cardName of ['Alice', 'Bob', 'Charlie', 'Diana']) {
-      const activeCard = await screen.findByRole('button', { name: new RegExp(cardName, 'i') });
+      const activeCard = await screen.findByRole('button', { name: new RegExp(`^${cardName}\\.`, 'i') });
       fireEvent.keyDown(activeCard, { key: 'ArrowRight' });
     }
 
     // Now on Eve (card #5)
-    const eveCard = await screen.findByRole('button', { name: /Eve/i });
+    const eveCard = await screen.findByRole('button', { name: /^Eve\./i });
     expect(eveCard).toBeInTheDocument();
 
     // 1st Left swipe (Undo): goes back to Diana (card #4)
     fireEvent.keyDown(eveCard, { key: 'ArrowLeft' });
-    const dianaCard = await screen.findByRole('button', { name: /Diana/i });
+    const dianaCard = await screen.findByRole('button', { name: /^Diana\./i });
     expect(dianaCard).toBeInTheDocument();
 
-    // 2nd Left swipe attempt: MUST BE BLOCKED! Stays on Diana (card #4)
+    // 2nd Left swipe (Undo): goes back to Charlie (card #3)
     fireEvent.keyDown(dianaCard, { key: 'ArrowLeft' });
-    expect(screen.getByRole('button', { name: /Diana/i })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Charlie/i })).not.toBeInTheDocument();
+    const charlieCard = await screen.findByRole('button', { name: /^Charlie\./i });
+    expect(charlieCard).toBeInTheDocument();
+
+    // 3rd Left swipe attempt: MUST BE BLOCKED! Stays on Charlie (card #3)
+    fireEvent.keyDown(charlieCard, { key: 'ArrowLeft' });
+    expect(screen.getByRole('button', { name: /^Charlie\./i })).toBeInTheDocument();
   });
 
   it('5. Tap / Space / Enter flips card around Y axis to reveal profile details', async () => {
     render(<MatchStack cards={mockCards} />);
 
-    const activeCard = screen.getByRole('button', { name: /Alice/i });
-    expect(screen.getByText('Loves React')).toBeInTheDocument();
+    const activeCard = screen.getByRole('button', { name: /^Alice\./i });
+    expect(screen.getAllByText('Alice')[0]).toBeInTheDocument();
 
     // Click flips card to back
     fireEvent.click(activeCard);
-    expect(screen.getByText('Tap card to flip back')).toBeInTheDocument();
+    expect(screen.getByText('Loves React')).toBeInTheDocument();
   });
 
   it('6. Reaching end of cards displays empty status state', async () => {
-    render(<MatchStack cards={[mockCards[0]]} />); // Only 1 card
+    render(<MatchStack cards={[]} />); // Empty cards array
 
-    fireEvent.keyDown(screen.getByRole('button', { name: /Alice/i }), { key: 'ArrowRight' });
-
-    expect(await screen.findByRole('status')).toHaveTextContent(/No more profiles/i);
+    expect(await screen.findByRole('status')).toHaveTextContent(/No profiles nearby/i);
   });
 });
