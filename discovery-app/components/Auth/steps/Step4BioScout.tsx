@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Sparkles, Loader2, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Sparkles, Loader2, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
 
 import { ScoutBioButton } from '../ScoutBioButton';
 
@@ -31,6 +31,28 @@ export const Step4BioScout: React.FC<Step4BioScoutProps> = ({
   setStep,
 }) => {
   const bioCharCount = getBioCharCount(bio);
+  const [bioError, setBioError] = useState<string | null>(null);
+
+  const validateBio = (text: string) => {
+    const count = getBioCharCount(text);
+    if (count < 30) {
+      return 'Bio must be at least 30 characters long (excluding spaces).';
+    }
+    if (count > 300) {
+      return 'Bio must be at most 300 characters long.';
+    }
+    return null;
+  };
+
+  const onNext = () => {
+    const err = validateBio(bio);
+    if (err) {
+      setBioError(err);
+      return;
+    }
+    setBioError(null);
+    handleStep4Next();
+  };
 
   return (
     <motion.div
@@ -38,20 +60,20 @@ export const Step4BioScout: React.FC<Step4BioScoutProps> = ({
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="space-y-5"
+      className="flex-1 flex flex-col justify-start space-y-3"
     >
-      <div className="space-y-1">
+      <div className="space-y-1.5 shrink-0 mb-1">
         <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white">Create your bio</h2>
         <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
           Step 4: Write a short bio or let <span className="text-[#00AAFF] dark:text-[#B8E7FF] font-bold">Soloberty Scout</span> draft one for you!
         </p>
+
+        {renderErrorAlert()}
       </div>
 
-      {renderErrorAlert()}
-
-      <div className="space-y-3">
+      <div className="space-y-2.5 shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-2">
-          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+          <label htmlFor="signup-bio" className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Your Bio (30 - 300 characters)
           </label>
           <div className="self-start sm:self-auto">
@@ -65,12 +87,24 @@ export const Step4BioScout: React.FC<Step4BioScoutProps> = ({
 
         <div className="relative">
           <textarea
+            id="signup-bio"
             rows={5}
             maxLength={400}
             value={bio}
-            onChange={(e) => setBio(e.target.value)}
+            aria-describedby={bioError ? 'bio-error' : undefined}
+            aria-invalid={Boolean(bioError)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setBio(val);
+              if (bioError) setBioError(validateBio(val));
+            }}
+            onBlur={() => setBioError(validateBio(bio))}
             placeholder="Share a little bit about what you love, your vibe, or what kind of connections you're hoping to make..."
-            className="w-full p-4 pb-10 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-[#00AAFF] transition-colors resize-none leading-relaxed"
+            className={`w-full p-4 pb-10 bg-slate-50 dark:bg-slate-800/60 border ${
+              bioError
+                ? 'border-rose-500 dark:border-rose-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
+                : 'border-slate-200 dark:border-slate-700 focus:border-[#00AAFF]'
+            } rounded-2xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none transition-colors resize-none leading-relaxed`}
           />
           <div
             className={`absolute bottom-3 right-3 text-[11px] font-semibold px-2 py-0.5 rounded-full border pointer-events-none backdrop-blur-sm ${
@@ -82,9 +116,20 @@ export const Step4BioScout: React.FC<Step4BioScoutProps> = ({
             {bioCharCount} / 300 (min 30)
           </div>
         </div>
+
+        {bioError && (
+          <p
+            id="bio-error"
+            className="text-xs font-semibold text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1.5"
+            role="alert"
+          >
+            <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+            <span>{bioError}</span>
+          </p>
+        )}
       </div>
 
-      <div className="flex gap-3 pt-2">
+      <div className="flex gap-3 pt-2 mt-auto shrink-0">
         <button
           type="button"
           onClick={() => setStep(3)}
@@ -95,7 +140,7 @@ export const Step4BioScout: React.FC<Step4BioScoutProps> = ({
         </button>
         <button
           type="button"
-          onClick={handleStep4Next}
+          onClick={onNext}
           className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           Continue to Location

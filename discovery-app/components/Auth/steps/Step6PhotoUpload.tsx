@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Upload, ImageIcon, Camera, ArrowRight, ArrowLeft, X } from 'lucide-react';
+import { Upload, ImageIcon, Camera, ArrowRight, ArrowLeft, X, AlertCircle } from 'lucide-react';
 
 interface Step6PhotoUploadProps {
   profilePhotoPreview: string | null;
@@ -25,10 +25,24 @@ export const Step6PhotoUpload: React.FC<Step6PhotoUploadProps> = ({
   const [showCameraModal, setShowCameraModal] = useState<boolean>(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isCameraStarting, setIsCameraStarting] = useState<boolean>(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
+
+  const processPhotoFile = (file: File) => {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setPhotoError('Profile photo must be JPG, PNG, or WEBP format.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError('Profile photo size must be less than 5MB.');
+      return;
+    }
+    setPhotoError(null);
+    handleProfilePhotoFile(file);
+  };
 
   // Prevent window default drag & drop behavior to stop browser from opening files in new tab
   useEffect(() => {
@@ -65,7 +79,7 @@ export const Step6PhotoUpload: React.FC<Step6PhotoUploadProps> = ({
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const droppedFile = e.dataTransfer.files[0];
-      handleProfilePhotoFile(droppedFile);
+      processPhotoFile(droppedFile);
     }
   };
 
@@ -137,7 +151,7 @@ export const Step6PhotoUpload: React.FC<Step6PhotoUploadProps> = ({
         const file = new File([blob], `camera-photo-${Date.now()}.jpg`, {
           type: 'image/jpeg',
         });
-        handleProfilePhotoFile(file);
+        processPhotoFile(file);
         stopCameraStream();
       }
     }, 'image/jpeg', 0.92);
@@ -162,7 +176,15 @@ export const Step6PhotoUpload: React.FC<Step6PhotoUploadProps> = ({
       {renderErrorAlert && <div className="shrink-0 mb-2">{renderErrorAlert()}</div>}
 
       {/* Middle Fixed Dropzone Box pulled down tight against bottom navigation buttons */}
-      <div className="w-full h-[250px] min-h-[250px] max-h-[250px] border-2 border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 rounded-3xl relative flex flex-col items-center justify-between p-4 shrink-0 transition-colors duration-150 mb-3">
+      <div
+        id="profile-photo-dropzone"
+        aria-describedby={photoError ? 'photo-error' : undefined}
+        className={`w-full h-[250px] min-h-[250px] max-h-[250px] -mt-[5px] border-2 border-dashed ${
+          photoError
+            ? 'border-rose-500 bg-rose-50/20 dark:bg-rose-950/20'
+            : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60'
+        } rounded-3xl relative flex flex-col items-center justify-between p-4 shrink-0 transition-colors duration-150 mb-3`}
+      >
         <div
           onDragOver={handleDragOver}
           onDragEnter={handleDragOver}
@@ -175,23 +197,36 @@ export const Step6PhotoUpload: React.FC<Step6PhotoUploadProps> = ({
           {profilePhotoPreview ? (
             <div className="flex flex-col items-center justify-between h-full w-full py-1">
               {/* Upper Avatar Preview Frame */}
-              <div className="flex items-center justify-center h-[140px] w-full relative shrink-0">
+              <div className="flex flex-col items-center justify-center h-[140px] w-full relative shrink-0">
                 <div className="relative group">
                   <img
                     src={profilePhotoPreview}
                     alt="Profile Preview"
-                    className="w-28 h-28 object-cover rounded-full border-4 border-[#00AAFF]/30 shadow-lg"
+                    className="w-24 h-24 object-cover rounded-full border-4 border-[#00AAFF]/30 shadow-lg"
                   />
                   {/* Red Circular Delete/Cancel Button on Top Right */}
                   <button
                     type="button"
-                    onClick={handleRemoveProfilePhoto}
+                    onClick={() => {
+                      handleRemoveProfilePhoto();
+                      setPhotoError(null);
+                    }}
                     className="absolute top-0 right-0 p-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-full transition-transform active:scale-90 shadow-md cursor-pointer"
                     title="Remove photo"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
+                {photoError && (
+                  <p
+                    id="photo-error"
+                    className="text-[11px] font-bold text-rose-600 dark:text-rose-400 mt-1 flex items-center justify-center gap-1"
+                    role="alert"
+                  >
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+                    <span>{photoError}</span>
+                  </p>
+                )}
               </div>
 
               {/* Upload & Camera Buttons Row */}
@@ -230,7 +265,18 @@ export const Step6PhotoUpload: React.FC<Step6PhotoUploadProps> = ({
                     </label>{' '}
                     or drag and drop your photo here
                   </p>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500">JPG, PNG or WEBP (Max 5MB)</p>
+                  {photoError ? (
+                    <p
+                      id="photo-error"
+                      className="text-[11px] font-bold text-rose-600 dark:text-rose-400 flex items-center justify-center gap-1"
+                      role="alert"
+                    >
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+                      <span>{photoError}</span>
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500">JPG, PNG or WEBP (Max 5MB)</p>
+                  )}
                 </div>
               </div>
 
@@ -262,7 +308,16 @@ export const Step6PhotoUpload: React.FC<Step6PhotoUploadProps> = ({
             id="profilePhotoInput"
             type="file"
             accept="image/jpeg,image/png,image/webp"
-            onChange={handleProfilePhotoChange}
+            aria-describedby={photoError ? 'photo-error' : undefined}
+            aria-invalid={Boolean(photoError)}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                processPhotoFile(file);
+              } else {
+                handleProfilePhotoChange(e);
+              }
+            }}
             className="hidden"
           />
 
@@ -272,7 +327,14 @@ export const Step6PhotoUpload: React.FC<Step6PhotoUploadProps> = ({
             type="file"
             accept="image/*"
             capture="user"
-            onChange={handleProfilePhotoChange}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                processPhotoFile(file);
+              } else {
+                handleProfilePhotoChange(e);
+              }
+            }}
             className="hidden"
           />
         </div>

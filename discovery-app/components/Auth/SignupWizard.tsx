@@ -9,7 +9,7 @@ import { doc, setDoc, serverTimestamp, collection, query, where, getDocs } from 
 import { fetchSignInMethodsForEmail } from 'firebase/auth';
 import { db, auth } from '../../lib/firebase/config';
 import { uploadToCloudinary } from '../../lib/cloudinary';
-import { Sparkles, AlertCircle, LogIn } from 'lucide-react';
+import { Sparkles, AlertCircle, LogIn, RefreshCw, Check, Loader2 } from 'lucide-react';
 
 import { Step1Credentials } from './steps/Step1Credentials';
 import { Step2BasicInfo } from './steps/Step2BasicInfo';
@@ -25,6 +25,7 @@ export const SignupWizard: React.FC = () => {
   const [step, setStep] = useState<number>(1);
   const [error, setErrorState] = useState<string | null>(null);
   const [errorKey, setErrorKey] = useState<number>(0);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [emailExists, setEmailExists] = useState<boolean>(false);
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
@@ -438,6 +439,7 @@ export const SignupWizard: React.FC = () => {
   // Final Submission: Save full UserProfile to Firestore
   const handleFinishProfile = async () => {
     setError(null);
+    setSuccessMessage(null);
     setUploadingPhotos(true);
 
     try {
@@ -519,8 +521,11 @@ export const SignupWizard: React.FC = () => {
         await refreshProfileStatus();
       }
 
-      // Redirect to discover page
-      router.push('/discover');
+      // Show success feedback confirmation and redirect to feed
+      setSuccessMessage('Profile created! Welcome to Soloberty. Redirecting to your feed...');
+      setTimeout(() => {
+        router.push('/feed');
+      }, 1500);
     } catch (err: any) {
       console.error('Final profile save error:', err);
       let errMsg = err?.message || 'Failed to complete profile registration. Please try again.';
@@ -529,8 +534,8 @@ export const SignupWizard: React.FC = () => {
         setStep(1);
       }
       setError(errMsg);
-    } finally {
       setUploadingPhotos(false);
+      return;
     }
   };
 
@@ -552,7 +557,18 @@ export const SignupWizard: React.FC = () => {
   const renderErrorAlert = () => (
     <div className="min-h-[50px] flex items-center justify-center w-full">
       <AnimatePresence mode="wait">
-        {redirectCountdown !== null ? (
+        {successMessage ? (
+          <motion.div
+            key="successAlert"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            className="w-full p-3.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/60 rounded-2xl flex items-center gap-2.5 text-xs text-emerald-800 dark:text-emerald-200 font-bold shadow-sm"
+          >
+            <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span>{successMessage}</span>
+          </motion.div>
+        ) : redirectCountdown !== null ? (
           <motion.div
             key="redirectAlert"
             initial={{ opacity: 0, x: 20 }}
@@ -574,24 +590,57 @@ export const SignupWizard: React.FC = () => {
             </div>
           </motion.div>
         ) : error ? (
-          <motion.div
-            key={errorKey}
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              x: [0, -12, 12, -9, 9, -5, 5, -2, 2, 0],
-            }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{
-              duration: 0.35,
-              ease: 'easeInOut',
-            }}
-            className="w-full flex items-start gap-2.5 p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-2xl text-rose-700 dark:text-rose-300 text-xs font-semibold shadow-sm"
-          >
-            <AlertCircle className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0 mt-0.5" />
-            <span>{error}</span>
-          </motion.div>
+          step === 7 ? (
+            <motion.div
+              key={errorKey}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              className="w-full p-3.5 bg-amber-50/90 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/60 rounded-2xl flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 shadow-sm"
+            >
+              <div className="flex items-center gap-2.5 overflow-hidden pr-1">
+                <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span className="font-bold">Registration failed</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleFinishProfile}
+                disabled={uploadingPhotos}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-200 dark:bg-amber-900/60 hover:bg-amber-300 dark:hover:bg-amber-800 text-amber-950 dark:text-amber-100 rounded-xl font-extrabold transition-colors cursor-pointer shrink-0 ml-2 disabled:opacity-50"
+              >
+                {uploadingPhotos ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Retrying...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Retry
+                  </>
+                )}
+              </button>
+            </motion.div>
+          ) : (
+            <motion.div
+              key={errorKey}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                x: [0, -12, 12, -9, 9, -5, 5, -2, 2, 0],
+              }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{
+                duration: 0.35,
+                ease: 'easeInOut',
+              }}
+              className="w-full flex items-start gap-2.5 p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-2xl text-rose-700 dark:text-rose-300 text-xs font-semibold shadow-sm"
+            >
+              <AlertCircle className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </motion.div>
+          )
         ) : null}
       </AnimatePresence>
     </div>
@@ -604,7 +653,7 @@ export const SignupWizard: React.FC = () => {
       }`}
     >
       {/* Progress Bar Header */}
-      <div className="space-y-3">
+      <div className="space-y-3 shrink-0 mb-4">
         <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
           <span className="text-[#00AAFF] dark:text-[#B8E7FF]">
             Soloberty Onboarding
@@ -660,6 +709,7 @@ export const SignupWizard: React.FC = () => {
             formData={formData}
             setFormData={setFormData}
             handleStep2Next={handleStep2Next}
+            renderErrorAlert={renderErrorAlert}
             setStep={setStep}
           />
         )}
@@ -728,6 +778,44 @@ export const SignupWizard: React.FC = () => {
             renderErrorAlert={renderErrorAlert}
             setStep={setStep}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Centered Popup Modals with Tinted Background */}
+      <AnimatePresence>
+        {successMessage && (
+          <motion.div
+            key="successModal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 select-none"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 15 }}
+              className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl max-w-sm w-full text-center space-y-4"
+            >
+              <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center border border-emerald-200 dark:border-emerald-800 shadow-sm">
+                <Check className="w-7 h-7" />
+              </div>
+
+              <div className="space-y-1.5">
+                <h3 className="text-xl font-heading font-extrabold text-slate-900 dark:text-white">
+                  Welcome to Soloberty!
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium">
+                  {successMessage}
+                </p>
+              </div>
+
+              <div className="pt-2 flex items-center justify-center gap-2 text-xs font-semibold text-[#00AAFF]">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Navigating to feed...</span>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

@@ -34,7 +34,7 @@ export const LoginPage: React.FC = () => {
 
     try {
       await login(email.trim(), password);
-      router.push('/discover');
+      router.push('/feed');
     } catch (err: any) {
       console.error('Login error:', err);
       let msg = err?.message || 'Invalid email or password. Please try again.';

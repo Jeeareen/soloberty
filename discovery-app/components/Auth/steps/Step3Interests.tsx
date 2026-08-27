@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { CheckCircle2, ArrowRight, ArrowLeft } from 'lucide-react';
+import { CheckCircle2, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
 import { PREDEFINED_INTERESTS } from '../../../types/user';
 
 interface Step3InterestsProps {
@@ -18,6 +18,21 @@ export const Step3Interests: React.FC<Step3InterestsProps> = ({
   handleStep3Next,
   setStep,
 }) => {
+  const [interestsError, setInterestsError] = useState<string | null>(null);
+
+  const onNext = () => {
+    if (interests.length === 0) {
+      setInterestsError('Please select at least 1 interest (up to 3) to proceed.');
+      return;
+    }
+    if (interests.length > 3) {
+      setInterestsError('You can select at most 3 interests.');
+      return;
+    }
+    setInterestsError(null);
+    handleStep3Next();
+  };
+
   return (
     <motion.div
       key="step3"
@@ -38,14 +53,23 @@ export const Step3Interests: React.FC<Step3InterestsProps> = ({
         </p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-[320px] overflow-y-auto pr-1">
+      <div
+        id="interests-container"
+        aria-describedby={interestsError ? 'interests-error' : undefined}
+        className={`grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-[320px] overflow-y-auto pr-1 p-1 rounded-2xl transition-colors ${
+          interestsError ? 'border border-rose-500 bg-rose-50/20 dark:bg-rose-950/20' : ''
+        }`}
+      >
         {PREDEFINED_INTERESTS.map((item) => {
           const isSelected = interests.includes(item.id);
           return (
             <button
               key={item.id}
               type="button"
-              onClick={() => toggleInterest(item.id)}
+              onClick={() => {
+                toggleInterest(item.id);
+                if (interestsError) setInterestsError(null);
+              }}
               className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all relative cursor-pointer ${
                 isSelected
                   ? 'bg-[#B8E7FF]/60 dark:bg-[#B8E7FF]/25 border-[#00AAFF] text-[#0088CC] dark:text-[#B8E7FF] shadow-sm'
@@ -64,6 +88,17 @@ export const Step3Interests: React.FC<Step3InterestsProps> = ({
         })}
       </div>
 
+      {interestsError && (
+        <p
+          id="interests-error"
+          className="text-xs font-semibold text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1.5"
+          role="alert"
+        >
+          <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+          <span>{interestsError}</span>
+        </p>
+      )}
+
       <div className="flex gap-3 pt-2">
         <button
           type="button"
@@ -75,9 +110,8 @@ export const Step3Interests: React.FC<Step3InterestsProps> = ({
         </button>
         <button
           type="button"
-          onClick={handleStep3Next}
-          disabled={interests.length === 0 || interests.length > 3}
-          className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          onClick={onNext}
+          className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           Continue to Bio
           <ArrowRight className="w-4 h-4" />

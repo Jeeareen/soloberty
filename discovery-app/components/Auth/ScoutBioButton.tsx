@@ -89,7 +89,7 @@ export const ScoutBioButton: React.FC<ScoutBioButtonProps> = ({
   // Easing definitions
   const transitionEase = prefersReducedMotion
     ? { duration: 0.1 }
-    : { type: 'spring', stiffness: 700, damping: 18 };
+    : { type: 'spring' as const, stiffness: 700, damping: 18 };
 
   // Error shake keyframes (compositor translateX only)
   const shakeAnimation =

@@ -107,7 +107,7 @@ export default function LoginPage() {
         try {
           const userDoc = await getDoc(doc(db, 'users', uid));
           if (userDoc.exists() && userDoc.data()?.profileCompleted) {
-            router.push('/discover');
+            router.push('/feed');
             return;
           }
         } catch (fsErr) {
