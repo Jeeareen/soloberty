@@ -103,7 +103,10 @@ const RenderCardFace: React.FC<{
     return (
       <div className="relative h-full w-full [transform-style:preserve-3d] transform-gpu">
         {/* Front Face */}
-        <div className="absolute inset-0 flex flex-col bg-white dark:bg-[#0F172A] rounded-xl overflow-hidden [backface-visibility:hidden]">
+        <div
+          onPointerDown={(e) => e.stopPropagation()}
+          className="absolute inset-0 flex flex-col bg-white dark:bg-[#0F172A] rounded-xl overflow-hidden [backface-visibility:hidden]"
+        >
           <div className="relative w-full h-52 sm:h-56 shrink-0 bg-slate-100 dark:bg-slate-800 overflow-hidden">
             {card.avatarUrl ? (
               <img
@@ -128,11 +131,31 @@ const RenderCardFace: React.FC<{
 
           {/* Content Below PP */}
           <div className="flex-1 flex flex-col p-5 space-y-3.5">
-            {/* Location Tag right below PP */}
-            <div className="flex items-center gap-1.5 text-sm sm:text-base font-bold text-[#00AAFF] dark:text-[#B8E7FF]">
-              <MapPin className="w-4 h-4 shrink-0 text-[#00AAFF]" />
-              <span>{card.location?.city || 'Vienna, AT'}</span>
-            </div>
+            {/* Location Tag right below PP (Interactive: redirects to Map page with coordinates) */}
+            <button
+              type="button"
+              onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                const coords = card.location?.coordinates;
+                const city = encodeURIComponent(card.location?.city || '');
+                const uid = encodeURIComponent(card.uid || card.id);
+                const name = encodeURIComponent(card.name || '');
+                if (coords && coords.lat && coords.lng) {
+                  router.push(`/map?lat=${coords.lat}&lng=${coords.lng}&zoom=12&city=${city}&uid=${uid}&name=${name}`);
+                } else {
+                  router.push(`/map?city=${city}&zoom=12&uid=${uid}&name=${name}`);
+                }
+              }}
+              title="View on Map"
+              className="flex items-center gap-1.5 text-sm sm:text-base font-bold text-[#00AAFF] dark:text-[#B8E7FF] hover:underline cursor-pointer group w-fit transition-all active:scale-95"
+            >
+              <MapPin className="w-4 h-4 shrink-0 text-[#00AAFF] group-hover:scale-110 transition-transform" />
+              <span className="group-hover:text-[#0088CC] dark:group-hover:text-white transition-colors">
+                {card.location?.city || 'Vienna, AT'}
+              </span>
+            </button>
 
             {/* Interests as Bulletpoints */}
             <div className="space-y-1.5 flex-1">
@@ -167,7 +190,10 @@ const RenderCardFace: React.FC<{
 
         {/* Back Face */}
         {!isBackground && (
-          <div className="absolute inset-0 flex flex-col p-6 bg-white dark:bg-[#0F172A] rounded-xl [transform:rotateY(180deg)] [backface-visibility:hidden]">
+          <div
+            onPointerDown={(e) => e.stopPropagation()}
+            className="absolute inset-0 flex flex-col p-6 bg-white dark:bg-[#0F172A] rounded-xl [transform:rotateY(180deg)] [backface-visibility:hidden]"
+          >
             {/* Top: Name, Age, Gender */}
             <div className="flex items-center gap-2 pb-3 border-b border-gray-100 dark:border-slate-800 shrink-0">
               <GenderSymbol gender={card.gender} className="w-6 h-6 shrink-0" />
@@ -398,6 +424,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
         interests: p.interests || [],
         location: {
           city: p.location?.city || 'Vienna, AT',
+          coordinates: p.location?.coordinates,
         },
         avatarUrl: p.avatarUrl || '',
         interestImages: (p.interestImages || []).map((img) => ({

@@ -13,6 +13,10 @@ export interface MatchCard {
   interests: string[];
   location: {
     city: string;
+    coordinates?: {
+      lat: number;
+      lng: number;
+    };
   };
   avatarUrl: string;
   interestImages: { slot: number; url: string }[];
