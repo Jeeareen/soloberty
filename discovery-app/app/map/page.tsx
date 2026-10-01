@@ -1,18 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '../../lib/hooks/useAuth';
 import { db } from '../../lib/firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
-import { UserProfile } from '../../types/user';
-import { useUserMarkers, ViewportBounds } from '../../hooks/useUserMarkers';
-import { DistanceFilter, DistanceOption } from '../../components/Map/DistanceFilter';
+import type { UserProfile } from '../../types/user';
+import { useUserMarkers, type ViewportBounds } from '../../hooks/useUserMarkers';
+import { DistanceFilter, type DistanceOption } from '../../components/Map/DistanceFilter';
 import { UserPreviewCard } from '../../components/Map/UserPreviewCard';
-import { Loader2, AlertCircle, RefreshCw, MapPin } from 'lucide-react';
+import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { calculateDistanceKm, COUNTRY_CENTERS, extractCountryCode } from '../../lib/mapUtils';
+import { COUNTRY_CENTERS, extractCountryCode } from '../../lib/mapUtils';
 
 // Leaflet requires window/DOM, so dynamically import MapCanvas with ssr: false
 const MapCanvas = dynamic(
@@ -30,7 +30,6 @@ const MapCanvas = dynamic(
 
 // Fallback coordinate: Vienna, AT
 const DEFAULT_CENTER = { lat: 48.2082, lng: 16.3738 };
-const DEFAULT_ZOOM = 12;
 
 function MapPageContent() {
   const { user, loading: authLoading } = useAuth();
@@ -42,7 +41,6 @@ function MapPageContent() {
   const queryZoom = searchParams.get('zoom');
   const queryCity = searchParams.get('city');
   const queryUid = searchParams.get('uid');
-  const queryName = searchParams.get('name');
 
   const targetCoords = useMemo(() => {
     if (queryLat && queryLng) {
@@ -74,7 +72,7 @@ function MapPageContent() {
     null
   );
   const [initialCenter, setInitialCenter] = useState<{ lat: number; lng: number }>(DEFAULT_CENTER);
-  const [initialZoomLevel, setInitialZoomLevel] = useState<number>(12);
+  const initialZoomLevel = 12;
   const [locatingUser, setLocatingUser] = useState<boolean>(true);
 
   // Filter & Viewport states
@@ -150,18 +148,6 @@ function MapPageContent() {
 
   // Hook to fetch and cache user profiles falling in the visible bounds
   const { users, loading, error, refetch } = useUserMarkers(viewportBounds, user?.uid);
-
-  // Filter by distance for visible user count
-  const visibleCount = useMemo(() => {
-    if (distanceFilter === 'any' || !currentUserLocation) {
-      return users.length;
-    }
-    return users.filter((u) => {
-      const coords = u.location?.coordinates;
-      if (!coords) return false;
-      return calculateDistanceKm(currentUserLocation, coords) <= distanceFilter;
-    }).length;
-  }, [users, currentUserLocation, distanceFilter]);
 
   const handleSelectClusterOrUser = useCallback((selected: UserProfile[], title: string) => {
     setSelectedUsers(selected);

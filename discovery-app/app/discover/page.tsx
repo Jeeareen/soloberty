@@ -1,4 +1,3 @@
-import React from 'react';
 import DiscoveryChat from '../../components/DiscoveryChat';
 
 export const metadata = {
