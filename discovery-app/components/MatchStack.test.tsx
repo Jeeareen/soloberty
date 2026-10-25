@@ -187,4 +187,23 @@ describe('MatchStack Component', () => {
       expect(screen.getByRole('button', { name: /^Bob\./i })).toBeInTheDocument();
     });
   });
+
+  it('9. Flips card on first single touch tap (touchstart -> touchend) even if synthetic click is suppressed', async () => {
+    render(<MatchStack cards={mockCards} />);
+
+    const activeCard = screen.getByRole('button', { name: /^Alice\./i });
+    expect(activeCard).toHaveStyle('transform: none');
+
+    // Simulate touch tap on card
+    fireEvent.touchStart(activeCard, {
+      touches: [{ clientX: 150, clientY: 200 }],
+    });
+    fireEvent.touchEnd(activeCard, {
+      changedTouches: [{ clientX: 152, clientY: 201 }],
+    });
+
+    await waitFor(() => {
+      expect(activeCard.style.transform).toContain('rotateY(180deg)');
+    });
+  });
 });

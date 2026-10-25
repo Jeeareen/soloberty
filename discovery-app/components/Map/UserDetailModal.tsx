@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Lightbulb, RefreshCw, LogIn } from 'lucide-react';
 import { createPortal } from 'react-dom';
@@ -20,6 +20,8 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user: profile,
   const { user: currentUser } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
+  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
+  const lastTapTimeRef = useRef<number>(0);
 
   // Auth modal state for unauthenticated users
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -162,7 +164,33 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user: profile,
               tabIndex={0}
               role="button"
               aria-label={`${card.name}. Tap card to flip for details`}
-              onClick={() => setIsFlipped((prev) => !prev)}
+              onClick={() => {
+                if (Date.now() - lastTapTimeRef.current < 400) return;
+                setIsFlipped((prev) => !prev);
+              }}
+              onPointerDownCapture={(e) => {
+                pointerStartRef.current = { x: e.clientX, y: e.clientY };
+              }}
+              onTouchStart={(e) => {
+                const touch = e.touches[0];
+                if (touch) {
+                  pointerStartRef.current = { x: touch.clientX, y: touch.clientY };
+                }
+              }}
+              onTouchEnd={(e) => {
+                const target = e.target as HTMLElement;
+                if (target?.closest('button, a')) return;
+                const touch = e.changedTouches[0];
+                if (touch && pointerStartRef.current) {
+                  const dx = Math.abs(touch.clientX - pointerStartRef.current.x);
+                  const dy = Math.abs(touch.clientY - pointerStartRef.current.y);
+                  if (dx < 10 && dy < 10) {
+                    lastTapTimeRef.current = Date.now();
+                    setIsFlipped((prev) => !prev);
+                  }
+                }
+                pointerStartRef.current = null;
+              }}
               animate={{ rotateY: isFlipped ? 180 : 0 }}
               transition={{ rotateY: { duration: 0.5, ease: 'easeInOut' } }}
               className="relative flex h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 shadow-2xl focus:outline-none [transform-style:preserve-3d] cursor-pointer"

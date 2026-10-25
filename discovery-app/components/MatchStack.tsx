@@ -393,6 +393,8 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
   const [isHeld, setIsHeld] = useState(false);
   const isDraggingRef = useRef(false);
   const dragTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
+  const lastTapTimeRef = useRef<number>(0);
 
   // Clear dragging state and timeouts whenever current card changes
   useEffect(() => {
@@ -401,6 +403,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
       dragTimeoutRef.current = null;
     }
     isDraggingRef.current = false;
+    pointerStartRef.current = null;
   }, [currentIndex]);
 
   // Save current swiping index to sessionStorage
@@ -557,9 +560,11 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
   // Ensure active card is rendered in final visible state on mount & index change
   useEffect(() => {
     if (!isFinished && cards.length > 0) {
+      x.stop();
+      x.set(0);
       controls.start({ scale: 1, opacity: 1, x: 0 });
     }
-  }, [currentIndex, isFinished, cards.length, controls]);
+  }, [currentIndex, isFinished, cards.length, controls, x]);
 
   const isAnimatingRef = useRef<boolean>(false);
 
@@ -838,17 +843,63 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
               role="button"
               aria-label={`${currentCard.name}. ${UI_TEXT.FLIP_ARIA}`}
               onClick={() => {
+                if (Date.now() - lastTapTimeRef.current < 400) return;
                 if (!isDraggingRef.current) setIsFlipped((prev) => !prev);
               }}
-              onPointerDown={() => {
+              onPointerDown={(e) => {
                 isDraggingRef.current = false;
+                pointerStartRef.current = { x: e.clientX, y: e.clientY };
                 setIsHeld(true);
               }}
-              onTouchStart={() => {
+              onPointerDownCapture={(e) => {
                 isDraggingRef.current = false;
+                pointerStartRef.current = { x: e.clientX, y: e.clientY };
               }}
-              onPointerUp={() => setIsHeld(false)}
-              onPointerCancel={() => setIsHeld(false)}
+              onTouchStart={(e) => {
+                isDraggingRef.current = false;
+                const touch = e.touches[0];
+                if (touch) {
+                  pointerStartRef.current = { x: touch.clientX, y: touch.clientY };
+                }
+              }}
+              onTouchEnd={(e) => {
+                setIsHeld(false);
+                if (isDraggingRef.current || isAnimatingRef.current) return;
+                const target = e.target as HTMLElement;
+                if (target?.closest('button, a')) return;
+                const touch = e.changedTouches[0];
+                if (touch && pointerStartRef.current) {
+                  const dx = Math.abs(touch.clientX - pointerStartRef.current.x);
+                  const dy = Math.abs(touch.clientY - pointerStartRef.current.y);
+                  if (dx < 10 && dy < 10) {
+                    lastTapTimeRef.current = Date.now();
+                    setIsFlipped((prev) => !prev);
+                  }
+                }
+                pointerStartRef.current = null;
+              }}
+              onPointerUp={(e) => {
+                setIsHeld(false);
+                if (e.pointerType === 'touch') {
+                  if (isDraggingRef.current || isAnimatingRef.current) return;
+                  if (Date.now() - lastTapTimeRef.current < 400) return;
+                  const target = e.target as HTMLElement;
+                  if (target?.closest('button, a')) return;
+                  if (pointerStartRef.current) {
+                    const dx = Math.abs(e.clientX - pointerStartRef.current.x);
+                    const dy = Math.abs(e.clientY - pointerStartRef.current.y);
+                    if (dx < 10 && dy < 10) {
+                      lastTapTimeRef.current = Date.now();
+                      setIsFlipped((prev) => !prev);
+                    }
+                  }
+                  pointerStartRef.current = null;
+                }
+              }}
+              onPointerCancel={() => {
+                setIsHeld(false);
+                pointerStartRef.current = null;
+              }}
               drag="x"
               dragConstraints={{ left: -stepX, right: undoCount > 0 && currentIndex > 0 ? stepX : 0 }}
               dragElastic={0}
