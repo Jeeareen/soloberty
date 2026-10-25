@@ -9,6 +9,7 @@ import type { UserProfile } from '../../types/user';
 import { useUserMarkers, type ViewportBounds } from '../../hooks/useUserMarkers';
 import { DistanceFilter, type DistanceOption } from '../../components/Map/DistanceFilter';
 import { UserPreviewCard } from '../../components/Map/UserPreviewCard';
+import { UserDetailModal } from '../../components/Map/UserDetailModal';
 import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -83,6 +84,9 @@ function MapPageContent() {
   const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>([]);
   const [selectedTitle, setSelectedTitle] = useState<string>('');
   const [previewIndex, setPreviewIndex] = useState<number>(0);
+
+  // Detailed MatchCard Modal state
+  const [detailedUser, setDetailedUser] = useState<UserProfile | null>(null);
 
   // Wait for auth to resolve before determining initial user location
   useEffect(() => {
@@ -264,6 +268,13 @@ function MapPageContent() {
         onPrev={handlePrev}
         onNext={handleNext}
         onClose={handleClosePreview}
+        onSelectUser={(u) => setDetailedUser(u)}
+      />
+
+      {/* Detailed MatchCard Modal */}
+      <UserDetailModal
+        user={detailedUser}
+        onClose={() => setDetailedUser(null)}
       />
     </div>
   );

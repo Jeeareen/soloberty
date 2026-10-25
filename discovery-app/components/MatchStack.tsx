@@ -32,7 +32,7 @@ const SWIPE_THRESHOLD = 50;
 export const defaultMockCards: MatchCard[] = [];
 
 // Gender Icon Symbol helper component
-const GenderSymbol: React.FC<{ gender?: string; className?: string }> = ({
+export const GenderSymbol: React.FC<{ gender?: string; className?: string }> = ({
   gender,
   className = 'w-6 h-6',
 }) => {
@@ -83,7 +83,7 @@ const GenderSymbol: React.FC<{ gender?: string; className?: string }> = ({
 };
 
 // Full Card Renderer component for all carousel card slots (Memoized for 60 FPS performance)
-const RenderCardFace: React.FC<{
+export const RenderCardFace: React.FC<{
   card: MatchCard;
   isBackground?: boolean;
   activeBackFocus?: 'chat' | 'whyYouTwo';
@@ -388,15 +388,20 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
   });
 
   const [undoCount, setUndoCount] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
+  const [flippedCardIds, setFlippedCardIds] = useState<Record<string, boolean>>({});
   const [activeBackFocus, setActiveBackFocus] = useState<'chat' | 'whyYouTwo' | null>(null);
   const [isHeld, setIsHeld] = useState(false);
   const isDraggingRef = useRef(false);
+  const dragTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Reset back face button focus to null whenever card flips or changes
+  // Clear dragging state and timeouts whenever current card changes
   useEffect(() => {
-    setActiveBackFocus(null);
-  }, [currentIndex, isFlipped]);
+    if (dragTimeoutRef.current) {
+      clearTimeout(dragTimeoutRef.current);
+      dragTimeoutRef.current = null;
+    }
+    isDraggingRef.current = false;
+  }, [currentIndex]);
 
   // Save current swiping index to sessionStorage
   useEffect(() => {
@@ -454,6 +459,23 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
     }
     return list;
   }, [baseCards, appendedCardCount, currentIndex]);
+
+  const currentCard = cards[currentIndex];
+  const isFlipped = currentCard ? !!flippedCardIds[currentCard.id] : false;
+
+  const setIsFlipped = (valOrUpdater: boolean | ((prev: boolean) => boolean)) => {
+    if (!currentCard) return;
+    setFlippedCardIds((prev) => {
+      const currentVal = !!prev[currentCard.id];
+      const newVal = typeof valOrUpdater === 'function' ? valOrUpdater(currentVal) : valOrUpdater;
+      return { ...prev, [currentCard.id]: newVal };
+    });
+  };
+
+  // Reset back face button focus to null whenever card flips or changes
+  useEffect(() => {
+    setActiveBackFocus(null);
+  }, [currentIndex, isFlipped]);
 
   // Helper to trigger endless card loop when user swipes near the end of available stack
   const checkAndExpandEndlessStack = (nextIndex: number) => {
@@ -541,20 +563,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
 
   const isAnimatingRef = useRef<boolean>(false);
 
-  const [flipWarning, setFlipWarning] = useState(false);
-
-  const triggerFlipWarning = () => {
-    setFlipWarning(true);
-    setTimeout(() => {
-      setFlipWarning(false);
-    }, 2000);
-  };
-
   const handleSwipeLeft = async () => {
-    if (isFlipped) {
-      triggerFlipWarning();
-      return;
-    }
     if (isAnimatingRef.current) return;
     isAnimatingRef.current = true;
 
@@ -563,8 +572,18 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
       centerScaleTarget.set(1.0);
       centerScaleSpring.jump(1.0);
 
+      // If the middle card is currently flipped, smoothly unflip it first so ONLY this card rotates
+      if (isFlipped) {
+        setIsFlipped(false);
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+
       const isTest = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
-      const duration = shouldReduceMotion || isTest ? 0 : 0.2;
+      const currentX = x.get();
+      // Ensure the swipe never travels faster than standard arrow swipe (duration proportional to remaining distance, capped at standard 0.2s)
+      const remainingDistance = Math.max(0, stepX + currentX);
+      const computedDuration = (remainingDistance / stepX) * 0.2;
+      const duration = shouldReduceMotion || isTest ? 0 : Math.max(computedDuration, 0.12);
 
       if (duration > 0) {
         await animate(x, -stepX, { duration, ease: 'easeOut' });
@@ -572,7 +591,6 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
 
       x.set(0);
       setUndoCount((prev) => Math.min(prev + 1, 2));
-      setIsFlipped(false);
       setCurrentIndex((prev) => {
         const next = prev + 1;
         checkAndExpandEndlessStack(next);
@@ -584,10 +602,6 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
   };
 
   const handleSwipeRightUndo = async () => {
-    if (isFlipped) {
-      triggerFlipWarning();
-      return;
-    }
     if (isAnimatingRef.current) return;
     if (undoCount <= 0 || currentIndex <= 0) {
       animate(x, 0, { type: 'spring', stiffness: 300, damping: 25 });
@@ -600,8 +614,18 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
       centerScaleTarget.set(1.0);
       centerScaleSpring.jump(1.0);
 
+      // If the middle card is currently flipped, smoothly unflip it first so ONLY this card rotates
+      if (isFlipped) {
+        setIsFlipped(false);
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+
       const isTest = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
-      const duration = shouldReduceMotion || isTest ? 0 : 0.2;
+      const currentX = x.get();
+      // Ensure undo swipe never travels faster than standard arrow swipe
+      const remainingDistance = Math.max(0, stepX - currentX);
+      const computedDuration = (remainingDistance / stepX) * 0.2;
+      const duration = shouldReduceMotion || isTest ? 0 : Math.max(computedDuration, 0.12);
 
       if (duration > 0) {
         await animate(x, stepX, { duration, ease: 'easeOut' });
@@ -609,7 +633,6 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
 
       x.set(0);
       setUndoCount((prev) => Math.max(prev - 1, 0));
-      setIsFlipped(false);
       setCurrentIndex((prev) => prev - 1);
     } finally {
       isAnimatingRef.current = false;
@@ -623,65 +646,26 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
       if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT') return;
       if (e.repeat) return;
 
-      if (isFlipped) {
-        // Backside focused: Arrow keys navigate between Chat and Why You Two buttons without swiping cards
-        switch (e.key) {
-          case 'ArrowLeft':
-            e.preventDefault();
-            setActiveBackFocus('chat');
-            break;
-          case 'ArrowRight':
-            e.preventDefault();
-            setActiveBackFocus('whyYouTwo');
-            break;
-          case 'Enter':
-            e.preventDefault();
-            const card = cards[currentIndex];
-            if (!card) break;
-            if (!activeBackFocus) {
-              setIsFlipped(false);
-              break;
-            }
-            if (activeBackFocus === 'chat') {
-              if (!user) {
-                handleRequireAuth('chat');
-              } else {
-                const token = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-                router.push(
-                  `/chat?name=${encodeURIComponent(card.name)}&age=${card.age}&bio=${encodeURIComponent(card.bio)}&interests=${encodeURIComponent((card.interests || []).join(','))}&uid=${card.uid}&generate=true&token=${token}&from=feed`
-                );
-              }
-            } else if (activeBackFocus === 'whyYouTwo') {
-              if (!user) {
-                handleRequireAuth('whyYouTwo');
-              } else {
-                handleWhyYouTwo(card);
-              }
-            }
-            break;
-          case ' ':
-          case 'Escape':
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          handleSwipeRightUndo();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          handleSwipeLeft();
+          break;
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          setIsFlipped((prev) => !prev);
+          break;
+        case 'Escape':
+          if (isFlipped) {
             e.preventDefault();
             setIsFlipped(false);
-            break;
-        }
-      } else {
-        // Frontside focused: Arrow keys slide through cards
-        switch (e.key) {
-          case 'ArrowLeft':
-            e.preventDefault();
-            handleSwipeRightUndo();
-            break;
-          case 'ArrowRight':
-            e.preventDefault();
-            handleSwipeLeft();
-            break;
-          case 'Enter':
-          case ' ':
-            e.preventDefault();
-            setIsFlipped(true);
-            break;
-        }
+          }
+          break;
       }
     };
 
@@ -692,19 +676,24 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     setIsHeld(false);
     x.stop();
-    if (Math.abs(info.offset.x) > 5) {
-      isDraggingRef.current = true;
-      setTimeout(() => {
-        isDraggingRef.current = false;
-      }, 150);
-    }
 
     const offset = info.offset.x;
     if (offset < -SWIPE_THRESHOLD) {
+      isDraggingRef.current = false;
       handleSwipeLeft();
     } else if (offset > SWIPE_THRESHOLD && undoCount > 0 && currentIndex > 0) {
+      isDraggingRef.current = false;
       handleSwipeRightUndo();
     } else {
+      if (Math.abs(info.offset.x) > 5) {
+        isDraggingRef.current = true;
+        if (dragTimeoutRef.current) clearTimeout(dragTimeoutRef.current);
+        dragTimeoutRef.current = setTimeout(() => {
+          isDraggingRef.current = false;
+        }, 150);
+      } else {
+        isDraggingRef.current = false;
+      }
       animate(x, 0, { type: 'spring', stiffness: 300, damping: 25 });
     }
   };
@@ -749,8 +738,6 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
       </div>
     );
   }
-
-  const currentCard = cards[currentIndex];
 
   return (
     <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-[#F8FAFC] dark:bg-[#090D16] touch-none [perspective:1000px]">
@@ -853,26 +840,27 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
               onClick={() => {
                 if (!isDraggingRef.current) setIsFlipped((prev) => !prev);
               }}
-              onPointerDown={() => setIsHeld(true)}
+              onPointerDown={() => {
+                isDraggingRef.current = false;
+                setIsHeld(true);
+              }}
+              onTouchStart={() => {
+                isDraggingRef.current = false;
+              }}
               onPointerUp={() => setIsHeld(false)}
               onPointerCancel={() => setIsHeld(false)}
-              drag={isFlipped ? false : "x"}
+              drag="x"
               dragConstraints={{ left: -stepX, right: undoCount > 0 && currentIndex > 0 ? stepX : 0 }}
               dragElastic={0}
               dragMomentum={false}
               onDragStart={() => {
-                if (isFlipped) {
-                  triggerFlipWarning();
-                  return;
-                }
                 isDraggingRef.current = true;
               }}
               onDragEnd={handleDragEnd}
               style={{ x, scale: activeScale, opacity: 1, zIndex: activeZIndex }}
               animate={{ rotateY: isFlipped ? 180 : 0 }}
               transition={{ rotateY: { duration: 0.5, ease: 'easeInOut' } }}
-              className={`absolute flex h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 focus:outline-none [transform-style:preserve-3d] ${isFlipped ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'
-                }`}
+              className="absolute flex h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 focus:outline-none [transform-style:preserve-3d] cursor-grab active:cursor-grabbing"
             >
               <RenderCardFace
                 card={currentCard}
@@ -884,22 +872,6 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
           )}
         </AnimatePresence>
       </div>
-
-      {/* Amber Warning Popup Toast when trying to swipe on back of card (Top to Down animation) */}
-      <AnimatePresence>
-        {flipWarning && (
-          <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
-            className="absolute top-6 z-50 px-4 py-2.5 bg-amber-500/15 dark:bg-amber-500/20 backdrop-blur-md border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-bold rounded-2xl shadow-lg shadow-amber-500/5 flex items-center gap-2 pointer-events-none"
-          >
-            <span>Flip card back to front to swipe</span>
-            <span>🔄</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Why You Two Modal Portaled to Body */}
       {mounted &&

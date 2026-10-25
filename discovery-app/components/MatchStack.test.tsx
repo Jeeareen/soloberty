@@ -170,4 +170,21 @@ describe('MatchStack Component', () => {
 
     expect(stopped).toBe(true);
   });
+
+  it('8. Allows swiping to next card while back face is shown (card is flipped)', async () => {
+    render(<MatchStack cards={mockCards} />);
+
+    const activeCard = screen.getByRole('button', { name: /^Alice\./i });
+    // Flip card to back
+    fireEvent.click(activeCard);
+    expect(screen.getByText('Loves React')).toBeInTheDocument();
+
+    // Swipe right while flipped
+    fireEvent.keyDown(activeCard, { key: 'ArrowRight' });
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /^Alice\./i })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^Bob\./i })).toBeInTheDocument();
+    });
+  });
 });

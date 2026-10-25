@@ -6,9 +6,12 @@ import { useChat } from '@ai-sdk/react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Send, ArrowLeft, Sparkles, AlertTriangle, RefreshCw, MessageSquare, X, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { collection, addDoc, query, orderBy, getDocs, limit, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, getDocs, limit, deleteDoc, serverTimestamp, doc, setDoc, updateDoc, where, getDoc } from 'firebase/firestore';
 import { db, auth } from '../../lib/firebase/config';
 import { useProfiles } from '../../hooks/useProfiles';
+import { useAuth } from '../../lib/hooks/useAuth';
+import { UserDetailModal } from '../../components/Map/UserDetailModal';
+import type { UserProfile } from '../../types/user';
 
 interface ToolInvocationBlockProps {
   toolInvocation: any;
@@ -170,97 +173,138 @@ export function ToolInvocationBlock({
   );
 }
 
+// Convert a Firestore Timestamp / Date / {seconds} into epoch millis (0 if missing)
+function tsToMillis(t: any): number {
+  if (!t) return 0;
+  if (typeof t.toMillis === 'function') return t.toMillis();
+  if (typeof t.seconds === 'number') return t.seconds * 1000;
+  if (t instanceof Date) return t.getTime();
+  return 0;
+}
+
+// Clear a conversation for ONE user. Messages stay in the database (hidden for this
+// user via clearedAt[uid]) until every participant has cleared it; then it is deleted.
+async function clearConversationForUser(conversationId: string, myUid: string): Promise<'hidden' | 'deleted'> {
+  const convRef = doc(db, 'conversations', conversationId);
+  try {
+    await updateDoc(convRef, { [`clearedAt.${myUid}`]: serverTimestamp() });
+  } catch (e: any) {
+    if (e?.code === 'not-found') return 'deleted';
+    throw e;
+  }
+
+  const snap = await getDoc(convRef);
+  if (!snap.exists()) return 'deleted';
+  const data = snap.data();
+  const participants: string[] = data.participants || [];
+  const lastActivity = tsToMillis(data.updatedAt);
+
+  const everyoneCleared = participants.every((p) => {
+    // My own marker may still be a pending server timestamp -> treat as now
+    const clearedAt = p === myUid ? tsToMillis(data.clearedAt?.[p]) || Date.now() : tsToMillis(data.clearedAt?.[p]);
+    return clearedAt > 0 && clearedAt >= lastActivity;
+  });
+
+  if (!everyoneCleared) return 'hidden';
+
+  const msgs = await getDocs(collection(db, 'conversations', conversationId, 'messages'));
+  for (const m of msgs.docs) {
+    await deleteDoc(m.ref);
+  }
+  await deleteDoc(convRef);
+  return 'deleted';
+}
+
 function ChatList() {
-  const { profiles, loading } = useProfiles();
+  const { user: authUser, loading: authLoading } = useAuth();
+  const { profiles, loading: profilesLoading } = useProfiles();
   const router = useRouter();
 
   const [chatItems, setChatItems] = React.useState<any[]>([]);
   const [loadingChats, setLoadingChats] = React.useState(true);
 
-  // Fetch real latest messages from Firestore for each profile conversation
+  // Fetch real latest messages from Firestore for each conversation
   useEffect(() => {
     let isMounted = true;
 
     async function loadLatestMessages() {
+      // Wait for auth to settle
+      if (authLoading) return;
+
       setLoadingChats(true);
       try {
-        const baseList = profiles;
+        const currentAuthUid = authUser?.uid || auth.currentUser?.uid || 'guest';
+        const conversationsMap = new Map<string, any>();
 
-        const updated = (
-          await Promise.all(
-            baseList.map(async (p, idx) => {
-              const uid = p.uid || `user_${idx}`;
-              const key = `chat_${uid}`;
+        // 1. Query standard 'conversations' collection where current user is a participant
+        if (currentAuthUid && currentAuthUid !== 'guest') {
+          try {
+            const convsRef = collection(db, 'conversations');
+            // Query without composite orderBy to avoid needing a Firestore composite index
+            const q = query(convsRef, where('participants', 'array-contains', currentAuthUid));
+            const convSnap = await getDocs(q);
+            for (const docSnap of convSnap.docs) {
+              const data = docSnap.data();
+              const participants: string[] = data.participants || [];
+              const otherUid = participants.find((id) => id !== currentAuthUid);
+              if (!otherUid) continue;
 
-              try {
-                const msgRef = collection(db, 'chats', key, 'messages');
-                const q = query(msgRef, orderBy('createdAt', 'desc'), limit(1));
-                const snap = await getDocs(q);
+              let lastTimestamp = tsToMillis(data.updatedAt);
 
-                const currentAuthUid = auth.currentUser?.uid || 'guest';
-                const isCleared = typeof window !== 'undefined' && localStorage.getItem(`chat_cleared_${currentAuthUid}_${uid}`) === 'true';
-
-                // Skip profile if there's no message history and it was never engaged with
-                if (snap.empty && !isCleared) {
-                  return null;
-                }
-
-                let lastMessageText = isCleared ? 'Chat cleared' : 'New conversation';
-                let lastTimestamp: number = 0;
-
-                if (!snap.empty && !isCleared) {
-                  const data = snap.docs[0].data();
-                  lastMessageText = data.content || '';
-                  if (data.createdAt?.toDate) {
-                    lastTimestamp = data.createdAt.toDate().getTime();
-                  } else if (data.createdAt?.seconds) {
-                    lastTimestamp = data.createdAt.seconds * 1000;
-                  } else if (data.createdAt instanceof Date) {
-                    lastTimestamp = data.createdAt.getTime();
-                  }
-                } else if (isCleared) {
-                  const savedTime = localStorage.getItem(`chat_cleared_time_${uid}`);
-                  if (savedTime) lastTimestamp = parseInt(savedTime, 10);
-                }
-
-                // Helper to format relative time
-                let formattedTime = isCleared ? 'Cleared' : 'New';
-                if (lastTimestamp > 0) {
-                  const diffMs = Date.now() - lastTimestamp;
-                  const diffSec = Math.floor(diffMs / 1000);
-                  const diffMin = Math.floor(diffSec / 60);
-                  const diffHour = Math.floor(diffMin / 60);
-                  const diffDay = Math.floor(diffHour / 24);
-
-                  if (diffSec < 45) {
-                    formattedTime = 'Just now';
-                  } else if (diffMin < 60) {
-                    formattedTime = `${Math.max(1, diffMin)}m ago`;
-                  } else if (diffHour < 24) {
-                    formattedTime = `${diffHour}h ago`;
-                  } else {
-                    formattedTime = `${diffDay}d ago`;
-                  }
-                }
-
-                return {
-                  uid: uid,
-                  name: p.name || 'Anonymous',
-                  age: p.age || 25,
-                  bio: p.bio || '',
-                  interests: p.interests || [],
-                  lastMessage: lastMessageText,
-                  lastTimestamp: lastTimestamp,
-                  time: formattedTime,
-                  isCleared: isCleared,
-                  avatarColor: idx % 2 === 0 ? 'bg-[#B8E7FF] text-[#00AAFF]' : 'bg-emerald-100 text-emerald-600',
-                };
-              } catch (e) {
-                return null;
+              // Hidden for me if I cleared it and nothing newer has arrived since
+              const myClearedAt = tsToMillis(data.clearedAt?.[currentAuthUid]);
+              if (myClearedAt && myClearedAt >= lastTimestamp) {
+                continue;
               }
-            })
-          )
-        ).filter(Boolean);
+
+              // Lookup profile details
+              const profile = profiles.find((p) => p.uid === otherUid);
+              const participantDetails = data.participantDetails?.[otherUid] || {};
+
+              conversationsMap.set(otherUid, {
+                uid: otherUid,
+                name: profile?.name || participantDetails.name || 'Member',
+                age: profile?.age || participantDetails.age || 25,
+                bio: profile?.bio || participantDetails.bio || '',
+                interests: profile?.interests || participantDetails.interests || [],
+                lastMessage: data.lastMessage || 'New conversation',
+                lastTimestamp,
+                isCleared: false,
+                avatarColor: 'bg-[#B8E7FF] text-[#00AAFF]',
+              });
+            }
+          } catch (err) {
+            console.warn('[Conversations Query Warning]:', err);
+          }
+        }
+
+        // (legacy chats/* fallback removed)
+
+        // Convert map values to array and compute formatted relative time
+        const updated = Array.from(conversationsMap.values()).map((item) => {
+          let formattedTime = item.isCleared ? 'Cleared' : 'New';
+          if (item.lastTimestamp > 0) {
+            const diffMs = Date.now() - item.lastTimestamp;
+            const diffSec = Math.floor(diffMs / 1000);
+            const diffMin = Math.floor(diffSec / 60);
+            const diffHour = Math.floor(diffMin / 60);
+            const diffDay = Math.floor(diffHour / 24);
+
+            if (diffSec < 45) {
+              formattedTime = 'Just now';
+            } else if (diffMin < 60) {
+              formattedTime = `${Math.max(1, diffMin)}m ago`;
+            } else if (diffHour < 24) {
+              formattedTime = `${diffHour}h ago`;
+            } else {
+              formattedTime = `${diffDay}d ago`;
+            }
+          }
+          return {
+            ...item,
+            time: formattedTime,
+          };
+        });
 
         // Sort chat items in descending order (most recently active chat first)
         updated.sort((a: any, b: any) => b.lastTimestamp - a.lastTimestamp);
@@ -277,47 +321,31 @@ function ChatList() {
       }
     }
 
-    if (!loading) {
+    if (!profilesLoading && !authLoading) {
       loadLatestMessages();
     }
 
     return () => {
       isMounted = false;
     };
-  }, [profiles, loading]);
+  }, [profiles, profilesLoading, authUser?.uid, authLoading]);
 
   const [showClearConfirmModal, setShowClearConfirmModal] = React.useState(false);
 
-  // Function to delete all message history from Firestore
+  // Clear every conversation for the current user only
   const handleClearAllHistory = async () => {
     setShowClearConfirmModal(false);
     setLoadingChats(true);
     try {
-      // Delete messages from Firestore for all active chat items
-      for (const item of chatItems) {
-        const key = `chat_${item.uid}`;
-        const msgRef = collection(db, 'chats', key, 'messages');
-        const snap = await getDocs(msgRef);
-        for (const docSnap of snap.docs) {
-          await deleteDoc(docSnap.ref);
-        }
-
-        if (typeof window !== 'undefined') {
-          const currentAuthUid = auth.currentUser?.uid || 'guest';
-          localStorage.setItem(`chat_cleared_${currentAuthUid}_${item.uid}`, 'true');
-          localStorage.setItem(`chat_cleared_time_${currentAuthUid}_${item.uid}`, Date.now().toString());
+      const myUid = authUser?.uid || auth.currentUser?.uid;
+      if (myUid) {
+        for (const item of chatItems) {
+          const convId = [myUid, item.uid].sort().join('_');
+          await clearConversationForUser(convId, myUid);
         }
       }
-
-      // Keep all cleared chat items visible in list with "Chat cleared" indicator
-      setChatItems((prev) =>
-        prev.map((item) => ({
-          ...item,
-          isCleared: true,
-          lastMessage: 'Chat cleared',
-          time: 'Just now',
-        }))
-      );
+      // Cleared conversations disappear from my list
+      setChatItems([]);
     } catch (e) {
       console.error('Error clearing chat history:', e);
     } finally {
@@ -389,7 +417,7 @@ function ChatList() {
 
       {/* Chat List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
-        {loading || loadingChats ? (
+        {profilesLoading || authLoading || loadingChats ? (
           <div className="flex justify-center items-center h-48">
             <div className="w-8 h-8 border-4 border-[#00AAFF] border-t-transparent rounded-full animate-spin" />
           </div>
@@ -484,11 +512,59 @@ function IndividualChat({
       : [];
 
   const uid = searchParams.get('uid') || '';
-  const chatKey = uid ? `chat_${uid}` : `${rawParamName || 'user'}-${age}-${interests.join('_')}`;
+  const { user: authUser } = useAuth();
+  const currentAuthUid = authUser?.uid || auth.currentUser?.uid;
+
+  // State to hold detailed UserProfile and detailed modal state
+  const [targetProfile, setTargetProfile] = React.useState<UserProfile | null>(null);
+  const [showDetailModal, setShowDetailModal] = React.useState(false);
+
+  // Fetch full UserProfile for this user from Firestore if uid exists
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchTargetProfile() {
+      if (!uid) return;
+      try {
+        const userDoc = await getDoc(doc(db, 'users', uid));
+        if (userDoc.exists() && isMounted) {
+          setTargetProfile({ uid, ...(userDoc.data() as any) });
+        }
+      } catch (err) {
+        console.warn('Could not fetch target profile from Firestore:', err);
+      }
+    }
+    fetchTargetProfile();
+    return () => {
+      isMounted = false;
+    };
+  }, [uid]);
+
+  // Fallback constructed profile using query parameters if full doc is not fetched
+  const resolvedTargetProfile: UserProfile = React.useMemo(() => {
+    if (targetProfile) return targetProfile;
+    return {
+      uid: uid || 'member',
+      name: name || 'Member',
+      age: age ? parseInt(age, 10) : 25,
+      bio: bio || '',
+      interests: interests || [],
+      location: {
+        city: 'Vienna, AT',
+      },
+    };
+  }, [targetProfile, uid, name, age, bio, interests]);
+
+  // Industry Standard: Deterministic conversation ID [uidA, uidB].sort().join('_')
+  const conversationId = React.useMemo(() => {
+    if (uid && currentAuthUid && uid !== currentAuthUid) {
+      return [currentAuthUid, uid].sort().join('_');
+    }
+    return uid ? `chat_${uid}` : `${rawParamName || 'user'}-${age}-${interests.join('_')}`;
+  }, [uid, currentAuthUid, rawParamName, age, interests]);
 
   const chat = useChat({
     api: '/api/chat',
-    id: chatKey,
+    id: conversationId,
   });
 
   const [localInput, setLocalInput] = React.useState('');
@@ -542,18 +618,26 @@ function IndividualChat({
 
     async function loadChatHistory() {
       try {
-        const chatsRef = collection(db, 'chats', chatKey, 'messages');
-        const q = query(chatsRef, orderBy('createdAt', 'asc'));
-        const snapshot = await getDocs(q);
+        if (!currentAuthUid) return;
+
+        // My personal "cleared" marker: only show messages newer than it
+        const convSnap = await getDoc(doc(db, 'conversations', conversationId));
+        const myClearedAt = convSnap.exists()
+          ? tsToMillis(convSnap.data()?.clearedAt?.[currentAuthUid])
+          : 0;
+
+        const standardRef = collection(db, 'conversations', conversationId, 'messages');
+        const snapshot = await getDocs(query(standardRef, orderBy('createdAt', 'asc')));
 
         const loaded: any[] = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
+          if (myClearedAt && tsToMillis(data.createdAt) <= myClearedAt) return;
           loaded.push({
             id: docSnap.id,
             role: data.role || 'user',
             senderUid: data.senderUid || '',
-            targetUid: data.targetUid || '',
+            receiverUid: data.receiverUid || '',
             content: data.content || '',
             toolInvocations: data.toolInvocations || [],
             createdAt: data.createdAt,
@@ -572,7 +656,7 @@ function IndividualChat({
     return () => {
       isMounted = false;
     };
-  }, [chatKey, name]);
+  }, [conversationId, uid, name, currentAuthUid]);
 
   // Helper to extract text from a message (supports string content and parts)
   const getMessageText = (message: any): string => {
@@ -745,34 +829,47 @@ function IndividualChat({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [rawMessages]);
 
-  // Save new sent message to Firestore database (bi-directional for both sender & target user)
+  // Save new sent message to Firestore (conversations/{id} + conversations/{id}/messages)
   const saveMessageToDb = async (textMsg: string, role: string = 'user') => {
     try {
-      const currentUid = auth.currentUser?.uid;
+      const currentUid = authUser?.uid || auth.currentUser?.uid;
+      if (!currentUid || !uid) {
+        console.error('[Firestore Save Message FAILED]: missing sender or receiver uid', { currentUid, uid });
+        return;
+      }
+      const participants = [currentUid, uid];
 
-      // 1. Save in target profile's chat collection
-      const targetChatRef = collection(db, 'chats', chatKey, 'messages');
-      await addDoc(targetChatRef, {
+      // 1. Upsert parent conversation FIRST (messages rule reads its participants)
+      const convDocRef = doc(db, 'conversations', conversationId);
+      await setDoc(
+        convDocRef,
+        {
+          participants,
+          lastMessage: textMsg,
+          lastSenderUid: currentUid,
+          updatedAt: serverTimestamp(),
+          participantDetails: {
+            [uid]: {
+              name: rawParamName || 'Member',
+              age: age ? parseInt(age, 10) : 25,
+              bio: bio || '',
+              interests: interests || [],
+            },
+          },
+        },
+        { merge: true }
+      );
+
+      // 2. Save the message itself
+      await addDoc(collection(db, 'conversations', conversationId, 'messages'), {
         role,
         content: textMsg,
-        senderUid: currentUid || 'anonymous',
+        senderUid: currentUid,
+        receiverUid: uid,
         createdAt: serverTimestamp(),
       });
-
-      // 2. Save in current user's own chat collection if different so it appears in both user accounts
-      if (currentUid && uid && currentUid !== uid) {
-        const myChatKey = `chat_${currentUid}`;
-        const myChatRef = collection(db, 'chats', myChatKey, 'messages');
-        await addDoc(myChatRef, {
-          role,
-          content: textMsg,
-          senderUid: currentUid,
-          targetUid: uid,
-          createdAt: serverTimestamp(),
-        });
-      }
     } catch (e) {
-      console.warn('[Firestore Save Message Warning]:', e);
+      console.error('[Firestore Save Message FAILED]:', e);
     }
   };
 
@@ -792,6 +889,7 @@ function IndividualChat({
         id: `local-${Date.now()}_${Math.random().toString(36).substring(2, 5)}`,
         role: 'user',
         senderUid: currentUid,
+        receiverUid: uid || '',
         content: textToSend,
         createdAt: new Date(),
       },
@@ -822,29 +920,8 @@ function IndividualChat({
   const handleClearIndividualChat = async () => {
     setShowIndividualClearModal(false);
     try {
-      // Clear Firestore documents for this chat
-      const chatsRef = collection(db, 'chats', chatKey, 'messages');
-      const snap = await getDocs(chatsRef);
-      for (const docSnap of snap.docs) {
-        await deleteDoc(docSnap.ref);
-      }
-
-      // Also clear currentUser's copy if present
-      const currentUid = auth.currentUser?.uid;
-      if (currentUid) {
-        const myKey = `chat_${currentUid}`;
-        const myRef = collection(db, 'chats', myKey, 'messages');
-        const mySnap = await getDocs(myRef);
-        for (const docSnap of mySnap.docs) {
-          await deleteDoc(docSnap.ref);
-        }
-      }
-
-      // Mark chat as cleared in localStorage so it stays visible in chat list for this user
-      if (typeof window !== 'undefined' && uid) {
-        const currentAuthUid = auth.currentUser?.uid || 'guest';
-        localStorage.setItem(`chat_cleared_${currentAuthUid}_${uid}`, 'true');
-        localStorage.setItem(`chat_cleared_time_${currentAuthUid}_${uid}`, Date.now().toString());
+      if (currentAuthUid) {
+        await clearConversationForUser(conversationId, currentAuthUid);
       }
 
       setDbMessages([]);
@@ -855,7 +932,7 @@ function IndividualChat({
       // Remove generate & token query params from URL so reloads don't re-trigger icebreakers
       router.replace(`/chat?name=${encodeURIComponent(rawParamName)}&age=${age}&bio=${encodeURIComponent(bio)}&interests=${encodeURIComponent(interests.join(','))}&uid=${uid}&from=${fromSource || 'chatlist'}`);
     } catch (e) {
-      console.warn('[Clear Individual Chat Warning]:', e);
+      console.error('[Clear Individual Chat FAILED]:', e);
     }
   };
 
@@ -894,24 +971,37 @@ function IndividualChat({
             <AnimatePresence>
               {showProfileModal && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.85, y: -10 }}
+                  initial={{ opacity: 0, scale: 0.9, y: -8 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.85, y: -10 }}
+                  exit={{ opacity: 0, scale: 0.94, y: -6, transition: { duration: 0.1 } }}
                   transition={{
                     type: 'spring',
-                    stiffness: 450,
-                    damping: 28,
+                    stiffness: 600,
+                    damping: 24,
+                    mass: 0.5,
                   }}
                   style={{ transformOrigin: 'top left' }}
-                  className="absolute top-full left-0 mt-3 w-72 sm:w-80 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-5 z-50 text-slate-900 dark:text-white space-y-3.5 overflow-hidden"
+                  onClick={() => {
+                    setShowProfileModal(false);
+                    setShowDetailModal(true);
+                  }}
+                  className="absolute top-full left-0 mt-3 w-72 sm:w-80 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 hover:border-[#00AAFF]/50 rounded-3xl shadow-2xl p-5 z-50 text-slate-900 dark:text-white space-y-3.5 overflow-hidden cursor-pointer group/modal active:scale-[0.99]"
                 >
                   {/* User Avatar & Name */}
                   <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 rounded-full bg-[#B8E7FF] dark:bg-slate-800 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center font-extrabold text-xl shrink-0 shadow-md border-2 border-white dark:border-slate-700">
-                      {name.charAt(0)}
+                    <div className="w-14 h-14 rounded-full bg-[#B8E7FF] dark:bg-slate-800 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center font-extrabold text-xl shrink-0 shadow-md border-2 border-white dark:border-slate-700 overflow-hidden">
+                      {resolvedTargetProfile.avatarUrl || resolvedTargetProfile.profilePhoto?.url ? (
+                        <img
+                          src={resolvedTargetProfile.avatarUrl || resolvedTargetProfile.profilePhoto?.url}
+                          alt={name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        name.charAt(0)
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h2 className="text-base font-extrabold font-heading text-slate-900 dark:text-white truncate">
+                      <h2 className="text-base font-extrabold font-heading text-slate-900 dark:text-white truncate group-hover/modal:text-[#00AAFF] transition-colors">
                         {name}{age ? `, ${age}` : ''}
                       </h2>
                       <p className="text-[11px] font-semibold text-[#00AAFF] dark:text-[#B8E7FF] tracking-wide uppercase">
@@ -920,7 +1010,10 @@ function IndividualChat({
                     </div>
                     <button
                       type="button"
-                      onClick={() => setShowProfileModal(false)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowProfileModal(false);
+                      }}
                       className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
                       aria-label="Close profile menu"
                     >
@@ -956,6 +1049,14 @@ function IndividualChat({
                       </div>
                     </div>
                   )}
+
+                  {/* View Detailed MatchCard Hint */}
+                  <div className="pt-1 text-center border-t border-slate-100 dark:border-slate-800">
+                    <span className="text-[11px] font-bold text-[#00AAFF] dark:text-[#B8E7FF] group-hover/modal:underline flex items-center justify-center gap-1">
+                      <span>Tap to view full MatchCard</span>
+                      <span>✨</span>
+                    </span>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -1080,11 +1181,10 @@ function IndividualChat({
               {/* Message text bubble (never render prompt text) */}
               {textContent && !isPromptMessage ? (
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
-                    isOwnMessage
-                      ? 'bg-white dark:bg-[#0F172A] text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 rounded-br-none'
-                      : 'bg-[#00AAFF] dark:bg-[#B8E7FF] text-white dark:text-slate-900 rounded-bl-none'
-                  }`}
+                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-sm ${isOwnMessage
+                    ? 'bg-white dark:bg-[#0F172A] text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 rounded-br-none'
+                    : 'bg-[#00AAFF] dark:bg-[#B8E7FF] text-white dark:text-slate-900 rounded-bl-none'
+                    }`}
                 >
                   {textContent}
                 </div>
@@ -1168,6 +1268,12 @@ function IndividualChat({
           </button>
         </div>
       </div>
+
+      {/* Detailed MatchCard Modal */}
+      <UserDetailModal
+        user={showDetailModal ? resolvedTargetProfile : null}
+        onClose={() => setShowDetailModal(false)}
+      />
     </div>
   );
 }

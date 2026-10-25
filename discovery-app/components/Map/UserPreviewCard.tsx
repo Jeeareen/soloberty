@@ -12,6 +12,7 @@ interface UserPreviewCardProps {
   onPrev: () => void;
   onNext: () => void;
   onClose: () => void;
+  onSelectUser?: (user: UserProfile) => void;
 }
 
 export const UserPreviewCard: React.FC<UserPreviewCardProps> = ({
@@ -21,6 +22,7 @@ export const UserPreviewCard: React.FC<UserPreviewCardProps> = ({
   onPrev,
   onNext,
   onClose,
+  onSelectUser,
 }) => {
   if (!users || users.length === 0) return null;
 
@@ -71,7 +73,16 @@ export const UserPreviewCard: React.FC<UserPreviewCardProps> = ({
             return (
               <div
                 key={u.uid}
-                className="flex items-start gap-3.5 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 transition-all hover:bg-blue-50/40 dark:hover:bg-slate-800"
+                role="button"
+                tabIndex={0}
+                onClick={() => onSelectUser?.(u)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelectUser?.(u);
+                  }
+                }}
+                className="flex items-start gap-3.5 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 transition-all hover:bg-blue-50/50 dark:hover:bg-slate-800 hover:border-[#00AAFF]/40 cursor-pointer active:scale-[0.98] group"
               >
                 {/* User Avatar */}
                 <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-700 shrink-0 border border-slate-300 dark:border-slate-600">
@@ -125,9 +136,16 @@ export const UserPreviewCard: React.FC<UserPreviewCardProps> = ({
           })}
         </div>
 
+        {/* Click to view full card hint */}
+        <div className="mt-2 text-center">
+          <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 group-hover:text-[#00AAFF] transition-colors">
+            Tap a profile to view detailed card
+          </span>
+        </div>
+
         {/* Pagination Controls for Multi-User Clusters */}
         {isMulti && totalPages > 1 && (
-          <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
+          <div className="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
             <span>
               Page {activePage + 1} of {totalPages} ({users.length} total)
             </span>
