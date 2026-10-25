@@ -129,7 +129,7 @@ const ProfileMatchCardPreview: React.FC<{
         onPointerCancel={() => setIsHeld(false)}
         animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{ rotateY: { duration: 0.4, ease: 'easeInOut' } }}
-        className="relative flex w-full max-w-[400px] aspect-[2/3] h-auto max-h-[75vh] cursor-pointer flex-col rounded-xl bg-white dark:bg-[#0F172A] shadow-xl border border-gray-100 dark:border-slate-800 [transform-style:preserve-3d] focus:outline-none"
+        className="relative flex w-full max-w-[400px] aspect-[2/3] h-auto max-h-[75vh] cursor-pointer flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 [transform-style:preserve-3d] focus:outline-none"
       >
         {/* Inner Tap/Hold Scale Container */}
         <motion.div
@@ -1390,7 +1390,7 @@ export const ProfileEditor: React.FC = () => {
         </div>
 
         {/* Right Column: 30% Width (lg:col-span-3) - Live Interactive User MatchCard */}
-        <div className="lg:col-span-3 flex justify-end sticky top-2 sm:top-3 h-fit">
+        <div className="lg:col-span-3 flex justify-end sticky top-2 sm:top-3 h-fit mb-4 sm:mb-5 lg:mb-0">
           <ProfileMatchCardPreview
             name={profileData.name}
             age={profileData.age}

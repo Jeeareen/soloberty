@@ -155,18 +155,19 @@ describe('MatchStack Component', () => {
     expect(await screen.findByRole('status')).toHaveTextContent(/No profiles nearby/i);
   });
 
-  it('7. Stops pointer down propagation on card face to prevent gesture handler interference', async () => {
+  it('7. Stops pointer down propagation on interactive buttons so clicking them does not drag or flip the card', async () => {
     render(<MatchStack cards={mockCards} />);
 
-    const frontFaceElement = screen.getAllByText('Alice')[0].closest('div[class*="[backface-visibility:hidden]"]');
-    expect(frontFaceElement).toBeInTheDocument();
+    const mapLocationButtons = screen.getAllByTitle('View on Map');
+    expect(mapLocationButtons.length).toBeGreaterThan(0);
+    const activeLocationButton = mapLocationButtons[0];
 
     let stopped = false;
     const event = new MouseEvent('pointerdown', { bubbles: true, cancelable: true });
     event.stopPropagation = () => {
       stopped = true;
     };
-    frontFaceElement!.dispatchEvent(event);
+    activeLocationButton.dispatchEvent(event);
 
     expect(stopped).toBe(true);
   });

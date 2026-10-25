@@ -104,7 +104,6 @@ export const RenderCardFace: React.FC<{
       <div className="relative h-full w-full [transform-style:preserve-3d] transform-gpu">
         {/* Front Face */}
         <div
-          onPointerDown={(e) => e.stopPropagation()}
           className="absolute inset-0 flex flex-col bg-white dark:bg-[#0F172A] rounded-xl overflow-hidden [backface-visibility:hidden]"
         >
           <div className="relative w-full h-52 sm:h-56 shrink-0 bg-slate-100 dark:bg-slate-800 overflow-hidden">
@@ -191,7 +190,6 @@ export const RenderCardFace: React.FC<{
         {/* Back Face */}
         {!isBackground && (
           <div
-            onPointerDown={(e) => e.stopPropagation()}
             className="absolute inset-0 flex flex-col p-6 bg-white dark:bg-[#0F172A] rounded-xl [transform:rotateY(180deg)] [backface-visibility:hidden]"
           >
             {/* Top: Name, Age, Gender */}
@@ -203,7 +201,7 @@ export const RenderCardFace: React.FC<{
             </div>
 
             {/* Middle: Bio */}
-            <div className="mt-3 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 leading-relaxed overflow-y-auto flex-1 space-y-1 pr-1">
+            <div className="mt-3 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 leading-relaxed overflow-y-auto flex-1 space-y-1 pr-1 touch-pan-y">
               <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1">
                 Bio
               </span>
@@ -580,15 +578,12 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
       // If the middle card is currently flipped, smoothly unflip it first so ONLY this card rotates
       if (isFlipped) {
         setIsFlipped(false);
-        await new Promise((resolve) => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 400));
       }
 
       const isTest = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
-      const currentX = x.get();
-      // Ensure the swipe never travels faster than standard arrow swipe (duration proportional to remaining distance, capped at standard 0.2s)
-      const remainingDistance = Math.max(0, stepX + currentX);
-      const computedDuration = (remainingDistance / stepX) * 0.2;
-      const duration = shouldReduceMotion || isTest ? 0 : Math.max(computedDuration, 0.12);
+      // Constant duration for swipe transition regardless of drag distance, release position, or button/key trigger
+      const duration = shouldReduceMotion || isTest ? 0 : 0.2;
 
       if (duration > 0) {
         await animate(x, -stepX, { duration, ease: 'easeOut' });
@@ -622,15 +617,12 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
       // If the middle card is currently flipped, smoothly unflip it first so ONLY this card rotates
       if (isFlipped) {
         setIsFlipped(false);
-        await new Promise((resolve) => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 400));
       }
 
       const isTest = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
-      const currentX = x.get();
-      // Ensure undo swipe never travels faster than standard arrow swipe
-      const remainingDistance = Math.max(0, stepX - currentX);
-      const computedDuration = (remainingDistance / stepX) * 0.2;
-      const duration = shouldReduceMotion || isTest ? 0 : Math.max(computedDuration, 0.12);
+      // Constant duration for undo transition regardless of drag distance, release position, or button/key trigger
+      const duration = shouldReduceMotion || isTest ? 0 : 0.2;
 
       if (duration > 0) {
         await animate(x, stepX, { duration, ease: 'easeOut' });
@@ -683,10 +675,17 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
     x.stop();
 
     const offset = info.offset.x;
-    if (offset < -SWIPE_THRESHOLD) {
+    const velocity = info.velocity.x;
+
+    // A shorter drag threshold (e.g. 25px when flipped or with flick velocity > 200px/s) makes changing cards responsive
+    const effectiveThreshold = isFlipped ? 25 : SWIPE_THRESHOLD;
+    const isFlickLeft = offset < -20 && velocity < -200;
+    const isFlickRight = offset > 20 && velocity > 200;
+
+    if (offset < -effectiveThreshold || isFlickLeft) {
       isDraggingRef.current = false;
       handleSwipeLeft();
-    } else if (offset > SWIPE_THRESHOLD && undoCount > 0 && currentIndex > 0) {
+    } else if ((offset > effectiveThreshold || isFlickRight) && undoCount > 0 && currentIndex > 0) {
       isDraggingRef.current = false;
       handleSwipeRightUndo();
     } else {
