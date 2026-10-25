@@ -13,7 +13,9 @@ export async function POST(req: NextRequest) {
     // this route accepts the payload gracefully and prepares for Firebase Admin FCM push.
     // If FIREBASE_SERVICE_ACCOUNT_KEY is configured in env:
     const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    if (serviceAccountKey) {
+    if (!serviceAccountKey) {
+      console.warn('[FCM Push]: FIREBASE_SERVICE_ACCOUNT_KEY is missing from environment variables.');
+    } else {
       try {
         const admin = await import('firebase-admin');
         if (!admin.apps.length) {
@@ -28,21 +30,48 @@ export async function POST(req: NextRequest) {
         const userDoc = await db.collection('users').doc(receiverUid).get();
         const fcmTokens: string[] = userDoc.data()?.fcmTokens || [];
 
+        console.log(`[FCM Push]: Found ${fcmTokens.length} token(s) for user ${receiverUid}`);
+
         if (fcmTokens.length > 0) {
-          await admin.messaging().sendEachForMulticast({
+          const title = senderName ? `New message from ${senderName}` : 'New message on Soloberty';
+          const targetUrl = `/chat?uid=${receiverUid}`;
+
+          const response = await admin.messaging().sendEachForMulticast({
             tokens: fcmTokens,
             notification: {
-              title: senderName ? `New message from ${senderName}` : 'New message on Soloberty',
+              title,
               body: messageText,
             },
             data: {
-              url: `/chat?uid=${receiverUid}`,
+              title,
+              body: messageText,
+              url: targetUrl,
               conversationId: conversationId || '',
             },
+            webpush: {
+              notification: {
+                title,
+                body: messageText,
+                icon: '/Soloberty.svg',
+                badge: '/Soloberty.svg',
+              },
+              fcmOptions: {
+                link: targetUrl,
+              },
+            },
           });
+
+          console.log(`[FCM Push Success]: Sent: ${response.successCount}, Failed: ${response.failureCount}`);
+          if (response.failureCount > 0) {
+            response.responses.forEach((resp, idx) => {
+              if (!resp.success) {
+                console.error(`[FCM Push Failed token ${idx}]:`, resp.error);
+              }
+            });
+          }
         }
       } catch (adminErr) {
-        console.warn('[FCM Admin Push Warning]:', adminErr);
+        console.error('[FCM Admin Push Error]:', adminErr);
       }
     }
 

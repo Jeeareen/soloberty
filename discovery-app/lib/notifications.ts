@@ -20,7 +20,13 @@ export async function requestNotificationPermission(): Promise<boolean> {
     if (permission === 'granted') {
       if ('serviceWorker' in navigator) {
         try {
-          await navigator.serviceWorker.register('/sw.js');
+          const swParams = new URLSearchParams({
+            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
+            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '',
+            messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
+            appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '',
+          }).toString();
+          await navigator.serviceWorker.register(`/firebase-messaging-sw.js?${swParams}`);
         } catch (swErr) {
           console.warn('[ServiceWorker registration warning]:', swErr);
         }
