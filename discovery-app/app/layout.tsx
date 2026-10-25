@@ -3,6 +3,7 @@ import { Outfit, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import Navbar from '../components/Navbar';
 import { AuthProvider } from '../lib/context/AuthContext';
+import { NotificationProvider } from '../lib/context/NotificationContext';
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -42,8 +43,10 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] text-[#0F172A] dark:text-slate-100 font-sans antialiased max-w-full w-full overflow-x-hidden transition-colors duration-200">
         <AuthProvider>
-          <Navbar />
-          <main className="w-full max-w-full overflow-x-hidden">{children}</main>
+          <NotificationProvider>
+            <Navbar />
+            <main className="w-full max-w-full overflow-x-hidden">{children}</main>
+          </NotificationProvider>
         </AuthProvider>
       </body>
     </html>

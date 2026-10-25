@@ -19,4 +19,13 @@ export const auth: Auth = getAuth(app);
 export const db: Firestore = getFirestore(app);
 export const storage: FirebaseStorage = getStorage(app);
 
+// Messaging helper (only initialized in browser environments where supported)
+export async function getFirebaseMessaging() {
+  if (typeof window === 'undefined') return null;
+  const { getMessaging, isSupported } = await import('firebase/messaging');
+  const supported = await isSupported();
+  if (!supported) return null;
+  return getMessaging(app);
+}
+
 export default app;

@@ -6,10 +6,11 @@ import { useChat } from '@ai-sdk/react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Send, ArrowLeft, Sparkles, AlertTriangle, RefreshCw, MessageSquare, X, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { collection, addDoc, query, orderBy, getDocs, limit, deleteDoc, serverTimestamp, doc, setDoc, updateDoc, where, getDoc } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, getDocs, limit, deleteDoc, serverTimestamp, doc, setDoc, updateDoc, where, getDoc, increment } from 'firebase/firestore';
 import { db, auth } from '../../lib/firebase/config';
 import { useProfiles } from '../../hooks/useProfiles';
 import { useAuth } from '../../lib/hooks/useAuth';
+import { useUnreadMessages } from '../../hooks/useUnreadMessages';
 import { UserDetailModal } from '../../components/Map/UserDetailModal';
 import type { UserProfile } from '../../types/user';
 import { getOptimizedCloudinaryUrl } from '../../lib/cloudinary';
@@ -219,6 +220,7 @@ async function clearConversationForUser(conversationId: string, myUid: string): 
 function ChatList() {
   const { user: authUser, loading: authLoading } = useAuth();
   const { profiles, loading: profilesLoading } = useProfiles();
+  const { unreadMap } = useUnreadMessages();
   const router = useRouter();
 
   const [chatItems, setChatItems] = React.useState<any[]>([]);
@@ -456,7 +458,14 @@ function ChatList() {
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">
                     {chatItem.name}, {chatItem.age}
                   </h3>
-                  <span className="text-[11px] text-slate-400">{chatItem.time}</span>
+                  <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                    <span className="text-[11px] text-slate-400">{chatItem.time}</span>
+                    {(unreadMap[chatItem.uid] ?? 0) > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-extrabold text-white bg-red-500 rounded-full shadow-sm opacity-100">
+                        {unreadMap[chatItem.uid]}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <p className={`text-xs truncate ${chatItem.isCleared ? 'text-slate-400 italic font-normal' : 'text-slate-500 dark:text-slate-400 font-medium'}`}>
                   {chatItem.lastMessage}
@@ -611,8 +620,11 @@ function IndividualChat({
 
   // Firestore persistent message storage for individual conversations
   const [dbMessages, setDbMessages] = React.useState<any[]>([]);
+  // Stores the ID of the first unread message when opening this chat (for "New Messages" divider)
+  const [unreadDividerMessageId, setUnreadDividerMessageId] = React.useState<string | null>(null);
+  const hasInitializedUnreadRef = React.useRef(false);
 
-  // 1. Load existing persistent chat messages from Firestore on mount
+  // 1. Load existing persistent chat messages from Firestore on mount & mark chat as read
   useEffect(() => {
     if (!name) return;
     let isMounted = true;
@@ -622,10 +634,13 @@ function IndividualChat({
         if (!currentAuthUid) return;
 
         // My personal "cleared" marker: only show messages newer than it
-        const convSnap = await getDoc(doc(db, 'conversations', conversationId));
-        const myClearedAt = convSnap.exists()
-          ? tsToMillis(convSnap.data()?.clearedAt?.[currentAuthUid])
-          : 0;
+        const convRef = doc(db, 'conversations', conversationId);
+        const convSnap = await getDoc(convRef);
+        const convData = convSnap.exists() ? convSnap.data() : null;
+
+        const myClearedAt = convData ? tsToMillis(convData.clearedAt?.[currentAuthUid]) : 0;
+        const myLastReadAt = convData ? tsToMillis(convData.lastReadAt?.[currentAuthUid]) : 0;
+        const unreadCountForMe = convData?.unreadCount?.[currentAuthUid] ?? 0;
 
         const standardRef = collection(db, 'conversations', conversationId, 'messages');
         const snapshot = await getDocs(query(standardRef, orderBy('createdAt', 'asc')));
@@ -644,6 +659,42 @@ function IndividualChat({
             createdAt: data.createdAt,
           });
         });
+
+        // Determine the first unread message before marking as read
+        if (!hasInitializedUnreadRef.current && isMounted) {
+          hasInitializedUnreadRef.current = true;
+
+          // If there were unread messages for the current user
+          const otherMessages = loaded.filter((m) => m.senderUid && m.senderUid !== currentAuthUid);
+          if (otherMessages.length > 0) {
+            let firstUnreadMsg: any = null;
+
+            if (unreadCountForMe > 0) {
+              // Take the last `unreadCountForMe` incoming messages
+              const unreadSlice = otherMessages.slice(-unreadCountForMe);
+              firstUnreadMsg = unreadSlice[0] || null;
+            } else if (myLastReadAt > 0) {
+              // Any message created after myLastReadAt
+              firstUnreadMsg = otherMessages.find((m) => tsToMillis(m.createdAt) > myLastReadAt) || null;
+            }
+
+            if (firstUnreadMsg) {
+              setUnreadDividerMessageId(firstUnreadMsg.id);
+            }
+          }
+
+          // Mark conversation as read in Firestore
+          if (convSnap.exists() && (unreadCountForMe > 0 || (convData?.lastSenderUid && convData.lastSenderUid !== currentAuthUid))) {
+            try {
+              await updateDoc(convRef, {
+                [`unreadCount.${currentAuthUid}`]: 0,
+                [`lastReadAt.${currentAuthUid}`]: serverTimestamp(),
+              });
+            } catch (updateErr) {
+              console.warn('[Mark Chat Read Warning]:', updateErr);
+            }
+          }
+        }
 
         if (isMounted && loaded.length > 0) {
           setDbMessages(loaded);
@@ -849,6 +900,13 @@ function IndividualChat({
           lastMessage: textMsg,
           lastSenderUid: currentUid,
           updatedAt: serverTimestamp(),
+          unreadCount: {
+            [uid]: increment(1),
+            [currentUid]: 0,
+          },
+          lastReadAt: {
+            [currentUid]: serverTimestamp(),
+          },
           participantDetails: {
             [uid]: {
               name: rawParamName || 'Member',
@@ -869,6 +927,18 @@ function IndividualChat({
         receiverUid: uid,
         createdAt: serverTimestamp(),
       });
+
+      // 3. Trigger background push notification endpoint
+      fetch('/api/notifications/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          receiverUid: uid,
+          senderName: authUser?.displayName || authUser?.email?.split('@')[0] || 'A Match',
+          messageText: textMsg,
+          conversationId,
+        }),
+      }).catch(() => { });
     } catch (e) {
       console.error('[Firestore Save Message FAILED]:', e);
     }
@@ -1173,12 +1243,23 @@ function IndividualChat({
             : (message.role === 'assistant' || message.role === 'other');
           const isOwnMessage = !isOtherUser;
 
+          const showDividerBeforeThis = unreadDividerMessageId && message.id === unreadDividerMessageId;
+
           // If prompt message, do NOT render text bubble, but DO render toolInvocations!
           return (
-            <div
-              key={message.id || messageIdx}
-              className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}
-            >
+            <React.Fragment key={message.id || messageIdx}>
+              {showDividerBeforeThis && (
+                <div className="w-full flex items-center justify-center py-2.5 my-2">
+                  <div className="flex-grow border-t border-red-200 dark:border-red-900/60" />
+                  <span className="flex-shrink mx-3 px-3 py-1 rounded-full text-[11px] font-extrabold bg-red-50 dark:bg-red-950/80 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/60 shadow-sm uppercase tracking-wider">
+                    New Messages
+                  </span>
+                  <div className="flex-grow border-t border-red-200 dark:border-red-900/60" />
+                </div>
+              )}
+              <div
+                className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}
+              >
               {/* Message text bubble (never render prompt text) */}
               {textContent && !isPromptMessage ? (
                 <div
@@ -1204,7 +1285,8 @@ function IndividualChat({
                     />
                   </div>
                 ))}
-            </div>
+              </div>
+            </React.Fragment>
           );
         })}
 

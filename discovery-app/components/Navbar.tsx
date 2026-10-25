@@ -22,6 +22,8 @@ import {
   MapPin,
   MessageSquare,
 } from 'lucide-react';
+import { useUnreadMessages } from '../hooks/useUnreadMessages';
+import { useNotification } from '../lib/context/NotificationContext';
 
 const MotionLink = motion.create(Link);
 
@@ -60,8 +62,9 @@ export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { unreadCount } = useUnreadMessages();
+  const { notificationsEnabled, toggleNotifications } = useNotification();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -207,7 +210,15 @@ export const Navbar: React.FC = () => {
                       }}
                       transition={{ type: 'tween', ease: 'easeOut', duration: 0.15 }}
                     >
-                      {Icon && <Icon className="w-4 h-4 shrink-0" />}
+                      <span className="relative inline-flex items-center justify-center">
+                        {Icon && <Icon className="w-4 h-4 shrink-0" />}
+                        {item.name === 'Chat' && unreadCount > 0 && (
+                          <span
+                            aria-label={`${unreadCount} unread messages`}
+                            className="absolute -top-1.5 -right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white dark:ring-slate-900 opacity-100"
+                          />
+                        )}
+                      </span>
                       <span>{item.name}</span>
                     </motion.span>
                   </MotionLink>
@@ -215,12 +226,12 @@ export const Navbar: React.FC = () => {
               })}
             </nav>
 
-            {/* Settings Gear Button with 60-deg Counterclockwise Rotation */}
+            {/* Settings / Notification Button with 60-deg Counterclockwise Rotation */}
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setMenuOpen((prev) => !prev)}
-                aria-label="Settings"
-                className="p-2 text-white dark:text-slate-900 hover:bg-white/15 dark:hover:bg-slate-900/15 rounded-xl transition-colors active:scale-95 flex items-center justify-center cursor-pointer"
+                aria-label="Settings and Notifications"
+                className="relative p-2 text-white dark:text-slate-900 hover:bg-white/15 dark:hover:bg-slate-900/15 rounded-xl transition-colors active:scale-95 flex items-center justify-center cursor-pointer"
               >
                 <motion.div
                   animate={{ rotate: menuOpen ? -60 : 0 }}
@@ -274,7 +285,7 @@ export const Navbar: React.FC = () => {
 
                     {/* Notifications Toggle Tile */}
                     <button
-                      onClick={() => setNotificationsEnabled((prev) => !prev)}
+                      onClick={toggleNotifications}
                       className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left cursor-pointer"
                     >
                       <div className="flex items-center gap-2.5">
@@ -455,7 +466,15 @@ export const Navbar: React.FC = () => {
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               )}
-              <Icon className="w-5 h-5 relative z-10 mb-0.5" />
+              <span className="relative inline-flex items-center justify-center mb-0.5">
+                <Icon className="w-5 h-5 relative z-10" />
+                {item.name === 'Chat' && unreadCount > 0 && (
+                  <span
+                    aria-label={`${unreadCount} unread messages`}
+                    className="absolute -top-1 -right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-slate-900 opacity-100 z-20"
+                  />
+                )}
+              </span>
               <span className="relative z-10 leading-none">{item.name}</span>
             </Link>
           );
