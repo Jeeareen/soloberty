@@ -20,6 +20,7 @@
     "ai": "^7.0.68",
     "cloudinary": "^2.10.0",
     "firebase": "^12.17.1",
+    "firebase-admin": "^14.5.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.29.0",
     "motion": "^13.1.0",
