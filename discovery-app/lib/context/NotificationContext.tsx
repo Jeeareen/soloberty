@@ -9,6 +9,7 @@ import {
   requestNotificationPermission,
   triggerSystemNotification,
   registerFcmToken,
+  ensureMessagingServiceWorker,
 } from '../notifications';
 import { useAuth } from '../hooks/useAuth';
 
@@ -51,9 +52,10 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
       setNotificationsEnabled(isEnabled);
 
       if (isEnabled && isNotificationSupported() && Notification.permission === 'granted' && 'serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(() => { });
         if (user?.uid) {
           registerFcmToken(user.uid).catch(() => { });
+        } else {
+          ensureMessagingServiceWorker().catch(() => { });
         }
       }
     } catch (e) {

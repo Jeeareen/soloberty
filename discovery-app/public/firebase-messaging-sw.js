@@ -1,40 +1,45 @@
-// Firebase Cloud Messaging Background Service Worker
-// Automatically loaded by Firebase Messaging SDK in the background
-importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
+// Background Service Worker for Firebase Cloud Messaging & Web Push
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
 
-// Parse config from registration query params to avoid hardcoding keys in repository
-const params = new URLSearchParams(self.location.search);
-const apiKey = params.get('apiKey');
-const projectId = params.get('projectId');
-const messagingSenderId = params.get('messagingSenderId');
-const appId = params.get('appId');
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
 
-if (apiKey && projectId) {
-  firebase.initializeApp({
-    apiKey,
-    projectId,
-    messagingSenderId,
-    appId,
-  });
-}
+// Intercept all push events directly (works for both FCM JSON payloads and DevTools plain-text pushes)
+self.addEventListener('push', (event) => {
+  let payload = {};
+  if (event.data) {
+    try {
+      payload = event.data.json();
+    } catch (e) {
+      payload = {
+        notification: {
+          title: 'New message on Soloberty',
+          body: event.data.text(),
+        },
+      };
+    }
+  }
 
-const messaging = firebase.messaging();
+  const notification = payload.notification || {};
+  const data = payload.data || {};
+  const title = notification.title || data.title || 'New message on Soloberty';
+  const body = notification.body || data.body || 'You received a new message.';
+  const icon = notification.icon || data.icon || '/Soloberty.svg';
+  const url = data.url || payload.fcmOptions?.link || '/chat';
 
-// Handle background push messages received when tabs are closed
-messaging.onBackgroundMessage((payload) => {
-  const notificationTitle = payload.notification?.title || payload.data?.title || 'New message on Soloberty';
-  const notificationOptions = {
-    body: payload.notification?.body || payload.data?.body || 'You received a new message.',
-    icon: payload.data?.icon || '/Soloberty.svg',
+  const options = {
+    body,
+    icon,
     badge: '/Soloberty.svg',
-    data: {
-      url: payload.data?.url || '/chat',
-    },
+    data: { url },
     vibrate: [100, 50, 100],
+    requireInteraction: false,
   };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 // Click event opens the conversation directly

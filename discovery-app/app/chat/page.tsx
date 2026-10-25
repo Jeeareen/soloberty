@@ -934,6 +934,7 @@ function IndividualChat({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           receiverUid: uid,
+          senderUid: currentUid,
           senderName: authUser?.displayName || authUser?.email?.split('@')[0] || 'A Match',
           messageText: textMsg,
           conversationId,

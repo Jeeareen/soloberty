@@ -11,6 +11,19 @@ export function getNotificationPermission(): NotificationPermission {
   return Notification.permission;
 }
 
+// Register and return the active Firebase Messaging ServiceWorkerRegistration
+export async function ensureMessagingServiceWorker(): Promise<ServiceWorkerRegistration | undefined> {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return undefined;
+  try {
+    const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    await navigator.serviceWorker.ready;
+    return reg;
+  } catch (swErr) {
+    console.warn('[ServiceWorker registration warning]:', swErr);
+    return undefined;
+  }
+}
+
 // Request permission and register service worker
 export async function requestNotificationPermission(): Promise<boolean> {
   if (!isNotificationSupported()) return false;
@@ -18,19 +31,7 @@ export async function requestNotificationPermission(): Promise<boolean> {
   try {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
-      if ('serviceWorker' in navigator) {
-        try {
-          const swParams = new URLSearchParams({
-            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
-            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '',
-            messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
-            appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '',
-          }).toString();
-          await navigator.serviceWorker.register(`/firebase-messaging-sw.js?${swParams}`);
-        } catch (swErr) {
-          console.warn('[ServiceWorker registration warning]:', swErr);
-        }
-      }
+      await ensureMessagingServiceWorker();
       return true;
     }
     return false;
@@ -54,10 +55,7 @@ export async function registerFcmToken(uid?: string): Promise<string | null> {
     const { getToken } = await import('firebase/messaging');
     const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
 
-    let registration: ServiceWorkerRegistration | undefined;
-    if ('serviceWorker' in navigator) {
-      registration = await navigator.serviceWorker.ready;
-    }
+    const registration = await ensureMessagingServiceWorker();
 
     const token = await getToken(messaging, {
       vapidKey: vapidKey || undefined,
