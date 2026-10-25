@@ -19,6 +19,7 @@ import type { MatchCard, MatchStackProps } from '../types/matching';
 import { PREDEFINED_INTERESTS } from '../types/user';
 import { useProfiles } from '../hooks/useProfiles';
 import { useAuth } from '../lib/hooks/useAuth';
+import { getOptimizedCloudinaryUrl } from '../lib/cloudinary';
 
 const UI_TEXT = {
   NO_MORE_CARDS: 'No more profiles to review.',
@@ -109,7 +110,7 @@ export const RenderCardFace: React.FC<{
           <div className="relative w-full h-52 sm:h-56 shrink-0 bg-slate-100 dark:bg-slate-800 overflow-hidden">
             {card.avatarUrl ? (
               <img
-                src={card.avatarUrl}
+                src={getOptimizedCloudinaryUrl(card.avatarUrl)}
                 alt={card.name}
                 decoding="async"
                 loading="lazy"
@@ -222,7 +223,7 @@ export const RenderCardFace: React.FC<{
                         className="aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100"
                       >
                         <img
-                          src={item.url}
+                          src={getOptimizedCloudinaryUrl(item.url)}
                           alt={`Interest ${idx + 1}`}
                           decoding="async"
                           loading="lazy"

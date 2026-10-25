@@ -12,6 +12,7 @@ import { useProfiles } from '../../hooks/useProfiles';
 import { useAuth } from '../../lib/hooks/useAuth';
 import { UserDetailModal } from '../../components/Map/UserDetailModal';
 import type { UserProfile } from '../../types/user';
+import { getOptimizedCloudinaryUrl } from '../../lib/cloudinary';
 
 interface ToolInvocationBlockProps {
   toolInvocation: any;
@@ -992,7 +993,7 @@ function IndividualChat({
                     <div className="w-14 h-14 rounded-full bg-[#B8E7FF] dark:bg-slate-800 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center font-extrabold text-xl shrink-0 shadow-md border-2 border-white dark:border-slate-700 overflow-hidden">
                       {resolvedTargetProfile.avatarUrl || resolvedTargetProfile.profilePhoto?.url ? (
                         <img
-                          src={resolvedTargetProfile.avatarUrl || resolvedTargetProfile.profilePhoto?.url}
+                          src={getOptimizedCloudinaryUrl(resolvedTargetProfile.avatarUrl || resolvedTargetProfile.profilePhoto?.url)}
                           alt={name}
                           className="w-full h-full object-cover"
                         />

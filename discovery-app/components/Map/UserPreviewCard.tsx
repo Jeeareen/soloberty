@@ -4,6 +4,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UserProfile, PREDEFINED_INTERESTS } from '../../types/user';
 import { User, ChevronLeft, ChevronRight, X, MapPin } from 'lucide-react';
+import { getOptimizedCloudinaryUrl } from '../../lib/cloudinary';
 
 interface UserPreviewCardProps {
   users: UserProfile[];
@@ -88,7 +89,7 @@ export const UserPreviewCard: React.FC<UserPreviewCardProps> = ({
                 <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-700 shrink-0 border border-slate-300 dark:border-slate-600">
                   {u.avatarUrl || u.profilePhoto?.url ? (
                     <img
-                      src={u.avatarUrl || u.profilePhoto?.url}
+                      src={getOptimizedCloudinaryUrl(u.avatarUrl || u.profilePhoto?.url)}
                       alt={u.name}
                       loading="lazy"
                       className="w-full h-full object-cover"

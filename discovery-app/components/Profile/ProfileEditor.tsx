@@ -6,7 +6,7 @@ import { useAuth } from '../../lib/hooks/useAuth';
 import { db } from '../../lib/firebase/config';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { PREDEFINED_INTERESTS, type UserProfile } from '../../types/user';
-import { uploadToCloudinary, deleteFromCloudinary } from '../../lib/cloudinary';
+import { uploadToCloudinary, deleteFromCloudinary, getOptimizedCloudinaryUrl } from '../../lib/cloudinary';
 import { useRouter } from 'next/navigation';
 import {
   Pencil,
@@ -142,7 +142,7 @@ const ProfileMatchCardPreview: React.FC<{
             {/* Rectangular PP taking top ~35% with Name, Gender Symbol & Age overlay */}
             <div className="relative w-full h-52 sm:h-56 shrink-0 bg-slate-100 dark:bg-slate-800 overflow-hidden">
               {photoUrl ? (
-                <img src={photoUrl} alt={name} className="w-full h-full object-cover" />
+                <img src={getOptimizedCloudinaryUrl(photoUrl)} alt={name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-[#B8E7FF] dark:bg-slate-800 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center">
                   <User className="w-20 h-20" />
@@ -227,7 +227,7 @@ const ProfileMatchCardPreview: React.FC<{
                         key={idx}
                         className="aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100"
                       >
-                        <img src={url} alt={`Interest ${idx + 1}`} className="w-full h-full object-cover" />
+                        <img src={getOptimizedCloudinaryUrl(url)} alt={`Interest ${idx + 1}`} className="w-full h-full object-cover" />
                       </div>
                     ))}
                   </div>
@@ -951,7 +951,7 @@ export const ProfileEditor: React.FC = () => {
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 pb-6 border-b border-slate-200/80 dark:border-slate-800">
                 {profilePhotoPreview || profileData.profilePhotoUrl ? (
                   <img
-                    src={profilePhotoPreview || profileData.profilePhotoUrl}
+                    src={getOptimizedCloudinaryUrl(profilePhotoPreview || profileData.profilePhotoUrl)}
                     alt={profileData.name}
                     className="w-28 h-28 object-cover rounded-full border-4 border-white dark:border-slate-800 ring-4 ring-[#00AAFF]/20 dark:ring-[#B8E7FF]/20 shadow-xl shrink-0"
                   />
@@ -1034,7 +1034,7 @@ export const ProfileEditor: React.FC = () => {
                         className="aspect-square rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm bg-slate-100 dark:bg-slate-800"
                       >
                         <img
-                          src={url}
+                          src={getOptimizedCloudinaryUrl(url)}
                           alt={`Interest ${idx + 1}`}
                           className="w-full h-full object-cover"
                         />
@@ -1058,7 +1058,7 @@ export const ProfileEditor: React.FC = () => {
                   {profilePhotoPreview ? (
                     <div className="relative group shrink-0">
                       <img
-                        src={profilePhotoPreview}
+                        src={getOptimizedCloudinaryUrl(profilePhotoPreview)}
                         alt="Profile Preview"
                         className="w-28 h-28 object-cover rounded-full border-4 border-white dark:border-slate-700 ring-2 ring-[#00AAFF]/30 shadow-md"
                       />
@@ -1353,7 +1353,7 @@ export const ProfileEditor: React.FC = () => {
                       key={idx}
                       className="relative aspect-square rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm"
                     >
-                      <img src={url} alt={`Interest ${idx + 1}`} className="w-full h-full object-cover" />
+                      <img src={getOptimizedCloudinaryUrl(url)} alt={`Interest ${idx + 1}`} className="w-full h-full object-cover" />
                       <button
                         type="button"
                         onClick={() => removeInterestImage(idx)}

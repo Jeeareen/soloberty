@@ -32,6 +32,18 @@ export interface CloudinaryImageMetadata {
 }
 
 /**
+ * Injects on-the-fly Cloudinary optimization and resizing transformations:
+ * f_auto (auto format WebP/AVIF), q_auto (auto quality compression), w_600 (resize max width 600px).
+ * Safely leaves non-Cloudinary or already transformed URLs untouched.
+ */
+export function getOptimizedCloudinaryUrl(url?: string | null): string {
+  if (!url || typeof url !== 'string') return '';
+  if (!url.includes('/upload/')) return url;
+  if (url.includes('/upload/f_auto,q_auto,w_600/')) return url;
+  return url.replace('/upload/', '/upload/f_auto,q_auto,w_600/');
+}
+
+/**
  * Direct client-side unsigned upload to Cloudinary API with user-scoped folder support
  * @param file File object selected via HTML file input
  * @param folderPath Destination folder in Cloudinary (e.g., users/<userId>/avatar)
