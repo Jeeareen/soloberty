@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import {
   motion,
-  AnimatePresence,
   useAnimation,
   useMotionValue,
   useTransform,
@@ -13,7 +12,7 @@ import {
   type PanInfo,
 } from 'motion/react';
 import { useRouter } from 'next/navigation';
-import { createPortal } from 'react-dom';
+import { createPortal, flushSync } from 'react-dom';
 import { MapPin, MessageSquare, User, Lightbulb, X, RefreshCw, LogIn, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { MatchCard, MatchStackProps } from '../types/matching';
 import { PREDEFINED_INTERESTS } from '../types/user';
@@ -557,7 +556,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
   }, [isFinished, onComplete]);
 
   // Ensure active card is rendered in final visible state on mount & index change
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isFinished && cards.length > 0) {
       x.stop();
       x.set(0);
@@ -590,12 +589,14 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
         await animate(x, -stepX, { duration, ease: 'easeOut' });
       }
 
-      x.set(0);
-      setUndoCount((prev) => Math.min(prev + 1, 2));
-      setCurrentIndex((prev) => {
-        const next = prev + 1;
-        checkAndExpandEndlessStack(next);
-        return next;
+      x.jump(0);
+      flushSync(() => {
+        setUndoCount((prev) => Math.min(prev + 1, 2));
+        setCurrentIndex((prev) => {
+          const next = prev + 1;
+          checkAndExpandEndlessStack(next);
+          return next;
+        });
       });
     } finally {
       isAnimatingRef.current = false;
@@ -629,9 +630,11 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
         await animate(x, stepX, { duration, ease: 'easeOut' });
       }
 
-      x.set(0);
-      setUndoCount((prev) => Math.max(prev - 1, 0));
-      setCurrentIndex((prev) => prev - 1);
+      x.jump(0);
+      flushSync(() => {
+        setUndoCount((prev) => Math.max(prev - 1, 0));
+        setCurrentIndex((prev) => prev - 1);
+      });
     } finally {
       isAnimatingRef.current = false;
     }
@@ -785,143 +788,141 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
           <ChevronRight className="w-6 h-6 stroke-[2.5]" />
         </button>
 
-        <AnimatePresence>
-          {/* Prev-Prev Card (Far Left, -640px) */}
-          {currentIndex > 1 && undoCount >= 2 && cards[currentIndex - 2] && (
-            <motion.div
-              key={`prevprev-${cards[currentIndex - 2].id}`}
-              style={{ x: prevPrevX, scale: prevPrevScale, opacity: prevPrevOpacity, zIndex: prevPrevZIndex }}
-              className="absolute h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 overflow-hidden pointer-events-none will-change-transform"
-              aria-hidden="true"
-            >
-              <RenderCardFace card={cards[currentIndex - 2]} isBackground={true} />
-            </motion.div>
-          )}
+        {/* Prev-Prev Card (Far Left, -520px) */}
+        {currentIndex > 1 && undoCount >= 2 && cards[currentIndex - 2] && (
+          <motion.div
+            key={`prevprev-${cards[currentIndex - 2].id}`}
+            style={{ x: prevPrevX, scale: prevPrevScale, opacity: prevPrevOpacity, zIndex: prevPrevZIndex }}
+            className="absolute h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 overflow-hidden pointer-events-none will-change-transform"
+            aria-hidden="true"
+          >
+            <RenderCardFace card={cards[currentIndex - 2]} isBackground={true} />
+          </motion.div>
+        )}
 
-          {/* Prev Card (Left, -320px) */}
-          {currentIndex > 0 && undoCount >= 1 && cards[currentIndex - 1] && (
-            <motion.div
-              key={`past-${cards[currentIndex - 1].id}`}
-              style={{ x: pastX, scale: pastScale, opacity: pastOpacity, zIndex: pastZIndex }}
-              className="absolute h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 overflow-hidden pointer-events-none will-change-transform"
-              aria-hidden="true"
-            >
-              <RenderCardFace card={cards[currentIndex - 1]} isBackground={true} />
-            </motion.div>
-          )}
+        {/* Prev Card (Left, -260px) */}
+        {currentIndex > 0 && undoCount >= 1 && cards[currentIndex - 1] && (
+          <motion.div
+            key={`past-${cards[currentIndex - 1].id}`}
+            style={{ x: pastX, scale: pastScale, opacity: pastOpacity, zIndex: pastZIndex }}
+            className="absolute h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 overflow-hidden pointer-events-none will-change-transform"
+            aria-hidden="true"
+          >
+            <RenderCardFace card={cards[currentIndex - 1]} isBackground={true} />
+          </motion.div>
+        )}
 
-          {/* Next Card (Right, +320px) */}
-          {currentIndex + 1 < cards.length && cards[currentIndex + 1] && (
-            <motion.div
-              key={`preview-${cards[currentIndex + 1].id}`}
-              style={{ x: previewX, scale: previewScale, opacity: previewOpacity, zIndex: previewZIndex }}
-              className="absolute h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 overflow-hidden pointer-events-none will-change-transform"
-              aria-hidden="true"
-            >
-              <RenderCardFace card={cards[currentIndex + 1]} isBackground={true} />
-            </motion.div>
-          )}
+        {/* Next Card (Right, +260px) */}
+        {currentIndex + 1 < cards.length && cards[currentIndex + 1] && (
+          <motion.div
+            key={`preview-${cards[currentIndex + 1].id}`}
+            style={{ x: previewX, scale: previewScale, opacity: previewOpacity, zIndex: previewZIndex }}
+            className="absolute h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 overflow-hidden pointer-events-none will-change-transform"
+            aria-hidden="true"
+          >
+            <RenderCardFace card={cards[currentIndex + 1]} isBackground={true} />
+          </motion.div>
+        )}
 
-          {/* Next-Next Card (Far Right, +640px) */}
-          {currentIndex + 2 < cards.length && cards[currentIndex + 2] && (
-            <motion.div
-              key={`nextnext-${cards[currentIndex + 2].id}`}
-              style={{ x: nextNextX, scale: nextNextScale, opacity: nextNextOpacity, zIndex: nextNextZIndex }}
-              className="absolute h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 overflow-hidden pointer-events-none will-change-transform"
-              aria-hidden="true"
-            >
-              <RenderCardFace card={cards[currentIndex + 2]} isBackground={true} />
-            </motion.div>
-          )}
+        {/* Next-Next Card (Far Right, +520px) */}
+        {currentIndex + 2 < cards.length && cards[currentIndex + 2] && (
+          <motion.div
+            key={`nextnext-${cards[currentIndex + 2].id}`}
+            style={{ x: nextNextX, scale: nextNextScale, opacity: nextNextOpacity, zIndex: nextNextZIndex }}
+            className="absolute h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 overflow-hidden pointer-events-none will-change-transform"
+            aria-hidden="true"
+          >
+            <RenderCardFace card={cards[currentIndex + 2]} isBackground={true} />
+          </motion.div>
+        )}
 
-          {/* Active Card */}
-          {currentCard && (
-            <motion.div
-              key={`active-${currentCard.id}`}
-              ref={activeCardRef}
-              tabIndex={0}
-              role="button"
-              aria-label={`${currentCard.name}. ${UI_TEXT.FLIP_ARIA}`}
-              onClick={() => {
-                if (Date.now() - lastTapTimeRef.current < 400) return;
-                if (!isDraggingRef.current) setIsFlipped((prev) => !prev);
-              }}
-              onPointerDown={(e) => {
-                isDraggingRef.current = false;
-                pointerStartRef.current = { x: e.clientX, y: e.clientY };
-                setIsHeld(true);
-              }}
-              onPointerDownCapture={(e) => {
-                isDraggingRef.current = false;
-                pointerStartRef.current = { x: e.clientX, y: e.clientY };
-              }}
-              onTouchStart={(e) => {
-                isDraggingRef.current = false;
-                const touch = e.touches[0];
-                if (touch) {
-                  pointerStartRef.current = { x: touch.clientX, y: touch.clientY };
+        {/* Active Card */}
+        {currentCard && (
+          <motion.div
+            key={`active-${currentCard.id}`}
+            ref={activeCardRef}
+            tabIndex={0}
+            role="button"
+            aria-label={`${currentCard.name}. ${UI_TEXT.FLIP_ARIA}`}
+            onClick={() => {
+              if (Date.now() - lastTapTimeRef.current < 400) return;
+              if (!isDraggingRef.current) setIsFlipped((prev) => !prev);
+            }}
+            onPointerDown={(e) => {
+              isDraggingRef.current = false;
+              pointerStartRef.current = { x: e.clientX, y: e.clientY };
+              setIsHeld(true);
+            }}
+            onPointerDownCapture={(e) => {
+              isDraggingRef.current = false;
+              pointerStartRef.current = { x: e.clientX, y: e.clientY };
+            }}
+            onTouchStart={(e) => {
+              isDraggingRef.current = false;
+              const touch = e.touches[0];
+              if (touch) {
+                pointerStartRef.current = { x: touch.clientX, y: touch.clientY };
+              }
+            }}
+            onTouchEnd={(e) => {
+              setIsHeld(false);
+              if (isDraggingRef.current || isAnimatingRef.current) return;
+              const target = e.target as HTMLElement;
+              if (target?.closest('button, a')) return;
+              const touch = e.changedTouches[0];
+              if (touch && pointerStartRef.current) {
+                const dx = Math.abs(touch.clientX - pointerStartRef.current.x);
+                const dy = Math.abs(touch.clientY - pointerStartRef.current.y);
+                if (dx < 10 && dy < 10) {
+                  lastTapTimeRef.current = Date.now();
+                  setIsFlipped((prev) => !prev);
                 }
-              }}
-              onTouchEnd={(e) => {
-                setIsHeld(false);
+              }
+              pointerStartRef.current = null;
+            }}
+            onPointerUp={(e) => {
+              setIsHeld(false);
+              if (e.pointerType === 'touch') {
                 if (isDraggingRef.current || isAnimatingRef.current) return;
+                if (Date.now() - lastTapTimeRef.current < 400) return;
                 const target = e.target as HTMLElement;
                 if (target?.closest('button, a')) return;
-                const touch = e.changedTouches[0];
-                if (touch && pointerStartRef.current) {
-                  const dx = Math.abs(touch.clientX - pointerStartRef.current.x);
-                  const dy = Math.abs(touch.clientY - pointerStartRef.current.y);
+                if (pointerStartRef.current) {
+                  const dx = Math.abs(e.clientX - pointerStartRef.current.x);
+                  const dy = Math.abs(e.clientY - pointerStartRef.current.y);
                   if (dx < 10 && dy < 10) {
                     lastTapTimeRef.current = Date.now();
                     setIsFlipped((prev) => !prev);
                   }
                 }
                 pointerStartRef.current = null;
-              }}
-              onPointerUp={(e) => {
-                setIsHeld(false);
-                if (e.pointerType === 'touch') {
-                  if (isDraggingRef.current || isAnimatingRef.current) return;
-                  if (Date.now() - lastTapTimeRef.current < 400) return;
-                  const target = e.target as HTMLElement;
-                  if (target?.closest('button, a')) return;
-                  if (pointerStartRef.current) {
-                    const dx = Math.abs(e.clientX - pointerStartRef.current.x);
-                    const dy = Math.abs(e.clientY - pointerStartRef.current.y);
-                    if (dx < 10 && dy < 10) {
-                      lastTapTimeRef.current = Date.now();
-                      setIsFlipped((prev) => !prev);
-                    }
-                  }
-                  pointerStartRef.current = null;
-                }
-              }}
-              onPointerCancel={() => {
-                setIsHeld(false);
-                pointerStartRef.current = null;
-              }}
-              drag="x"
-              dragConstraints={{ left: -stepX, right: undoCount > 0 && currentIndex > 0 ? stepX : 0 }}
-              dragElastic={0}
-              dragMomentum={false}
-              onDragStart={() => {
-                isDraggingRef.current = true;
-              }}
-              onDragEnd={handleDragEnd}
-              style={{ x, scale: activeScale, opacity: 1, zIndex: activeZIndex }}
-              animate={{ rotateY: isFlipped ? 180 : 0 }}
-              transition={{ rotateY: { duration: 0.5, ease: 'easeInOut' } }}
-              className="absolute flex h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 focus:outline-none [transform-style:preserve-3d] cursor-grab active:cursor-grabbing"
-            >
-              <RenderCardFace
-                card={currentCard}
-                activeBackFocus={activeBackFocus}
-                onWhyYouTwo={handleWhyYouTwo}
-                onRequireAuth={!user ? handleRequireAuth : undefined}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+              }
+            }}
+            onPointerCancel={() => {
+              setIsHeld(false);
+              pointerStartRef.current = null;
+            }}
+            drag="x"
+            dragConstraints={{ left: -stepX, right: undoCount > 0 && currentIndex > 0 ? stepX : 0 }}
+            dragElastic={0}
+            dragMomentum={false}
+            onDragStart={() => {
+              isDraggingRef.current = true;
+            }}
+            onDragEnd={handleDragEnd}
+            style={{ x, scale: activeScale, opacity: 1, zIndex: activeZIndex }}
+            animate={{ rotateY: isFlipped ? 180 : 0 }}
+            transition={{ rotateY: { duration: 0.5, ease: 'easeInOut' } }}
+            className="absolute flex h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 focus:outline-none [transform-style:preserve-3d] cursor-grab active:cursor-grabbing"
+          >
+            <RenderCardFace
+              card={currentCard}
+              activeBackFocus={activeBackFocus}
+              onWhyYouTwo={handleWhyYouTwo}
+              onRequireAuth={!user ? handleRequireAuth : undefined}
+            />
+          </motion.div>
+        )}
       </div>
 
       {/* Why You Two Modal Portaled to Body */}
