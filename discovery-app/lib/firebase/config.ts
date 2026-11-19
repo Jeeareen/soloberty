@@ -1,11 +1,5 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
-import {
-  getAuth,
-  initializeAuth,
-  indexedDBLocalPersistence,
-  browserLocalPersistence,
-  type Auth,
-} from 'firebase/auth';
+import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 
@@ -21,22 +15,7 @@ const firebaseConfig = {
 // Initialize Firebase app safely (prevent duplicate initializations in SSR/HMR)
 const app: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// Avoid browserPopupRedirectResolver (which loads ~400KB of gapi + auth iframe scripts on every page)
-// since Soloberty uses email/password auth only.
-let authInstance: Auth;
-if (typeof window !== 'undefined') {
-  try {
-    authInstance = initializeAuth(app, {
-      persistence: [indexedDBLocalPersistence, browserLocalPersistence],
-    });
-  } catch {
-    authInstance = getAuth(app);
-  }
-} else {
-  authInstance = getAuth(app);
-}
-
-export const auth: Auth = authInstance;
+export const auth: Auth = getAuth(app);
 export const db: Firestore = getFirestore(app);
 export const storage: FirebaseStorage = getStorage(app);
 
