@@ -8,12 +8,20 @@ import { doc, getDoc } from 'firebase/firestore';
 import type { UserProfile } from '../../types/user';
 import { useUserMarkers, type ViewportBounds } from '../../hooks/useUserMarkers';
 import { DistanceFilter, type DistanceOption } from '../../components/Map/DistanceFilter';
-import { UserPreviewCard } from '../../components/Map/UserPreviewCard';
-import { UserDetailModal } from '../../components/Map/UserDetailModal';
 import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { COUNTRY_CENTERS, extractCountryCode } from '../../lib/mapUtils';
+
+const UserPreviewCard = dynamic(
+  () => import('../../components/Map/UserPreviewCard').then((mod) => mod.UserPreviewCard),
+  { ssr: false }
+);
+
+const UserDetailModal = dynamic(
+  () => import('../../components/Map/UserDetailModal').then((mod) => mod.UserDetailModal),
+  { ssr: false }
+);
 
 // Leaflet requires window/DOM, so dynamically import MapCanvas with ssr: false
 const MapCanvas = dynamic(
@@ -72,9 +80,7 @@ function MapPageContent() {
   const [currentUserLocation, setCurrentUserLocation] = useState<{ lat: number; lng: number } | null>(
     null
   );
-  const [initialCenter, setInitialCenter] = useState<{ lat: number; lng: number }>(DEFAULT_CENTER);
   const initialZoomLevel = 12;
-  const [locatingUser, setLocatingUser] = useState<boolean>(true);
 
   // Filter & Viewport states
   const [distanceFilter, setDistanceFilter] = useState<DistanceOption>('any');
@@ -105,8 +111,6 @@ function MapPageContent() {
             if (coords && (coords.lat !== 0 || coords.lng !== 0)) {
               if (isMounted) {
                 setCurrentUserLocation(coords);
-                setInitialCenter(coords);
-                setLocatingUser(false);
                 return;
               }
             }
@@ -116,30 +120,20 @@ function MapPageContent() {
         }
       }
 
-      // Check browser geolocation as fallback
+      // Check browser geolocation as fallback without blocking initial map mount
       if (typeof window !== 'undefined' && 'geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
             if (isMounted) {
               const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
               setCurrentUserLocation(coords);
-              setInitialCenter(coords);
-              setLocatingUser(false);
             }
           },
           () => {
-            if (isMounted) {
-              setInitialCenter(DEFAULT_CENTER);
-              setLocatingUser(false);
-            }
+            // Keep default center
           },
           { timeout: 4000 }
         );
-      } else {
-        if (isMounted) {
-          setInitialCenter(DEFAULT_CENTER);
-          setLocatingUser(false);
-        }
       }
     }
 
@@ -219,19 +213,23 @@ function MapPageContent() {
         onChange={setDistanceFilter}
       />
 
-      {/* Map Canvas */}
-      {!locatingUser && (
-        <MapCanvas
-          initialCenter={initialCenter}
-          initialZoom={initialZoomLevel}
-          targetLocation={targetCoords ? { lat: targetCoords.lat, lng: targetCoords.lng, zoom: targetZoom } : null}
-          users={users}
-          currentUserLocation={currentUserLocation}
-          distanceFilter={distanceFilter}
-          onBoundsChange={setViewportBounds}
-          onSelectClusterOrUser={handleSelectClusterOrUser}
-        />
-      )}
+      {/* Map Canvas (mounts immediately at DEFAULT_CENTER; pans once user location resolves) */}
+      <MapCanvas
+        initialCenter={DEFAULT_CENTER}
+        initialZoom={initialZoomLevel}
+        targetLocation={
+          targetCoords
+            ? { lat: targetCoords.lat, lng: targetCoords.lng, zoom: targetZoom }
+            : currentUserLocation
+              ? { lat: currentUserLocation.lat, lng: currentUserLocation.lng, zoom: initialZoomLevel }
+              : null
+        }
+        users={users}
+        currentUserLocation={currentUserLocation}
+        distanceFilter={distanceFilter}
+        onBoundsChange={setViewportBounds}
+        onSelectClusterOrUser={handleSelectClusterOrUser}
+      />
 
       {/* Loading Indicator Pill (Bottom Left) */}
       {loading && (
@@ -261,23 +259,27 @@ function MapPageContent() {
         </div>
       )}
 
-      {/* User / Cluster Preview Bottom Sheet */}
-      <UserPreviewCard
-        users={selectedUsers}
-        clusterTitle={selectedTitle}
-        currentIndex={previewIndex}
-        onPrev={handlePrev}
-        onNext={handleNext}
-        onClose={handleClosePreview}
-        onSelectUser={(u) => setDetailedUser(u)}
-        pauseFocusTrap={Boolean(detailedUser)}
-      />
+      {/* User / Cluster Preview Bottom Sheet (lazy-loaded only when opened) */}
+      {selectedUsers.length > 0 && (
+        <UserPreviewCard
+          users={selectedUsers}
+          clusterTitle={selectedTitle}
+          currentIndex={previewIndex}
+          onPrev={handlePrev}
+          onNext={handleNext}
+          onClose={handleClosePreview}
+          onSelectUser={(u) => setDetailedUser(u)}
+          pauseFocusTrap={Boolean(detailedUser)}
+        />
+      )}
 
-      {/* Detailed MatchCard Modal */}
-      <UserDetailModal
-        user={detailedUser}
-        onClose={() => setDetailedUser(null)}
-      />
+      {/* Detailed MatchCard Modal (lazy-loaded only when opened) */}
+      {detailedUser && (
+        <UserDetailModal
+          user={detailedUser}
+          onClose={() => setDetailedUser(null)}
+        />
+      )}
     </div>
   );
 }
