@@ -65,7 +65,7 @@ export const Step4BioScout: React.FC<Step4BioScoutProps> = ({
       <div className="space-y-1.5 shrink-0 mb-1">
         <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white">Create your bio</h2>
         <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-          Step 4: Write a short bio or let <span className="text-[#00AAFF] dark:text-[#B8E7FF] font-bold">Soloberty Scout</span> draft one for you!
+          Step 4: Write a short bio or let <span className="text-[#007ABB] dark:text-[#B8E7FF] font-bold">Soloberty Scout</span> draft one for you!
         </p>
 
         {renderErrorAlert()}
@@ -103,7 +103,7 @@ export const Step4BioScout: React.FC<Step4BioScoutProps> = ({
             className={`w-full p-4 pb-10 bg-slate-50 dark:bg-slate-800/60 border ${
               bioError
                 ? 'border-rose-500 dark:border-rose-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
-                : 'border-slate-200 dark:border-slate-700 focus:border-[#00AAFF]'
+                : 'border-slate-200 dark:border-slate-700 focus:border-[#007ABB]'
             } rounded-2xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none transition-colors resize-none leading-relaxed`}
           />
           <div
@@ -141,7 +141,7 @@ export const Step4BioScout: React.FC<Step4BioScoutProps> = ({
         <button
           type="button"
           onClick={onNext}
-          className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          className="flex-1 py-3.5 px-4 bg-[#007ABB] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#007ABB]/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           Continue to Location
           <ArrowRight className="w-4 h-4" />

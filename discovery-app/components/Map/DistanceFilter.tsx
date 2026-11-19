@@ -33,8 +33,9 @@ export const DistanceFilter: React.FC<DistanceFilterProps> = ({
               <button
                 key={opt.label}
                 type="button"
+                aria-pressed={isSelected}
                 onClick={() => onChange(opt.value)}
-                className={`relative h-7 px-3 flex items-center justify-center text-xs font-heading font-extrabold rounded-lg transition-colors cursor-pointer leading-none select-none ${
+                className={`relative h-7 px-3 flex items-center justify-center text-xs font-heading font-extrabold rounded-lg transition-colors cursor-pointer leading-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB] ${
                   isSelected
                     ? 'text-white dark:text-slate-900'
                     : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
@@ -43,7 +44,7 @@ export const DistanceFilter: React.FC<DistanceFilterProps> = ({
                 {isSelected && (
                   <motion.div
                     layoutId="activeDistanceFilter"
-                    className="absolute inset-0 bg-[#00AAFF] dark:bg-[#B8E7FF] rounded-lg shadow-sm -z-0"
+                    className="absolute inset-0 bg-[#007ABB] dark:bg-[#B8E7FF] rounded-lg shadow-sm -z-0"
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   />
                 )}

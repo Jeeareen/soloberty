@@ -9,19 +9,24 @@ import type { UserProfile } from '../../types/user';
 import type { MatchCard } from '../../types/matching';
 import { RenderCardFace } from '../MatchStack';
 import { useAuth } from '../../lib/hooks/useAuth';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface UserDetailModalProps {
   user: UserProfile | null;
   onClose: () => void;
+  hideChatButton?: boolean;
 }
 
-export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user: profile, onClose }) => {
+export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user: profile, onClose, hideChatButton = false }) => {
   const router = useRouter();
   const { user: currentUser } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
   const lastTapTimeRef = useRef<number>(0);
+  const modalWrapperRef = useRef<HTMLDivElement | null>(null);
+  const matchCardRef = useRef<HTMLDivElement | null>(null);
+  const whyYouTwoModalRef = useRef<HTMLDivElement | null>(null);
 
   // Auth modal state for unauthenticated users
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -37,29 +42,49 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user: profile,
     setMounted(true);
   }, []);
 
+  useFocusTrap(
+    Boolean(profile) && !whyYouTwoModalOpen && !authModalOpen,
+    modalWrapperRef,
+    undefined,
+    matchCardRef
+  );
+
+  useFocusTrap(whyYouTwoModalOpen, whyYouTwoModalRef);
+
   // Reset flip state whenever target user changes
   useEffect(() => {
     setIsFlipped(false);
   }, [profile?.uid]);
 
-  // Handle ESC key to unflip or close
+  // Handle ESC key to close and Space key to rotate MatchCard
   useEffect(() => {
+    if (!profile) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
         if (whyYouTwoModalOpen) {
           setWhyYouTwoModalOpen(false);
         } else if (authModalOpen) {
           setAuthModalOpen(false);
-        } else if (isFlipped) {
-          setIsFlipped(false);
         } else {
           onClose();
+        }
+        return;
+      }
+
+      if (e.key === ' ' && !whyYouTwoModalOpen && !authModalOpen) {
+        const targetTag = (e.target as HTMLElement)?.tagName;
+        if (e.target === matchCardRef.current || (targetTag !== 'BUTTON' && targetTag !== 'A')) {
+          e.preventDefault();
+          setIsFlipped((prev) => !prev);
         }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [whyYouTwoModalOpen, authModalOpen, isFlipped, onClose]);
+  }, [profile, whyYouTwoModalOpen, authModalOpen, onClose]);
 
   if (!profile) return null;
 
@@ -136,16 +161,21 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user: profile,
 
         {/* Modal Card Wrapper */}
         <motion.div
+          ref={modalWrapperRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Member Profile"
+          tabIndex={-1}
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative z-10 flex flex-col items-center max-w-full"
+          className="relative z-10 flex flex-col items-center max-w-full focus:outline-none"
         >
           {/* Header Controls: Card Label & Close Button */}
           <div className="w-[320px] sm:w-[360px] md:w-[400px] flex items-center justify-between pb-2 px-1 text-white">
             <span className="text-xs font-bold uppercase tracking-wider text-white/80 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#00AAFF] animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-[#007ABB] animate-pulse" />
               Member Profile
             </span>
             <button
@@ -161,12 +191,19 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user: profile,
           {/* 3D Flippable MatchCard */}
           <div className="[perspective:1000px]">
             <motion.div
+              ref={matchCardRef}
               tabIndex={0}
               role="button"
               aria-label={`${card.name}. Tap card to flip for details`}
               onClick={() => {
                 if (Date.now() - lastTapTimeRef.current < 400) return;
                 setIsFlipped((prev) => !prev);
+              }}
+              onKeyDown={(e) => {
+                if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault();
+                  setIsFlipped((prev) => !prev);
+                }
               }}
               onPointerDownCapture={(e) => {
                 pointerStartRef.current = { x: e.clientX, y: e.clientY };
@@ -193,10 +230,12 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user: profile,
               }}
               animate={{ rotateY: isFlipped ? 180 : 0 }}
               transition={{ rotateY: { duration: 0.5, ease: 'easeInOut' } }}
-              className="relative flex h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 shadow-2xl focus:outline-none [transform-style:preserve-3d] cursor-pointer"
+              className="relative flex h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 shadow-2xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#007ABB]/60 [transform-style:preserve-3d] cursor-pointer"
             >
               <RenderCardFace
                 card={card}
+                isFlipped={isFlipped}
+                hideChatButton={hideChatButton}
                 activeBackFocus={null}
                 onWhyYouTwo={handleWhyYouTwo}
                 onRequireAuth={!currentUser ? handleRequireAuth : undefined}
@@ -215,7 +254,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user: profile,
               className="w-full max-w-sm rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-4 text-center"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="w-12 h-12 rounded-full bg-[#00AAFF]/10 text-[#00AAFF] flex items-center justify-center mx-auto">
+              <div className="w-12 h-12 rounded-full bg-[#007ABB]/10 text-[#007ABB] flex items-center justify-center mx-auto">
                 <LogIn className="w-6 h-6" />
               </div>
               <div className="space-y-1">
@@ -239,7 +278,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user: profile,
                 <button
                   type="button"
                   onClick={() => router.push('/login')}
-                  className="flex-1 py-2 text-xs font-extrabold text-white bg-[#00AAFF] hover:bg-[#0088CC] rounded-xl transition-all shadow-md shadow-[#00AAFF]/20 cursor-pointer"
+                  className="flex-1 py-2 text-xs font-extrabold text-white bg-[#007ABB] hover:bg-[#0088CC] rounded-xl transition-all shadow-md shadow-[#007ABB]/20 cursor-pointer"
                 >
                   Sign in
                 </button>
@@ -255,13 +294,18 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user: profile,
             onClick={() => setWhyYouTwoModalOpen(false)}
           >
             <div
-              className="w-full max-w-md max-h-[85vh] flex flex-col rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 p-6 shadow-2xl overflow-y-auto space-y-4"
+              ref={whyYouTwoModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Why You Two?"
+              tabIndex={-1}
+              className="w-full max-w-md max-h-[85vh] flex flex-col rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 p-6 shadow-2xl overflow-y-auto space-y-4 focus:outline-none"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-2">
-                  <span className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400">
+                  <span className="p-2 rounded-xl bg-[#FFF3EB] dark:bg-[#CC5500]/20 text-[#CC5500] dark:text-[#FF8533]">
                     <Lightbulb className="w-5 h-5" />
                   </span>
                   <div>
@@ -285,7 +329,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user: profile,
               {/* Loading State */}
               {whyYouTwoLoading && (
                 <div className="py-12 flex flex-col items-center justify-center space-y-3">
-                  <RefreshCw className="w-7 h-7 text-purple-600 dark:text-purple-400 animate-spin" />
+                  <RefreshCw className="w-7 h-7 text-[#CC5500] dark:text-[#FF8533] animate-spin" />
                   <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
                     Analyzing shared interests & possibilities...
                   </p>
@@ -329,7 +373,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user: profile,
                         {whyYouTwoResult.sharedInterests.map((interest: string, idx: number) => (
                           <span
                             key={idx}
-                            className="px-3 py-1 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/40 rounded-full text-xs font-bold"
+                            className="px-3 py-1 bg-[#FFF3EB] dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-[#CC5500]/25/60 dark:border-[#CC5500]/40/40 rounded-full text-xs font-bold"
                           >
                             {interest}
                           </span>
@@ -379,7 +423,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user: profile,
                     <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                       3. Connection Idea
                     </h4>
-                    <div className="p-3.5 bg-purple-500/10 border border-purple-500/20 rounded-xl text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200 leading-relaxed">
+                    <div className="p-3.5 bg-[#FFF3EB]0/10 border border-purple-500/20 rounded-xl text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200 leading-relaxed">
                       {whyYouTwoResult.connectionIdea || 'No connection idea available.'}
                     </div>
                   </div>

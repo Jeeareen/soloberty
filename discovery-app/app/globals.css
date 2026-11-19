@@ -5,16 +5,16 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-brand-primary: #00AAFF;
+  --color-brand-primary: #007ABB;
   --color-brand-secondary: #0088CC;
   --font-heading: var(--font-heading), sans-serif;
   --font-sans: var(--font-body), system-ui, sans-serif;
 }
 
 :root {
-  --accent: #00AAFF;
+  --accent: #007ABB;
   --accent-bg: #B8E7FF;
-  --accent-border: #00AAFF;
+  --accent-border: #007ABB;
   --border: #E2E8F0;
   --text-h: #0F172A;
   --social-bg: #F8FAFC;
@@ -320,4 +320,42 @@
 .custom-cluster-marker:hover {
   transform: scale(1.1);
   z-index: 999 !important;
-}
+}
+
+/* ==========================================================================
+   Keyboard Focus-Visible Aesthetics (Site-wide)
+   ========================================================================== */
+:focus-visible {
+  outline: 2px solid #0088CC;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.dark :focus-visible {
+  outline-color: #007ABB;
+}
+
+nav :focus-visible,
+header :focus-visible {
+  outline-color: #FFFFFF;
+}
+
+header [data-settings-menu="true"] :focus-visible {
+  outline: 2px solid #007ABB;
+  outline-offset: -2px;
+}
+
+nav a[aria-current="page"]:focus-visible {
+  outline: none;
+}
+
+nav a[aria-current="page"]:focus-visible::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid #000000;
+  border-radius: 12px;
+  pointer-events: none;
+  z-index: 20;
+}
+

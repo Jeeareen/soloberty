@@ -150,7 +150,7 @@ export const Navbar: React.FC = () => {
   return (
     <>
       {/* Top Header Navbar */}
-      <header className="sticky top-0 z-50 w-screen max-w-none bg-[#00AAFF] dark:bg-[#B8E7FF] shadow-md h-14 transition-colors duration-200">
+      <header className="sticky top-0 z-50 w-screen max-w-none bg-[#007ABB] dark:bg-[#B8E7FF] shadow-md h-14 transition-colors duration-200">
         <div className="w-full flex items-center justify-between px-4 sm:px-8 h-full min-w-0 relative">
           {/* Brand Logo & Title (Left-aligned) */}
           <div className="flex items-center shrink-0">
@@ -178,22 +178,21 @@ export const Navbar: React.FC = () => {
                   <MotionLink
                     key={item.href}
                     href={item.href}
+                    aria-current={isActive ? 'page' : undefined}
                     scroll={false}
                     initial="rest"
                     whileHover="hover"
                     animate="rest"
-                    className={`relative flex items-center justify-center gap-2 px-3 sm:px-5 h-full text-xs sm:text-sm font-bold transition-colors whitespace-nowrap shrink-0 ${
-                      isAuthTab ? 'w-24 sm:w-28 text-center' : ''
-                    } ${
-                      isActive
-                        ? 'text-[#00AAFF] dark:text-[#0088CC]'
-                        : 'text-white/90 dark:text-slate-800/90 hover:text-white dark:hover:text-slate-950'
-                    }`}
+                    className={`relative flex items-center justify-center gap-2 px-3 sm:px-5 my-1.5 h-[calc(100%-12px)] text-xs sm:text-sm font-bold transition-colors whitespace-nowrap shrink-0 rounded-xl ${isAuthTab ? 'w-24 sm:w-28 text-center' : ''
+                      } ${isActive
+                        ? 'text-[#007ABB] dark:text-[#005E91] focus-visible:outline focus-visible:outline-2 focus-visible:outline-black focus-visible:-outline-offset-2'
+                        : 'text-white/90 dark:text-slate-800/90 hover:text-white dark:hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white dark:focus-visible:outline-black focus-visible:-outline-offset-2'
+                      }`}
                   >
                     {isActive && (
                       <motion.div
                         layoutId="activeNavbarTab"
-                        className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0)_0%,rgba(255,255,255,0.45)_5%,rgba(255,255,255,0.75)_10%,rgba(255,255,255,0.92)_15%,rgba(255,255,255,1)_20%,rgba(255,255,255,1)_80%,rgba(255,255,255,0.92)_85%,rgba(255,255,255,0.75)_90%,rgba(255,255,255,0.45)_95%,rgba(255,255,255,0)_100%)] shadow-sm"
+                        className="absolute inset-x-0 -inset-y-1.5 bg-[linear-gradient(to_right,rgba(255,255,255,0)_0%,rgba(255,255,255,0.45)_5%,rgba(255,255,255,0.75)_10%,rgba(255,255,255,0.92)_15%,rgba(255,255,255,1)_20%,rgba(255,255,255,1)_80%,rgba(255,255,255,0.92)_85%,rgba(255,255,255,0.75)_90%,rgba(255,255,255,0.45)_95%,rgba(255,255,255,0)_100%)] shadow-sm"
                         transition={{
                           type: 'spring',
                           stiffness: 500,
@@ -231,7 +230,8 @@ export const Navbar: React.FC = () => {
               <button
                 onClick={() => setMenuOpen((prev) => !prev)}
                 aria-label="Settings and Notifications"
-                className="relative p-2 text-white dark:text-slate-900 hover:bg-white/15 dark:hover:bg-slate-900/15 rounded-xl transition-colors active:scale-95 flex items-center justify-center cursor-pointer"
+                aria-expanded={menuOpen}
+                className="relative p-2 text-white dark:text-slate-900 hover:bg-white/15 dark:hover:bg-slate-900/15 rounded-xl transition-colors active:scale-95 flex items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white dark:focus-visible:ring-slate-900"
               >
                 <motion.div
                   animate={{ rotate: menuOpen ? -60 : 0 }}
@@ -250,6 +250,7 @@ export const Navbar: React.FC = () => {
               <AnimatePresence>
                 {menuOpen && (
                   <motion.div
+                    data-settings-menu="true"
                     initial={{ opacity: 0, scale: 0.85, y: -10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.85, y: -10 }}
@@ -259,6 +260,12 @@ export const Navbar: React.FC = () => {
                       damping: 28,
                     }}
                     style={{ transformOrigin: 'top right' }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        e.stopPropagation();
+                        setMenuOpen(false);
+                      }
+                    }}
                     className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-3 z-50 text-slate-900 dark:text-white overflow-hidden space-y-2"
                   >
                     {/* Settings Title */}
@@ -270,7 +277,7 @@ export const Navbar: React.FC = () => {
 
                     {/* Mail Info Tile */}
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-[#00AAFF] dark:bg-[#B8E7FF] text-white dark:text-slate-900 flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">
+                      <div className="w-8 h-8 rounded-xl bg-[#007ABB] dark:bg-[#B8E7FF] text-white dark:text-slate-900 flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">
                         {user?.email?.[0]?.toUpperCase() || <Mail className="w-4 h-4" />}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -286,7 +293,7 @@ export const Navbar: React.FC = () => {
                     {/* Notifications Toggle Tile */}
                     <button
                       onClick={toggleNotifications}
-                      className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left cursor-pointer"
+                      className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                     >
                       <div className="flex items-center gap-2.5">
                         <div className="p-1.5 bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 rounded-xl">
@@ -300,9 +307,8 @@ export const Navbar: React.FC = () => {
                         </div>
                       </div>
                       <div
-                        className={`w-9 h-5 rounded-full p-0.5 transition-colors relative ${
-                          notificationsEnabled ? 'bg-[#00AAFF] dark:bg-[#B8E7FF]' : 'bg-slate-300 dark:bg-slate-700'
-                        }`}
+                        className={`w-9 h-5 rounded-full p-0.5 transition-colors relative ${notificationsEnabled ? 'bg-[#007ABB] dark:bg-[#B8E7FF]' : 'bg-slate-300 dark:bg-slate-700'
+                          }`}
                       >
                         <motion.div
                           className="w-4 h-4 bg-white dark:bg-slate-900 rounded-full shadow-sm"
@@ -315,15 +321,14 @@ export const Navbar: React.FC = () => {
                     {/* Dark Mode Toggle Tile */}
                     <button
                       onClick={toggleDarkMode}
-                      className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left cursor-pointer"
+                      className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                     >
                       <div className="flex items-center gap-2.5">
                         <div
-                          className={`p-1.5 rounded-xl ${
-                            darkMode
-                              ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400'
+                          className={`p-1.5 rounded-xl ${darkMode
+                              ? 'bg-purple-100 dark:bg-purple-950/60 text-[#CC5500] dark:text-[#FF8533]'
                               : 'bg-amber-100 dark:bg-amber-950/60 text-amber-500 dark:text-amber-400'
-                          }`}
+                            }`}
                         >
                           {darkMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
                         </div>
@@ -335,9 +340,8 @@ export const Navbar: React.FC = () => {
                         </div>
                       </div>
                       <div
-                        className={`w-9 h-5 rounded-full p-0.5 transition-colors relative ${
-                          darkMode ? 'bg-[#00AAFF] dark:bg-[#B8E7FF]' : 'bg-slate-300 dark:bg-slate-700'
-                        }`}
+                        className={`w-9 h-5 rounded-full p-0.5 transition-colors relative ${darkMode ? 'bg-[#007ABB] dark:bg-[#B8E7FF]' : 'bg-slate-300 dark:bg-slate-700'
+                          }`}
                       >
                         <motion.div
                           className="w-4 h-4 bg-white dark:bg-slate-900 rounded-full shadow-sm"
@@ -351,7 +355,7 @@ export const Navbar: React.FC = () => {
                     <Link
                       href="/health"
                       onClick={() => setMenuOpen(false)}
-                      className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left"
+                      className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                     >
                       <div className="flex items-center gap-2.5">
                         <div className="p-1.5 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 rounded-xl">
@@ -369,7 +373,7 @@ export const Navbar: React.FC = () => {
                     <Link
                       href="/demo/motion-button"
                       onClick={() => setMenuOpen(false)}
-                      className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left"
+                      className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                     >
                       <div className="flex items-center gap-2.5">
                         <div className="p-1.5 bg-yellow-100 dark:bg-yellow-950/50 text-yellow-500 dark:text-yellow-400 rounded-xl">
@@ -395,7 +399,7 @@ export const Navbar: React.FC = () => {
                       <Link
                         href="/auth/changePassword"
                         onClick={() => setMenuOpen(false)}
-                        className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left"
+                        className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                       >
                         <div className="flex items-center gap-2.5">
                           <div className="p-1.5 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-xl">
@@ -414,7 +418,7 @@ export const Navbar: React.FC = () => {
                     {user ? (
                       <button
                         onClick={handleLogout}
-                        className="w-full py-2.5 px-3 bg-rose-600 hover:bg-rose-500 active:scale-[0.98] text-white font-bold text-xs rounded-2xl shadow-md shadow-rose-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                        className="w-full py-2.5 px-3 bg-rose-600 hover:bg-rose-500 active:scale-[0.98] text-white font-bold text-xs rounded-2xl shadow-md shadow-rose-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                       >
                         <LogOut className="w-4 h-4" />
                         <span>Log Out</span>
@@ -423,7 +427,7 @@ export const Navbar: React.FC = () => {
                       <Link
                         href="/auth/login"
                         onClick={() => setMenuOpen(false)}
-                        className="w-full py-2.5 px-3 bg-[#00AAFF] dark:bg-[#B8E7FF] hover:bg-[#0088CC] dark:hover:bg-[#99D8FF] active:scale-[0.98] text-white dark:text-slate-900 font-bold text-xs rounded-2xl shadow-md shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2"
+                        className="w-full py-2.5 px-3 bg-[#007ABB] dark:bg-[#B8E7FF] hover:bg-[#0088CC] dark:hover:bg-[#99D8FF] active:scale-[0.98] text-white dark:text-slate-900 font-bold text-xs rounded-2xl shadow-md shadow-[#007ABB]/20 transition-all flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                       >
                         <LogIn className="w-4 h-4" />
                         <span>Log In / Sign Up</span>
@@ -440,7 +444,7 @@ export const Navbar: React.FC = () => {
       {/* Mobile Bottom Navigation Bar (Visible only on screens < md) */}
       <nav
         aria-label="Mobile Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 w-screen max-w-none z-50 bg-[#00AAFF]/95 dark:bg-[#0F172A]/95 backdrop-blur-lg border-t border-white/20 dark:border-slate-800/80 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] px-3 py-1.5 flex items-center justify-around pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+        className="md:hidden fixed bottom-0 left-0 right-0 w-screen max-w-none z-50 bg-[#007ABB]/95 dark:bg-[#0F172A]/95 backdrop-blur-lg border-t border-white/20 dark:border-slate-800/80 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] px-3 py-1.5 flex items-center justify-around pb-[max(0.5rem,env(safe-area-inset-bottom))]"
       >
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -453,16 +457,15 @@ export const Navbar: React.FC = () => {
             <Link
               key={item.href}
               href={item.href}
-              className={`relative flex flex-col items-center justify-center py-1 px-3.5 rounded-2xl text-[11px] font-extrabold transition-all active:scale-95 ${
-                isActive
-                  ? 'text-white dark:text-[#00AAFF]'
+              className={`relative flex flex-col items-center justify-center py-1 px-3.5 rounded-2xl text-[11px] font-extrabold transition-all active:scale-95 ${isActive
+                  ? 'text-white dark:text-[#007ABB]'
                   : 'text-white/70 dark:text-slate-400 hover:text-white dark:hover:text-slate-200'
-              }`}
+                }`}
             >
               {isActive && (
                 <motion.div
                   layoutId="activeMobileTab"
-                  className="absolute inset-0 bg-white/25 dark:bg-[#00AAFF]/20 rounded-2xl -z-0"
+                  className="absolute inset-0 bg-white/25 dark:bg-[#007ABB]/20 rounded-2xl -z-0"
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               )}

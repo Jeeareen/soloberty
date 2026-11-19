@@ -47,7 +47,7 @@ const GenderSymbol: React.FC<{ gender: string; className?: string }> = ({
   if (g === 'male') {
     return (
       <svg
-        className={`${className} text-blue-500 dark:text-[#00AAFF] shrink-0 inline-block`}
+        className={`${className} text-blue-500 dark:text-[#007ABB] shrink-0 inline-block`}
         fill="none"
         stroke="currentColor"
         strokeWidth="2.5"
@@ -124,12 +124,18 @@ const ProfileMatchCardPreview: React.FC<{
         tabIndex={0}
         aria-label={`${name}, ${bio}. Tap to flip card`}
         onClick={() => setIsFlipped((prev) => !prev)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsFlipped((prev) => !prev);
+          }
+        }}
         onPointerDown={() => setIsHeld(true)}
         onPointerUp={() => setIsHeld(false)}
         onPointerCancel={() => setIsHeld(false)}
         animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{ rotateY: { duration: 0.4, ease: 'easeInOut' } }}
-        className="relative flex w-full max-w-[400px] aspect-[2/3] h-auto max-h-[75vh] cursor-pointer flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 [transform-style:preserve-3d] focus:outline-none"
+        className="relative flex w-full max-w-[400px] aspect-[2/3] h-auto max-h-[75vh] cursor-pointer flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 [transform-style:preserve-3d] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#007ABB]/60"
       >
         {/* Inner Tap/Hold Scale Container */}
         <motion.div
@@ -144,7 +150,7 @@ const ProfileMatchCardPreview: React.FC<{
               {photoUrl ? (
                 <img src={getOptimizedCloudinaryUrl(photoUrl)} alt={name} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full bg-[#B8E7FF] dark:bg-slate-800 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center">
+                <div className="w-full h-full bg-[#E8F4FC] dark:bg-slate-800 text-[#007ABB] dark:text-[#B8E7FF] flex items-center justify-center">
                   <User className="w-20 h-20" />
                 </div>
               )}
@@ -160,8 +166,8 @@ const ProfileMatchCardPreview: React.FC<{
             {/* Content Below PP */}
             <div className="flex-1 flex flex-col p-5 space-y-3.5">
               {/* Location Tag right below PP (1.25x font size) */}
-              <div className="flex items-center gap-1.5 text-sm sm:text-base font-bold text-[#00AAFF] dark:text-[#B8E7FF]">
-                <MapPin className="w-4 h-4 shrink-0 text-[#00AAFF]" />
+              <div className="flex items-center gap-1.5 text-sm sm:text-base font-bold text-[#007ABB] dark:text-[#B8E7FF]">
+                <MapPin className="w-4 h-4 shrink-0 text-[#007ABB]" />
                 <span>{city || 'Vienna, AT'}</span>
               </div>
 
@@ -177,7 +183,7 @@ const ProfileMatchCardPreview: React.FC<{
                         key={idx}
                         className="flex items-center gap-2.5 text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100"
                       >
-                        <span className="text-[#00AAFF] font-black text-base">•</span>
+                        <span className="text-[#007ABB] font-black text-base">•</span>
                         <span className="text-lg sm:text-xl shrink-0">{item.icon || '✨'}</span>
                         <span className="truncate">{item.name}</span>
                       </li>
@@ -236,18 +242,6 @@ const ProfileMatchCardPreview: React.FC<{
                 )}
               </div>
 
-              {/* Chat Button (1.25x font size) */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  router.push('/chat');
-                }}
-                className="w-full py-3 px-4 bg-[#00AAFF] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs sm:text-sm font-extrabold rounded-xl shadow-md shadow-[#00AAFF]/20 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
-              >
-                <MessageSquare className="w-4 h-4" />
-                Chat with {name?.split(' ')[0] || 'User'}
-              </button>
             </div>
           </div>
         </motion.div>
@@ -315,6 +309,48 @@ export const ProfileEditor: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const profilePhotoInputRef = useRef<HTMLInputElement | null>(null);
+  const interestPhotosInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraCloseBtnRef = useRef<HTMLButtonElement | null>(null);
+  const cameraCaptureBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!showCameraModal) return;
+    const prevFocus = document.activeElement as HTMLElement | null;
+    const focusTimer = setTimeout(() => {
+      cameraCloseBtnRef.current?.focus();
+    }, 50);
+
+    const handleModalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        stopCameraStream();
+        return;
+      }
+      if (e.key === 'Tab') {
+        const focusables = [cameraCloseBtnRef.current, cameraCaptureBtnRef.current].filter(
+          (el): el is HTMLButtonElement => Boolean(el)
+        );
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleModalKeyDown);
+    return () => {
+      clearTimeout(focusTimer);
+      window.removeEventListener('keydown', handleModalKeyDown);
+      prevFocus?.focus?.();
+    };
+  }, [showCameraModal]);
 
   // 1. Instant Cache Hydration on Client Mount for current logged-in user
   useEffect(() => {
@@ -854,7 +890,7 @@ export const ProfileEditor: React.FC = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] w-full space-y-4">
-        <Loader2 className="w-10 h-10 text-[#00AAFF] animate-[spin_0.8s_cubic-bezier(0.5,0.1,0.4,0.9)_infinite]" />
+        <Loader2 className="w-10 h-10 text-[#007ABB] animate-[spin_0.8s_cubic-bezier(0.5,0.1,0.4,0.9)_infinite]" />
         <p className="text-sm font-extrabold tracking-wide text-slate-500 dark:text-slate-400">Loading your profile...</p>
       </div>
     );
@@ -889,7 +925,7 @@ export const ProfileEditor: React.FC = () => {
               type="button"
               onClick={handleSaveProfile}
               disabled={saving}
-              className="px-4 py-2.5 bg-[#00AAFF] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs sm:text-sm font-extrabold rounded-xl shadow-md shadow-[#00AAFF]/20 transition-all flex items-center gap-1.5 active:scale-95 disabled:opacity-50 cursor-pointer"
+              className="px-4 py-2.5 bg-[#007ABB] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs sm:text-sm font-extrabold rounded-xl shadow-md shadow-[#007ABB]/20 transition-all flex items-center gap-1.5 active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               {saving ? (
                 <>
@@ -908,7 +944,7 @@ export const ProfileEditor: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsEditMode(true)}
-            className="px-5 py-2.5 bg-[#00AAFF] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs sm:text-sm font-extrabold rounded-xl shadow-md shadow-[#00AAFF]/20 transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
+            className="px-5 py-2.5 bg-[#007ABB] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs sm:text-sm font-extrabold rounded-xl shadow-md shadow-[#007ABB]/20 transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
           >
             <Pencil className="w-4 h-4" />
             Edit Profile
@@ -953,10 +989,10 @@ export const ProfileEditor: React.FC = () => {
                   <img
                     src={getOptimizedCloudinaryUrl(profilePhotoPreview || profileData.profilePhotoUrl)}
                     alt={profileData.name}
-                    className="w-28 h-28 object-cover rounded-full border-4 border-white dark:border-slate-800 ring-4 ring-[#00AAFF]/20 dark:ring-[#B8E7FF]/20 shadow-xl shrink-0"
+                    className="w-28 h-28 object-cover rounded-full border-4 border-white dark:border-slate-800 ring-4 ring-[#007ABB]/20 dark:ring-[#B8E7FF]/20 shadow-xl shrink-0"
                   />
                 ) : (
-                  <div className="w-28 h-28 rounded-full bg-[#B8E7FF] dark:bg-slate-800 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center border-4 border-white dark:border-slate-800 ring-4 ring-[#00AAFF]/20 dark:ring-[#B8E7FF]/20 shadow-xl shrink-0">
+                  <div className="w-28 h-28 rounded-full bg-[#E8F4FC] dark:bg-slate-800 text-[#007ABB] dark:text-[#B8E7FF] flex items-center justify-center border-4 border-white dark:border-slate-800 ring-4 ring-[#007ABB]/20 dark:ring-[#B8E7FF]/20 shadow-xl shrink-0">
                     <User className="w-12 h-12" />
                   </div>
                 )}
@@ -975,7 +1011,7 @@ export const ProfileEditor: React.FC = () => {
                   {/* Location Pin & City: Left side 100% aligned with Gender Icon */}
                   <div className="flex items-center justify-center sm:justify-start gap-2.5 text-sm font-semibold text-slate-600 dark:text-slate-400">
                     <div className="w-8 sm:w-9 flex items-center justify-start shrink-0">
-                      <MapPin className="w-6 h-6 sm:w-7 sm:h-7 text-[#00AAFF]" />
+                      <MapPin className="w-6 h-6 sm:w-7 sm:h-7 text-[#007ABB]" />
                     </div>
                     <span className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-200">
                       {profileData.city || 'Vienna, AT'}
@@ -1006,7 +1042,7 @@ export const ProfileEditor: React.FC = () => {
                       return (
                         <div
                           key={id}
-                          className="aspect-[3/1] flex items-center justify-center gap-2.5 px-3.5 py-2 text-center bg-[#B8E7FF]/40 dark:bg-[#B8E7FF]/15 text-[#0088CC] dark:text-[#B8E7FF] rounded-2xl border border-[#B8E7FF]/60 dark:border-[#B8E7FF]/30 shadow-sm transition-all hover:scale-[1.02]"
+                          className="aspect-[3/1] flex items-center justify-center gap-2.5 px-3.5 py-2 text-center bg-[#E8F4FC]/40 dark:bg-[#B8E7FF]/15 text-[#0088CC] dark:text-[#B8E7FF] rounded-2xl border border-[#B8E7FF]/60 dark:border-[#B8E7FF]/30 shadow-sm transition-all hover:scale-[1.02]"
                         >
                           <span className="text-xl sm:text-2xl shrink-0">{interest?.icon || '✨'}</span>
                           <span className="text-xs sm:text-sm font-bold truncate">
@@ -1060,7 +1096,7 @@ export const ProfileEditor: React.FC = () => {
                       <img
                         src={getOptimizedCloudinaryUrl(profilePhotoPreview)}
                         alt="Profile Preview"
-                        className="w-28 h-28 object-cover rounded-full border-4 border-white dark:border-slate-700 ring-2 ring-[#00AAFF]/30 shadow-md"
+                        className="w-28 h-28 object-cover rounded-full border-4 border-white dark:border-slate-700 ring-2 ring-[#007ABB]/30 shadow-md"
                       />
                       <button
                         type="button"
@@ -1072,31 +1108,33 @@ export const ProfileEditor: React.FC = () => {
                       </button>
                     </div>
                   ) : (
-                    <div className="w-28 h-28 rounded-full bg-[#B8E7FF] dark:bg-slate-700 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center border-4 border-white dark:border-slate-700 shrink-0">
+                    <div className="w-28 h-28 rounded-full bg-[#E8F4FC] dark:bg-slate-700 text-[#007ABB] dark:text-[#B8E7FF] flex items-center justify-center border-4 border-white dark:border-slate-700 shrink-0">
                       <User className="w-12 h-12" />
                     </div>
                   )}
 
                   <div className="flex items-center gap-2.5 w-full max-w-xs">
-                    <label
-                      htmlFor="profilePhotoInputProfile"
-                      className="flex-1 py-2.5 px-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl cursor-pointer shadow-sm flex items-center justify-center gap-1.5 transition-all text-center"
+                    <button
+                      type="button"
+                      onClick={() => profilePhotoInputRef.current?.click()}
+                      className="flex-1 py-2.5 px-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl cursor-pointer shadow-sm flex items-center justify-center gap-1.5 transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                     >
-                      <Upload className="w-4 h-4 text-[#00AAFF]" />
+                      <Upload className="w-4 h-4 text-[#007ABB]" />
                       Upload File
-                    </label>
+                    </button>
                     <button
                       type="button"
                       onClick={openCamera}
                       disabled={isCameraStarting}
-                      className="flex-1 py-2.5 px-3 bg-[#00AAFF] hover:bg-[#0088CC] text-white text-xs font-bold rounded-xl shadow-md shadow-[#00AAFF]/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50 text-center cursor-pointer"
+                      className="flex-1 py-2.5 px-3 bg-[#007ABB] hover:bg-[#0088CC] text-white text-xs font-bold rounded-xl shadow-md shadow-[#007ABB]/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50 text-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                     >
                       <Camera className="w-4 h-4" />
-                      Shoot Cam
+                      Capture Photo
                     </button>
                   </div>
 
                   <input
+                    ref={profilePhotoInputRef}
                     id="profilePhotoInputProfile"
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
@@ -1145,7 +1183,7 @@ export const ProfileEditor: React.FC = () => {
                         {isActive && (
                           <motion.div
                             layoutId="profileLocationPrivacyPill"
-                            className="absolute inset-0 bg-[#00AAFF] dark:bg-[#B8E7FF] rounded-xl shadow-md"
+                            className="absolute inset-0 bg-[#007ABB] dark:bg-[#B8E7FF] rounded-xl shadow-md"
                             transition={{
                               type: 'spring',
                               stiffness: 500,
@@ -1232,7 +1270,7 @@ export const ProfileEditor: React.FC = () => {
                           }
                         }}
                         placeholder="Type city name (e.g. Vienna, London)..."
-                        className="w-full h-[46px] pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-[#00AAFF] transition-all"
+                        className="w-full h-[46px] pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-[#007ABB] transition-all"
                       />
 
                       {/* OpenFreeMap / Photon Geocoding City Autocomplete Dropdown */}
@@ -1300,7 +1338,7 @@ export const ProfileEditor: React.FC = () => {
                     setProfileData((prev) => ({ ...prev, bio: e.target.value.slice(0, 300) }))
                   }
                   placeholder="Share your hobbies, favorite spots, and what you love doing..."
-                  className="w-full p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#00AAFF] transition-colors resize-none"
+                  className="w-full p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#007ABB] transition-colors resize-none"
                 />
               </div>
 
@@ -1310,7 +1348,7 @@ export const ProfileEditor: React.FC = () => {
                   <label className="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                     Interests (Select 1 to 3)
                   </label>
-                  <span className="text-xs font-bold text-[#00AAFF] dark:text-[#B8E7FF]">
+                  <span className="text-xs font-bold text-[#007ABB] dark:text-[#B8E7FF]">
                     {profileData.interests.length} / 3
                   </span>
                 </div>
@@ -1324,7 +1362,7 @@ export const ProfileEditor: React.FC = () => {
                         onClick={() => toggleInterest(interest.id)}
                         className={`aspect-[3/1] flex items-center justify-center gap-2 px-3 py-2 text-center rounded-2xl transition-all cursor-pointer ${
                           selected
-                            ? 'bg-[#00AAFF] text-white shadow-md shadow-[#00AAFF]/20 border border-[#00AAFF] scale-[1.02]'
+                            ? 'bg-[#007ABB] text-white shadow-md shadow-[#007ABB]/20 border border-[#007ABB] scale-[1.02]'
                             : 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700/60'
                         }`}
                       >
@@ -1342,7 +1380,7 @@ export const ProfileEditor: React.FC = () => {
                   <label className="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                     Interest Photos (Max 3)
                   </label>
-                  <span className="text-xs font-bold text-[#00AAFF] dark:text-[#B8E7FF]">
+                  <span className="text-xs font-bold text-[#007ABB] dark:text-[#B8E7FF]">
                     {interestPreviews.length} / 3
                   </span>
                 </div>
@@ -1366,17 +1404,19 @@ export const ProfileEditor: React.FC = () => {
                   ))}
 
                   {interestPreviews.length < 3 && (
-                    <label
-                      htmlFor="interestPhotosInputEdit"
-                      className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-[#00AAFF] dark:hover:border-[#00AAFF] bg-slate-50 dark:bg-slate-800/40 flex flex-col items-center justify-center cursor-pointer transition-all p-2 text-center"
+                    <button
+                      type="button"
+                      onClick={() => interestPhotosInputRef.current?.click()}
+                      className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-[#007ABB] dark:hover:border-[#007ABB] bg-slate-50 dark:bg-slate-800/40 flex flex-col items-center justify-center cursor-pointer transition-all p-2 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                     >
-                      <Upload className="w-5 h-5 text-[#00AAFF] mb-1" />
+                      <Upload className="w-5 h-5 text-[#007ABB] mb-1" />
                       <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Add Photo</span>
-                    </label>
+                    </button>
                   )}
                 </div>
 
                 <input
+                  ref={interestPhotosInputRef}
                   id="interestPhotosInputEdit"
                   type="file"
                   multiple
@@ -1414,6 +1454,9 @@ export const ProfileEditor: React.FC = () => {
             className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
           >
             <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Capture Profile Photo"
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
@@ -1421,13 +1464,15 @@ export const ProfileEditor: React.FC = () => {
             >
               <div className="flex items-center justify-between w-full pb-1 border-b border-slate-100">
                 <span className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                  <Camera className="w-4 h-4 text-[#00AAFF]" />
+                  <Camera className="w-4 h-4 text-[#007ABB]" />
                   Capture Profile Photo
                 </span>
                 <button
+                  ref={cameraCloseBtnRef}
                   type="button"
                   onClick={stopCameraStream}
-                  className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                  aria-label="Close camera"
+                  className="p-1 rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                   title="Close camera"
                 >
                   <X className="w-5 h-5" />
@@ -1439,7 +1484,7 @@ export const ProfileEditor: React.FC = () => {
                   {cameraError}
                 </div>
               ) : (
-                <div className="relative w-64 h-64 rounded-full overflow-hidden border-4 border-[#00AAFF]/40 bg-slate-900 shadow-inner flex items-center justify-center">
+                <div className="relative w-64 h-64 rounded-full overflow-hidden border-4 border-[#007ABB]/40 bg-slate-900 shadow-inner flex items-center justify-center">
                   <video
                     ref={videoRef}
                     autoPlay
@@ -1452,9 +1497,10 @@ export const ProfileEditor: React.FC = () => {
 
               <div className="w-full pt-1">
                 <button
+                  ref={cameraCaptureBtnRef}
                   type="button"
                   onClick={capturePhotoFromCamera}
-                  className="w-full py-3 bg-[#00AAFF] hover:bg-[#0088CC] text-white text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+                  className="w-full py-3 bg-[#007ABB] hover:bg-[#0088CC] text-white text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-[#007ABB]/20 transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                 >
                   <Camera className="w-4 h-4" />
                   Capture Photo

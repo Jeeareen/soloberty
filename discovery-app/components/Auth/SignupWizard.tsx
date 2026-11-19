@@ -657,7 +657,7 @@ export const SignupWizard: React.FC = () => {
       {/* Progress Bar Header */}
       <div className="space-y-3 shrink-0 mb-4">
         <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          <span className="text-[#00AAFF] dark:text-[#B8E7FF]">
+          <span className="text-[#007ABB] dark:text-[#B8E7FF]">
             Soloberty Onboarding
           </span>
           <span>Step {step} of 7</span>
@@ -679,7 +679,7 @@ export const SignupWizard: React.FC = () => {
 
           {/* Active filled progress bar */}
           <motion.div
-            className="h-full bg-[#00AAFF] dark:bg-[#00AAFF] rounded-full relative z-10 shadow-sm"
+            className="h-full bg-[#007ABB] dark:bg-[#007ABB] rounded-full relative z-10 shadow-sm"
             initial={{ width: '0%' }}
             animate={{ width: `${(step / 7) * 100}%` }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
@@ -812,7 +812,7 @@ export const SignupWizard: React.FC = () => {
                 </p>
               </div>
 
-              <div className="pt-2 flex items-center justify-center gap-2 text-xs font-semibold text-[#00AAFF]">
+              <div className="pt-2 flex items-center justify-center gap-2 text-xs font-semibold text-[#007ABB]">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span>Navigating to feed...</span>
               </div>

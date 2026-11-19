@@ -113,7 +113,7 @@ export const Step1Credentials: React.FC<Step1CredentialsProps> = ({
               placeholder="you@example.com"
               className={`w-full pl-[35px] pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border ${emailError
                   ? 'border-rose-500 dark:border-rose-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
-                  : 'border-slate-200 dark:border-slate-700 focus:border-[#00AAFF]'
+                  : 'border-slate-200 dark:border-slate-700 focus:border-[#007ABB]'
                 } rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none transition-colors`}
             />
           </div>
@@ -155,7 +155,7 @@ export const Step1Credentials: React.FC<Step1CredentialsProps> = ({
               placeholder="••••••••"
               className={`w-full pl-[35px] pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border ${passwordError
                   ? 'border-rose-500 dark:border-rose-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
-                  : 'border-slate-200 dark:border-slate-700 focus:border-[#00AAFF]'
+                  : 'border-slate-200 dark:border-slate-700 focus:border-[#007ABB]'
                 } rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none transition-colors`}
             />
           </div>
@@ -193,7 +193,7 @@ export const Step1Credentials: React.FC<Step1CredentialsProps> = ({
               placeholder="••••••••"
               className={`w-full pl-[35px] pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border ${confirmPasswordError
                   ? 'border-rose-500 dark:border-rose-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
-                  : 'border-slate-200 dark:border-slate-700 focus:border-[#00AAFF]'
+                  : 'border-slate-200 dark:border-slate-700 focus:border-[#007ABB]'
                 } rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none transition-colors`}
             />
           </div>
@@ -214,7 +214,7 @@ export const Step1Credentials: React.FC<Step1CredentialsProps> = ({
         <button
           type="submit"
           disabled={loading || authLoading || emailExists}
-          className="w-full py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className="w-full py-3.5 px-4 bg-[#007ABB] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#007ABB]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           {loading || authLoading ? (
             <>

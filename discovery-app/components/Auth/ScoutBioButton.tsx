@@ -107,9 +107,9 @@ export const ScoutBioButton: React.FC<ScoutBioButtonProps> = ({
       case 'error':
         return 'bg-rose-600 dark:bg-rose-500 text-white shadow-rose-500/20';
       case 'loading':
-        return 'bg-[#0099EE] dark:bg-[#99D8FF] text-white dark:text-slate-900 shadow-[#00AAFF]/20';
+        return 'bg-[#0099EE] dark:bg-[#99D8FF] text-white dark:text-slate-900 shadow-[#007ABB]/20';
       default:
-        return 'bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 shadow-[#00AAFF]/25';
+        return 'bg-[#007ABB] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 shadow-[#007ABB]/25';
     }
   };
 
@@ -129,7 +129,7 @@ export const ScoutBioButton: React.FC<ScoutBioButtonProps> = ({
         x: { duration: 0.4, ease: 'easeInOut' },
         default: transitionEase,
       }}
-      className={`relative inline-flex items-center justify-center gap-2 w-[220px] shrink-0 px-3.5 py-2 text-xs font-extrabold rounded-xl shadow-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00AAFF] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 disabled:opacity-90 select-none overflow-hidden ${
+      className={`relative inline-flex items-center justify-center gap-2 w-[220px] shrink-0 px-3.5 py-2 text-xs font-extrabold rounded-xl shadow-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 disabled:opacity-90 select-none overflow-hidden ${
         isInteractionDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
       } ${getBgClass()} ${className}`}
       aria-live="polite"

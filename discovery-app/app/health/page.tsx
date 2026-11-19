@@ -17,7 +17,7 @@ export default async function HealthPage() {
           {JSON.stringify(data, null, 2)}
         </pre>
         <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
-          <Link href="/profile" className="text-sm text-[#00AAFF] dark:text-[#B8E7FF] hover:underline font-extrabold flex items-center gap-1">
+          <Link href="/profile" className="text-sm text-[#007ABB] dark:text-[#B8E7FF] hover:underline font-extrabold flex items-center gap-1">
             ← Back to Profile
           </Link>
         </div>

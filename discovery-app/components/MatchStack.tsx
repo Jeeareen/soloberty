@@ -55,7 +55,7 @@ export const GenderSymbol: React.FC<{ gender?: string; className?: string }> = (
   if (g === 'other') {
     return (
       <svg
-        className={`${className} text-purple-500 dark:text-purple-400 shrink-0 inline-block`}
+        className={`${className} text-purple-500 dark:text-[#FF8533] shrink-0 inline-block`}
         fill="none"
         stroke="currentColor"
         strokeWidth="2.5"
@@ -86,11 +86,13 @@ export const GenderSymbol: React.FC<{ gender?: string; className?: string }> = (
 export const RenderCardFace: React.FC<{
   card: MatchCard;
   isBackground?: boolean;
-  activeBackFocus?: 'chat' | 'whyYouTwo';
+  isFlipped?: boolean;
+  hideChatButton?: boolean;
+  activeBackFocus?: 'chat' | 'whyYouTwo' | null;
   onWhyYouTwo?: (card: MatchCard) => void;
   onRequireAuth?: (feature: 'chat' | 'whyYouTwo') => void;
 }> = React.memo(
-  ({ card, isBackground = false, activeBackFocus = 'chat', onWhyYouTwo, onRequireAuth }) => {
+  ({ card, isBackground = false, isFlipped = false, hideChatButton = false, activeBackFocus = 'chat', onWhyYouTwo, onRequireAuth }) => {
     const router = useRouter();
     const cardInterests = React.useMemo(
       () =>
@@ -104,6 +106,7 @@ export const RenderCardFace: React.FC<{
       <div className="relative h-full w-full [transform-style:preserve-3d] transform-gpu">
         {/* Front Face */}
         <div
+          aria-hidden={isBackground || isFlipped ? true : undefined}
           className="absolute inset-0 flex flex-col bg-white dark:bg-[#0F172A] rounded-xl overflow-hidden [backface-visibility:hidden]"
         >
           <div className="relative w-full h-52 sm:h-56 shrink-0 bg-slate-100 dark:bg-slate-800 overflow-hidden">
@@ -112,17 +115,26 @@ export const RenderCardFace: React.FC<{
                 src={getOptimizedCloudinaryUrl(card.avatarUrl)}
                 alt={card.name}
                 decoding="async"
-                loading="lazy"
+                loading={isBackground ? 'lazy' : 'eager'}
+                fetchPriority={isBackground ? undefined : 'high'}
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-[#B8E7FF] dark:bg-slate-800 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center">
+              <div className="w-full h-full bg-[#E8F4FC] dark:bg-slate-800 text-[#007ABB] dark:text-[#B8E7FF] flex items-center justify-center">
                 <User className="w-20 h-20" />
               </div>
             )}
             {/* Profile Picture Name Overlay */}
-            <div className="absolute inset-x-0 bottom-0 p-4">
-              <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight truncate text-white">
+            <div
+              className={`absolute inset-x-0 bottom-0 p-4 ${
+                card.avatarUrl ? 'bg-gradient-to-t from-black/65 via-black/30 to-transparent' : ''
+              }`}
+            >
+              <h2
+                className={`text-xl sm:text-2xl font-heading font-extrabold tracking-tight truncate ${
+                  card.avatarUrl ? 'text-white' : 'text-slate-900 dark:text-white'
+                }`}
+              >
                 {card.name}
               </h2>
             </div>
@@ -133,6 +145,7 @@ export const RenderCardFace: React.FC<{
             {/* Location Tag right below PP (Interactive: redirects to Map page with coordinates) */}
             <button
               type="button"
+              tabIndex={isBackground || isFlipped ? -1 : undefined}
               onPointerDown={(e) => e.stopPropagation()}
               onPointerUp={(e) => e.stopPropagation()}
               onClick={(e) => {
@@ -148,9 +161,9 @@ export const RenderCardFace: React.FC<{
                 }
               }}
               title="View on Map"
-              className="flex items-center gap-1.5 text-sm sm:text-base font-bold text-[#00AAFF] dark:text-[#B8E7FF] hover:underline cursor-pointer group w-fit transition-all active:scale-95"
+              className="flex items-center gap-1.5 text-sm sm:text-base font-bold text-[#007ABB] dark:text-[#B8E7FF] hover:underline cursor-pointer group w-fit transition-all active:scale-95"
             >
-              <MapPin className="w-4 h-4 shrink-0 text-[#00AAFF] group-hover:scale-110 transition-transform" />
+              <MapPin className="w-4 h-4 shrink-0 text-[#007ABB] group-hover:scale-110 transition-transform" />
               <span className="group-hover:text-[#0088CC] dark:group-hover:text-white transition-colors">
                 {card.location?.city || 'Vienna, AT'}
               </span>
@@ -158,7 +171,7 @@ export const RenderCardFace: React.FC<{
 
             {/* Interests as Bulletpoints */}
             <div className="space-y-1.5 flex-1">
-              <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+              <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
                 Interests
               </span>
               <ul className="space-y-2.5 pt-0.5">
@@ -168,7 +181,7 @@ export const RenderCardFace: React.FC<{
                       key={idx}
                       className="flex items-center gap-2.5 text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100"
                     >
-                      <span className="text-[#00AAFF] font-black text-base">•</span>
+                      <span className="text-[#007ABB] font-black text-base">•</span>
                       <span className="text-lg sm:text-xl shrink-0">{item.icon || '✨'}</span>
                       <span className="truncate">{item.name}</span>
                     </li>
@@ -190,6 +203,7 @@ export const RenderCardFace: React.FC<{
         {/* Back Face */}
         {!isBackground && (
           <div
+            aria-hidden={!isFlipped ? true : undefined}
             className="absolute inset-0 flex flex-col p-6 bg-white dark:bg-[#0F172A] rounded-xl [transform:rotateY(180deg)] [backface-visibility:hidden]"
           >
             {/* Top: Name, Age, Gender */}
@@ -238,8 +252,10 @@ export const RenderCardFace: React.FC<{
 
               {/* Action Buttons Row */}
               <div className="flex items-center gap-2">
+                {!hideChatButton && (
                 <button
                   type="button"
+                  tabIndex={!isFlipped ? -1 : undefined}
                   onPointerDown={(e) => e.stopPropagation()}
                   onPointerUp={(e) => e.stopPropagation()}
                   onTouchEnd={(e) => e.stopPropagation()}
@@ -254,15 +270,17 @@ export const RenderCardFace: React.FC<{
                       `/chat?name=${encodeURIComponent(card.name)}&age=${card.age}&bio=${encodeURIComponent(card.bio)}&interests=${encodeURIComponent((card.interests || []).join(','))}&uid=${card.uid}&generate=true&token=${token}&from=feed`
                     );
                   }}
-                  className={`flex-1 py-3 px-3 bg-[#00AAFF] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs font-extrabold rounded-xl shadow-md shadow-[#00AAFF]/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer ${activeBackFocus === 'chat' ? 'ring-4 ring-[#00AAFF]/50 outline-none scale-[1.02]' : 'opacity-80'
+                  className={`flex-1 py-3 px-3 bg-[#007ABB] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs font-extrabold rounded-xl shadow-md shadow-[#007ABB]/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer ${activeBackFocus === 'chat' ? 'ring-4 ring-[#007ABB]/50 outline-none scale-[1.02]' : 'opacity-80'
                     }`}
                 >
                   <MessageSquare className="w-4 h-4 shrink-0" />
                   <span className="truncate">Chat with {card.name.split(' ')[0]}</span>
                 </button>
+                )}
 
                 <button
                   type="button"
+                  tabIndex={!isFlipped ? -1 : undefined}
                   onPointerDown={(e) => e.stopPropagation()}
                   onPointerUp={(e) => e.stopPropagation()}
                   onTouchEnd={(e) => e.stopPropagation()}
@@ -276,7 +294,7 @@ export const RenderCardFace: React.FC<{
                       onWhyYouTwo(card);
                     }
                   }}
-                  className={`flex-1 py-3 px-3 bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold rounded-xl shadow-md shadow-purple-600/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer ${activeBackFocus === 'whyYouTwo' ? 'ring-4 ring-purple-500/50 outline-none scale-[1.02]' : 'opacity-80'
+                  className={`flex-1 py-3 px-3 bg-[#CC5500] hover:bg-[#A84400] text-white text-xs font-extrabold rounded-xl shadow-md shadow-[#CC5500]/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer ${activeBackFocus === 'whyYouTwo' ? 'ring-4 ring-[#CC5500]/50 outline-none scale-[1.02]' : 'opacity-80'
                     }`}
                 >
                   <Lightbulb className="w-4 h-4 shrink-0" />
@@ -292,6 +310,7 @@ export const RenderCardFace: React.FC<{
   (prevProps, nextProps) =>
     prevProps.card.id === nextProps.card.id &&
     prevProps.isBackground === nextProps.isBackground &&
+    prevProps.isFlipped === nextProps.isFlipped &&
     prevProps.activeBackFocus === nextProps.activeBackFocus &&
     prevProps.onWhyYouTwo === nextProps.onWhyYouTwo &&
     prevProps.onRequireAuth === nextProps.onRequireAuth
@@ -357,19 +376,58 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
     }
   };
 
-  // Close modals on Escape key press
+  const whyYouTwoModalRef = useRef<HTMLDivElement | null>(null);
+
+  // Close modals on Escape key press & trap focus inside Why You Two modal
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
+    if (!whyYouTwoModalOpen && !authModalOpen) return;
+
+    const prevFocus = document.activeElement as HTMLElement | null;
+    const focusTimer = whyYouTwoModalOpen
+      ? setTimeout(() => {
+          const focusables = whyYouTwoModalRef.current?.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          );
+          if (focusables && focusables.length > 0) {
+            focusables[0].focus();
+          } else {
+            whyYouTwoModalRef.current?.focus();
+          }
+        }, 20)
+      : undefined;
+
+    const handleModalKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault();
         if (whyYouTwoModalOpen) setWhyYouTwoModalOpen(false);
         if (authModalOpen) setAuthModalOpen(false);
+        return;
+      }
+
+      if (e.key === 'Tab' && whyYouTwoModalOpen && whyYouTwoModalRef.current) {
+        const focusables = Array.from(
+          whyYouTwoModalRef.current.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+        );
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
-    if (whyYouTwoModalOpen || authModalOpen) {
-      window.addEventListener('keydown', handleEscape);
-    }
+
+    window.addEventListener('keydown', handleModalKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleEscape);
+      if (focusTimer) clearTimeout(focusTimer);
+      window.removeEventListener('keydown', handleModalKeyDown);
+      prevFocus?.focus?.();
     };
   }, [whyYouTwoModalOpen, authModalOpen]);
 
@@ -643,6 +701,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
   // Global window keyboard navigation
   useEffect(() => {
     const handleGlobalKeyDown = (e: globalThis.KeyboardEvent) => {
+      if (whyYouTwoModalOpen || authModalOpen) return;
       const targetTag = (e.target as HTMLElement)?.tagName;
       if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT') return;
       if (e.repeat) return;
@@ -657,9 +716,16 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
           handleSwipeLeft();
           break;
         case 'Enter':
+          if (e.target === activeCardRef.current) {
+            e.preventDefault();
+            setIsFlipped((prev) => !prev);
+          }
+          break;
         case ' ':
-          e.preventDefault();
-          setIsFlipped((prev) => !prev);
+          if (e.target === activeCardRef.current || (targetTag !== 'BUTTON' && targetTag !== 'A')) {
+            e.preventDefault();
+            setIsFlipped((prev) => !prev);
+          }
           break;
         case 'Escape':
           if (isFlipped) {
@@ -672,7 +738,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [currentIndex, undoCount, isFinished, isFlipped, activeBackFocus, cards, user, router]);
+  }, [currentIndex, undoCount, isFinished, isFlipped, activeBackFocus, cards, user, router, whyYouTwoModalOpen, authModalOpen]);
 
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     setIsHeld(false);
@@ -710,7 +776,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
   if (loading) {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center bg-[#F8FAFC] dark:bg-[#090D16] text-gray-500 dark:text-slate-200 space-y-3">
-        <div className="w-8 h-8 border-4 border-[#00AAFF] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#007ABB] border-t-transparent rounded-full animate-spin" />
         <p className="text-sm font-medium">Loading profiles...</p>
       </div>
     );
@@ -913,10 +979,11 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
             style={{ x, scale: activeScale, opacity: 1, zIndex: activeZIndex }}
             animate={{ rotateY: isFlipped ? 180 : 0 }}
             transition={{ rotateY: { duration: 0.5, ease: 'easeInOut' } }}
-            className="absolute flex h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 focus:outline-none [transform-style:preserve-3d] cursor-grab active:cursor-grabbing"
+            className="absolute flex h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#007ABB]/60 [transform-style:preserve-3d] cursor-grab active:cursor-grabbing"
           >
             <RenderCardFace
               card={currentCard}
+              isFlipped={isFlipped}
               activeBackFocus={activeBackFocus}
               onWhyYouTwo={handleWhyYouTwo}
               onRequireAuth={!user ? handleRequireAuth : undefined}
@@ -934,13 +1001,18 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
             onClick={() => setWhyYouTwoModalOpen(false)}
           >
             <div
-              className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 text-slate-900 dark:text-slate-100 shadow-2xl max-h-[85vh] overflow-y-auto space-y-5"
+              ref={whyYouTwoModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Why You Two?"
+              tabIndex={-1}
+              className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 text-slate-900 dark:text-slate-100 shadow-2xl max-h-[85vh] overflow-y-auto space-y-5 focus:outline-none"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-2">
-                  <Lightbulb className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  <Lightbulb className="w-5 h-5 text-[#CC5500] dark:text-[#FF8533]" />
                   <h3 className="text-lg font-extrabold font-heading">
                     Why You Two?
                   </h3>
@@ -948,7 +1020,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
                 <button
                   type="button"
                   onClick={() => setWhyYouTwoModalOpen(false)}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="p-1.5 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                   aria-label="Close modal"
                 >
                   <X className="w-5 h-5" />
@@ -958,7 +1030,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
               {/* Loading State */}
               {whyYouTwoLoading && (
                 <div className="py-12 flex flex-col items-center justify-center space-y-3">
-                  <RefreshCw className="w-7 h-7 text-purple-600 dark:text-purple-400 animate-spin" />
+                  <RefreshCw className="w-7 h-7 text-[#CC5500] dark:text-[#FF8533] animate-spin" />
                   <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
                     Analyzing shared interests & possibilities...
                   </p>
@@ -1002,7 +1074,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
                         {whyYouTwoResult.sharedInterests.map((interest: string, idx: number) => (
                           <span
                             key={idx}
-                            className="px-3 py-1 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/40 rounded-full text-xs font-bold"
+                            className="px-3 py-1 bg-[#FFF3EB] dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-[#CC5500]/25/60 dark:border-[#CC5500]/40/40 rounded-full text-xs font-bold"
                           >
                             {interest}
                           </span>
@@ -1052,7 +1124,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
                     <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                       3. Connection Idea
                     </h4>
-                    <div className="p-3.5 bg-purple-500/10 border border-purple-500/20 rounded-xl text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200 leading-relaxed">
+                    <div className="p-3.5 bg-[#FFF3EB]0/10 border border-purple-500/20 rounded-xl text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200 leading-relaxed">
                       {whyYouTwoResult.connectionIdea || 'No connection idea available.'}
                     </div>
                   </div>
@@ -1078,7 +1150,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
               {/* Modal Header */}
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-2">
-                  <LogIn className="w-5 h-5 text-[#00AAFF] dark:text-[#B8E7FF]" />
+                  <LogIn className="w-5 h-5 text-[#007ABB] dark:text-[#B8E7FF]" />
                   <h3 className="text-base font-extrabold font-heading">
                     Login Required
                   </h3>
@@ -1108,7 +1180,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
                     setAuthModalOpen(false);
                     router.push('/auth/login');
                   }}
-                  className="w-full py-3 px-4 bg-[#00AAFF] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs sm:text-sm font-extrabold rounded-xl shadow-md shadow-[#00AAFF]/20 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+                  className="w-full py-3 px-4 bg-[#007ABB] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs sm:text-sm font-extrabold rounded-xl shadow-md shadow-[#007ABB]/20 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
                 >
                   <LogIn className="w-4 h-4 shrink-0" />
                   <span>Go to Login Page</span>

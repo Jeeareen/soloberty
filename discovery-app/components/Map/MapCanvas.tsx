@@ -73,13 +73,13 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     // Radius in meters
     const radiusMeters = distanceFilter * 1000;
 
-    // Draw transparent light-blue circle with #00AAFF border
+    // Draw transparent light-blue circle with #007ABB border
     const circle = L.circle([currentUserLocation.lat, currentUserLocation.lng], {
       radius: radiusMeters,
-      color: '#00AAFF',
+      color: '#007ABB',
       weight: 2,
       opacity: 0.85,
-      fillColor: '#00AAFF',
+      fillColor: '#007ABB',
       fillOpacity: 0.12,
       dashArray: '4, 4',
     }).addTo(radiusLayer);
@@ -120,8 +120,16 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       noWrap: false, // let tiles repeat horizontally if needed, while vertical bounds stay strictly locked
       bounds: earthBounds,
       attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        '&copy; <a href="https://www.openstreetmap.org/copyright" tabindex="-1">OpenStreetMap</a> contributors',
     }).addTo(map);
+
+    // Keep Leaflet / OpenStreetMap attribution visible but skip it during Tab navigation
+    containerRef.current.tabIndex = -1;
+    containerRef.current
+      .querySelectorAll<HTMLAnchorElement>('.leaflet-control-attribution a')
+      .forEach((link) => {
+        link.tabIndex = -1;
+      });
 
     const radiusLayer = L.layerGroup().addTo(map);
     radiusLayerRef.current = radiusLayer;
@@ -182,13 +190,30 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
 
     markersLayer.clearLayers();
 
+    const bindMarkerActivation = (marker: L.Marker, label: string, onActivate: () => void) => {
+      marker.on('click', onActivate);
+      const el = marker.getElement();
+      if (el) {
+        el.setAttribute('role', 'button');
+        el.setAttribute('aria-label', label);
+        el.setAttribute('tabindex', '0');
+        el.addEventListener('keydown', (e: KeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            e.stopPropagation();
+            onActivate();
+          }
+        });
+      }
+    };
+
     // Plot Current User marker if location is available (blinking blue circle)
     if (currentUserLocation && currentUserLocation.lat !== 0 && currentUserLocation.lng !== 0) {
       const userMarkerHtml = `
         <div class="relative flex items-center justify-center w-6 h-6 cursor-pointer">
-          <div class="absolute w-6 h-6 rounded-full bg-[#00AAFF]/40 animate-ping"></div>
-          <div class="absolute w-4 h-4 rounded-full bg-[#00AAFF]/60 animate-pulse"></div>
-          <div class="relative w-3.5 h-3.5 rounded-full bg-[#00AAFF] border-2 border-white dark:border-slate-900 shadow-md"></div>
+          <div class="absolute w-6 h-6 rounded-full bg-[#007ABB]/40 animate-ping"></div>
+          <div class="absolute w-4 h-4 rounded-full bg-[#007ABB]/60 animate-pulse"></div>
+          <div class="relative w-3.5 h-3.5 rounded-full bg-[#007ABB] border-2 border-white dark:border-slate-900 shadow-md"></div>
         </div>
       `;
       const meIcon = L.divIcon({
@@ -242,7 +267,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
           markersLayer
         );
 
-        marker.on('click', () => {
+        bindMarkerActivation(marker, `${continentInfo.name} (${bucketUsers.length} users)`, () => {
           onSelectClusterOrUser(bucketUsers, `${continentInfo.name} (${bucketUsers.length})`);
         });
       });
@@ -289,7 +314,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
           markersLayer
         );
 
-        marker.on('click', () => {
+        bindMarkerActivation(marker, `${countryInfo.name} (${bucketUsers.length} users)`, () => {
           onSelectClusterOrUser(bucketUsers, `${countryInfo.name} (${bucketUsers.length})`);
         });
       });
@@ -334,7 +359,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         });
 
         const marker = L.marker([avgLat, avgLng], { icon: clusterIcon }).addTo(markersLayer);
-        marker.on('click', () => {
+        bindMarkerActivation(marker, `${displayName} (${bucketUsers.length} users)`, () => {
           onSelectClusterOrUser(bucketUsers, `${displayName} (${bucketUsers.length})`);
         });
       });
@@ -403,10 +428,10 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         icon,
       }).addTo(markersLayer);
 
-      marker.on('click', () => {
-        const title = isMulti
-          ? `${group.length} People Nearby`
-          : `${firstUser.name}${firstUser.age ? `, ${firstUser.age}` : ''}`;
+      const title = isMulti
+        ? `${group.length} People Nearby`
+        : `${firstUser.name}${firstUser.age ? `, ${firstUser.age}` : ''}`;
+      bindMarkerActivation(marker, title, () => {
         onSelectClusterOrUser(group, title);
       });
     });

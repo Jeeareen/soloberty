@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Upload, ImageIcon, Camera, ArrowRight, ArrowLeft, X, AlertCircle } from 'lucide-react';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
 interface Step6PhotoUploadProps {
   profilePhotoPreview: string | null;
@@ -30,6 +31,8 @@ export const Step6PhotoUpload: React.FC<Step6PhotoUploadProps> = ({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const profileFileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraModalRef = useRef<HTMLDivElement | null>(null);
 
   const processPhotoFile = (file: File) => {
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
@@ -133,6 +136,8 @@ export const Step6PhotoUpload: React.FC<Step6PhotoUploadProps> = ({
     setShowCameraModal(false);
   };
 
+  useFocusTrap(showCameraModal, cameraModalRef, stopCameraStream);
+
   const capturePhotoFromCamera = () => {
     if (!videoRef.current) return;
 
@@ -202,7 +207,7 @@ export const Step6PhotoUpload: React.FC<Step6PhotoUploadProps> = ({
                   <img
                     src={profilePhotoPreview}
                     alt="Profile Preview"
-                    className="w-24 h-24 object-cover rounded-full border-4 border-[#00AAFF]/30 shadow-lg"
+                    className="w-24 h-24 object-cover rounded-full border-4 border-[#007ABB]/30 shadow-lg"
                   />
                   {/* Red Circular Delete/Cancel Button on Top Right */}
                   <button
@@ -231,22 +236,23 @@ export const Step6PhotoUpload: React.FC<Step6PhotoUploadProps> = ({
 
               {/* Upload & Camera Buttons Row */}
               <div className="flex items-center justify-center gap-3 w-full max-w-sm h-[44px] shrink-0">
-                <label
-                  htmlFor="profilePhotoInput"
-                  className="flex-1 h-[42px] bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl cursor-pointer shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 text-center"
+                <button
+                  type="button"
+                  onClick={() => profileFileInputRef.current?.click()}
+                  className="flex-1 h-[42px] bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl cursor-pointer shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                 >
-                  <Upload className="w-4 h-4 text-[#00AAFF] shrink-0" />
+                  <Upload className="w-4 h-4 text-[#007ABB] shrink-0" />
                   Upload File
-                </label>
+                </button>
 
                 <button
                   type="button"
                   onClick={openCamera}
                   disabled={isCameraStarting}
-                  className="flex-1 h-[42px] bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 text-xs font-extrabold rounded-xl shadow-md shadow-[#00AAFF]/20 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 text-center cursor-pointer"
+                  className="flex-1 h-[42px] bg-[#007ABB] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 text-xs font-extrabold rounded-xl shadow-md shadow-[#007ABB]/20 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 text-center cursor-pointer"
                 >
                   <Camera className="w-4 h-4 shrink-0" />
-                  Shoot Cam
+                  Capture Photo
                 </button>
               </div>
             </div>
@@ -254,13 +260,13 @@ export const Step6PhotoUpload: React.FC<Step6PhotoUploadProps> = ({
             <div className="flex flex-col items-center justify-between h-full w-full py-1 text-center">
               {/* Upper Empty Dropzone Area */}
               <div className="flex flex-col items-center justify-center h-[140px] w-full space-y-2 shrink-0">
-                <div className="w-14 h-14 rounded-full bg-[#B8E7FF]/40 dark:bg-slate-700 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center border border-[#B8E7FF]/60 dark:border-slate-600 shadow-sm">
+                <div className="w-14 h-14 rounded-full bg-[#E8F4FC]/40 dark:bg-slate-700 text-[#007ABB] dark:text-[#B8E7FF] flex items-center justify-center border border-[#B8E7FF]/60 dark:border-slate-600 shadow-sm">
                   <ImageIcon className="w-7 h-7" />
                 </div>
 
                 <div className="space-y-0.5">
                   <p className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                    <label htmlFor="profilePhotoInput" className="text-[#00AAFF] dark:text-[#B8E7FF] hover:underline cursor-pointer">
+                    <label htmlFor="profilePhotoInput" className="text-[#007ABB] dark:text-[#B8E7FF] hover:underline cursor-pointer">
                       Click to upload
                     </label>{' '}
                     or drag and drop your photo here
@@ -282,22 +288,23 @@ export const Step6PhotoUpload: React.FC<Step6PhotoUploadProps> = ({
 
               {/* Upload & Camera Buttons Row */}
               <div className="flex items-center justify-center gap-3 w-full max-w-sm h-[44px] shrink-0">
-                <label
-                  htmlFor="profilePhotoInput"
-                  className="flex-1 h-[42px] bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl cursor-pointer shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 text-center"
+                <button
+                  type="button"
+                  onClick={() => profileFileInputRef.current?.click()}
+                  className="flex-1 h-[42px] bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl cursor-pointer shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                 >
-                  <Upload className="w-4 h-4 text-[#00AAFF] shrink-0" />
+                  <Upload className="w-4 h-4 text-[#007ABB] shrink-0" />
                   Upload File
-                </label>
+                </button>
 
                 <button
                   type="button"
                   onClick={openCamera}
                   disabled={isCameraStarting}
-                  className="flex-1 h-[42px] bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 text-xs font-extrabold rounded-xl shadow-md shadow-[#00AAFF]/20 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 text-center cursor-pointer"
+                  className="flex-1 h-[42px] bg-[#007ABB] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 text-xs font-extrabold rounded-xl shadow-md shadow-[#007ABB]/20 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 text-center cursor-pointer"
                 >
                   <Camera className="w-4 h-4 shrink-0" />
-                  Shoot Cam
+                  Capture Photo
                 </button>
               </div>
             </div>
@@ -305,6 +312,7 @@ export const Step6PhotoUpload: React.FC<Step6PhotoUploadProps> = ({
 
           {/* Hidden File Input for Device Upload */}
           <input
+            ref={profileFileInputRef}
             id="profilePhotoInput"
             type="file"
             accept="image/jpeg,image/png,image/webp"
@@ -353,7 +361,7 @@ export const Step6PhotoUpload: React.FC<Step6PhotoUploadProps> = ({
         <button
           type="button"
           onClick={() => setStep(7)}
-          className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+          className="flex-1 py-3.5 px-4 bg-[#007ABB] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#007ABB]/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
         >
           {profilePhotoPreview ? 'Continue to Interest Images' : 'Skip / Continue to Interest Images'}
           <ArrowRight className="w-4 h-4" />
@@ -370,14 +378,19 @@ export const Step6PhotoUpload: React.FC<Step6PhotoUploadProps> = ({
             className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
           >
             <motion.div
+              ref={cameraModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Capture Profile Photo"
+              tabIndex={-1}
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white dark:bg-[#0F172A] rounded-3xl p-5 max-w-sm w-full shadow-2xl flex flex-col items-center space-y-4 border border-slate-200/80 dark:border-slate-800"
+              className="bg-white dark:bg-[#0F172A] rounded-3xl p-5 max-w-sm w-full shadow-2xl flex flex-col items-center space-y-4 border border-slate-200/80 dark:border-slate-800 focus:outline-none"
             >
               <div className="flex items-center justify-between w-full pb-1 border-b border-slate-100 dark:border-slate-800">
                 <span className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                  <Camera className="w-4 h-4 text-[#00AAFF]" />
+                  <Camera className="w-4 h-4 text-[#007ABB]" />
                   Capture Profile Photo
                 </span>
                 <button
@@ -395,7 +408,7 @@ export const Step6PhotoUpload: React.FC<Step6PhotoUploadProps> = ({
                   {cameraError}
                 </div>
               ) : (
-                <div className="relative w-64 h-64 rounded-full overflow-hidden border-4 border-[#00AAFF]/40 bg-slate-900 shadow-inner flex items-center justify-center">
+                <div className="relative w-64 h-64 rounded-full overflow-hidden border-4 border-[#007ABB]/40 bg-slate-900 shadow-inner flex items-center justify-center">
                   <video
                     ref={videoRef}
                     autoPlay
@@ -412,7 +425,7 @@ export const Step6PhotoUpload: React.FC<Step6PhotoUploadProps> = ({
                 <button
                   type="button"
                   onClick={capturePhotoFromCamera}
-                  className="w-full py-3 bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-xs sm:text-sm rounded-xl shadow-md shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+                  className="w-full py-3 bg-[#007ABB] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-xs sm:text-sm rounded-xl shadow-md shadow-[#007ABB]/20 transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
                 >
                   <Camera className="w-4 h-4" />
                   Capture Photo

@@ -38,7 +38,7 @@ export default function ChatError({ error, reset }: ChatErrorProps) {
           <button
             type="button"
             onClick={() => reset()}
-            className="w-full sm:w-auto px-4 py-2.5 bg-[#00AAFF] hover:bg-[#0088CC] text-white text-xs font-bold rounded-xl shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
+            className="w-full sm:w-auto px-4 py-2.5 bg-[#007ABB] hover:bg-[#0088CC] text-white text-xs font-bold rounded-xl shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Try again</span>

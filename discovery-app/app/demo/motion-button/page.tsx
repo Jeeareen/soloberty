@@ -47,7 +47,7 @@ export default function MotionButtonDemoPage() {
         <header className="space-y-3 border-b border-slate-200 dark:border-slate-800 pb-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#00AAFF]/10 text-[#00AAFF] border border-[#00AAFF]/20 rounded-full text-xs font-bold uppercase tracking-wider mb-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#007ABB]/10 text-[#007ABB] border border-[#007ABB]/20 rounded-full text-xs font-bold uppercase tracking-wider mb-2">
                 FE-AA1 Assignment Showcase
               </span>
               <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
@@ -63,8 +63,8 @@ export default function MotionButtonDemoPage() {
             </Link>
           </div>
           <p className="text-slate-600 dark:text-slate-400 text-sm max-w-2xl">
-            A stateful micro-interaction system choreographing 5 distinct states: <code className="text-[#00AAFF] dark:text-sky-300 font-mono">idle</code>,{' '}
-            <code className="text-[#00AAFF] dark:text-sky-300 font-mono">hover/focus</code>, <code className="text-[#00AAFF] dark:text-sky-300 font-mono">loading</code>,{' '}
+            A stateful micro-interaction system choreographing 5 distinct states: <code className="text-[#007ABB] dark:text-sky-300 font-mono">idle</code>,{' '}
+            <code className="text-[#007ABB] dark:text-sky-300 font-mono">hover/focus</code>, <code className="text-[#007ABB] dark:text-sky-300 font-mono">loading</code>,{' '}
             <code className="text-emerald-600 dark:text-emerald-300 font-mono">success</code>, and <code className="text-rose-600 dark:text-rose-300 font-mono">error</code> (+ disabled bonus).
           </p>
         </header>
@@ -76,10 +76,10 @@ export default function MotionButtonDemoPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
                 <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#00AAFF] dark:text-sky-400" />
+                  <Sparkles className="w-4 h-4 text-[#007ABB] dark:text-sky-400" />
                   Primary Component: Scout AI Bio Generator
                 </h2>
-                <span className="text-[11px] font-mono bg-sky-50 dark:bg-sky-500/10 text-[#00AAFF] dark:text-sky-400 px-2 py-0.5 rounded-md border border-sky-100 dark:border-transparent">
+                <span className="text-[11px] font-mono bg-sky-50 dark:bg-sky-500/10 text-[#007ABB] dark:text-sky-400 px-2 py-0.5 rounded-md border border-sky-100 dark:border-transparent">
                   ScoutBioButton.tsx
                 </span>
               </div>
@@ -107,7 +107,7 @@ export default function MotionButtonDemoPage() {
                   onClick={() => setOverrideState(null)}
                   className={`px-2.5 py-1 text-xs rounded-lg border font-semibold transition-colors cursor-pointer ${
                     overrideState === null
-                      ? 'bg-sky-50 dark:bg-sky-500/20 text-[#00AAFF] dark:text-sky-300 border-sky-200 dark:border-sky-500/40'
+                      ? 'bg-sky-50 dark:bg-sky-500/20 text-[#007ABB] dark:text-sky-300 border-sky-200 dark:border-sky-500/40'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
@@ -121,7 +121,7 @@ export default function MotionButtonDemoPage() {
                 </button>
                 <button
                   onClick={() => setOverrideState('loading')}
-                  className="px-2.5 py-1 text-xs bg-sky-50 dark:bg-sky-950 text-[#00AAFF] dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900 rounded-lg border border-sky-200 dark:border-sky-800 font-semibold cursor-pointer"
+                  className="px-2.5 py-1 text-xs bg-sky-50 dark:bg-sky-950 text-[#007ABB] dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900 rounded-lg border border-sky-200 dark:border-sky-800 font-semibold cursor-pointer"
                 >
                   Loading
                 </button>
@@ -208,12 +208,12 @@ export default function MotionButtonDemoPage() {
         {/* Assignment Note & Rationale Section */}
         <section className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm dark:shadow-none transition-colors">
           <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Eye className="w-5 h-5 text-[#00AAFF] dark:text-sky-400" />
+            <Eye className="w-5 h-5 text-[#007ABB] dark:text-sky-400" />
             Motion Choreography & System Rationale
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-slate-700 dark:text-slate-300">
             <div className="p-4 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-2xl space-y-1.5">
-              <h3 className="font-extrabold text-[#00AAFF] dark:text-sky-400">1. Stiff Click Spring & Pop Icon Reveal</h3>
+              <h3 className="font-extrabold text-[#007ABB] dark:text-sky-400">1. Stiff Click Spring & Pop Icon Reveal</h3>
               <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
                 Uses a stiff click spring (<code className="text-slate-900 dark:text-slate-200 font-mono">stiffness: 700, damping: 18</code>) for tactile feedback. All state icons share the identical pop curve (<code className="text-slate-900 dark:text-slate-200 font-mono">scale: [0, 1.2, 1]</code>).
               </p>

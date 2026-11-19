@@ -11,6 +11,7 @@ import { db, auth } from '../../lib/firebase/config';
 import { useProfiles } from '../../hooks/useProfiles';
 import { useAuth } from '../../lib/hooks/useAuth';
 import { useUnreadMessages } from '../../hooks/useUnreadMessages';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { UserDetailModal } from '../../components/Map/UserDetailModal';
 import type { UserProfile } from '../../types/user';
 import { getOptimizedCloudinaryUrl } from '../../lib/cloudinary';
@@ -58,23 +59,23 @@ export function ToolInvocationBlock({
   // State 1 — Streaming (state === 'partial-call')
   if (state === 'partial-call') {
     return (
-      <div className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#B8E7FF]/40 dark:bg-slate-800/80 text-[#00AAFF] dark:text-[#B8E7FF] text-xs font-semibold my-2 border border-[#00AAFF]/20 shadow-sm">
+      <div className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#E8F4FC]/40 dark:bg-slate-800/80 text-[#007ABB] dark:text-[#B8E7FF] text-xs font-semibold my-2 border border-[#007ABB]/20 shadow-sm">
         <span>Scout is generating icebreakers</span>
         <span className="inline-flex items-center gap-0.5 ml-0.5">
           <motion.span
             animate={{ opacity: [0.2, 1, 0.2] }}
             transition={{ repeat: Infinity, duration: 1.2, delay: 0 }}
-            className="w-1 h-1 rounded-full bg-[#00AAFF] dark:bg-[#B8E7FF]"
+            className="w-1 h-1 rounded-full bg-[#007ABB] dark:bg-[#B8E7FF]"
           />
           <motion.span
             animate={{ opacity: [0.2, 1, 0.2] }}
             transition={{ repeat: Infinity, duration: 1.2, delay: 0.2 }}
-            className="w-1 h-1 rounded-full bg-[#00AAFF] dark:bg-[#B8E7FF]"
+            className="w-1 h-1 rounded-full bg-[#007ABB] dark:bg-[#B8E7FF]"
           />
           <motion.span
             animate={{ opacity: [0.2, 1, 0.2] }}
             transition={{ repeat: Infinity, duration: 1.2, delay: 0.4 }}
-            className="w-1 h-1 rounded-full bg-[#00AAFF] dark:bg-[#B8E7FF]"
+            className="w-1 h-1 rounded-full bg-[#007ABB] dark:bg-[#B8E7FF]"
           />
         </span>
       </div>
@@ -93,7 +94,7 @@ export function ToolInvocationBlock({
         className="my-2 p-3.5 bg-sky-50 dark:bg-slate-800/90 border border-sky-200 dark:border-slate-700 rounded-2xl space-y-2 text-xs"
       >
         <div className="flex items-center gap-2 font-bold text-sky-900 dark:text-sky-200">
-          <Sparkles className="w-4 h-4 text-[#00AAFF]" />
+          <Sparkles className="w-4 h-4 text-[#007ABB]" />
           <span>Finding questions for {args.name || name}</span>
         </div>
         {interestsList.length > 0 && (
@@ -138,10 +139,10 @@ export function ToolInvocationBlock({
                 transition={{ duration: 0.25, delay: idx * 0.1 }}
                 type="button"
                 onClick={() => setInput(question)}
-                className="w-full text-left p-3 bg-slate-50 dark:bg-slate-800/60 hover:bg-[#B8E7FF]/30 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700/60 hover:border-[#00AAFF]/40 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-200 transition-all cursor-pointer group flex items-start justify-between gap-2 active:scale-[0.99]"
+                className="w-full text-left p-3 bg-slate-50 dark:bg-slate-800/60 hover:bg-[#E8F4FC]/30 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700/60 hover:border-[#007ABB]/40 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-200 transition-all cursor-pointer group flex items-start justify-between gap-2 active:scale-[0.99]"
               >
                 <span>{question}</span>
-                <MessageSquare className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#00AAFF] shrink-0 mt-0.5" />
+                <MessageSquare className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#007ABB] shrink-0 mt-0.5" />
               </motion.button>
             ))}
           </div>
@@ -273,7 +274,7 @@ function ChatList() {
                 lastMessage: data.lastMessage || 'New conversation',
                 lastTimestamp,
                 isCleared: false,
-                avatarColor: 'bg-[#B8E7FF] text-[#00AAFF]',
+                avatarColor: 'bg-[#E8F4FC] text-[#007ABB]',
               });
             }
           } catch (err) {
@@ -334,6 +335,8 @@ function ChatList() {
   }, [profiles, profilesLoading, authUser?.uid, authLoading]);
 
   const [showClearConfirmModal, setShowClearConfirmModal] = React.useState(false);
+  const clearAllModalRef = React.useRef<HTMLDivElement>(null);
+  useFocusTrap(showClearConfirmModal, clearAllModalRef, () => setShowClearConfirmModal(false));
 
   // Clear every conversation for the current user only
   const handleClearAllHistory = async () => {
@@ -367,7 +370,7 @@ function ChatList() {
         <button
           type="button"
           onClick={() => setShowClearConfirmModal(true)}
-          className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-300 text-xs font-bold rounded-xl border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer flex items-center gap-1.5"
+          className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-300 text-xs font-bold rounded-xl border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
         >
           <Trash2 className="w-3.5 h-3.5" />
           <span>Clear All</span>
@@ -382,7 +385,12 @@ function ChatList() {
             onClick={() => setShowClearConfirmModal(false)}
           >
             <div
-              className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 text-slate-900 dark:text-slate-100 shadow-2xl space-y-4"
+              ref={clearAllModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Clear All Conversations"
+              tabIndex={-1}
+              className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 text-slate-900 dark:text-slate-100 shadow-2xl space-y-4 focus:outline-none"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400">
@@ -422,7 +430,7 @@ function ChatList() {
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {profilesLoading || authLoading || loadingChats ? (
           <div className="flex justify-center items-center h-48">
-            <div className="w-8 h-8 border-4 border-[#00AAFF] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-[#007ABB] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : chatItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center px-4 space-y-3">
@@ -438,7 +446,8 @@ function ChatList() {
           </div>
         ) : (
           chatItems.map((chatItem, idx) => (
-            <motion.div
+            <motion.button
+              type="button"
               key={idx}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -448,18 +457,18 @@ function ChatList() {
                   `/chat?name=${encodeURIComponent(chatItem.name)}&age=${chatItem.age}&bio=${encodeURIComponent(chatItem.bio)}&interests=${encodeURIComponent(chatItem.interests.join(','))}&uid=${chatItem.uid}&from=chatlist`
                 );
               }}
-              className="p-4 bg-white dark:bg-[#0F172A] hover:bg-slate-100 dark:hover:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl cursor-pointer transition-all flex items-center gap-3.5 shadow-sm active:scale-[0.99]"
+              className="w-full text-left p-4 bg-white dark:bg-[#0F172A] hover:bg-slate-100 dark:hover:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl cursor-pointer transition-all flex items-center gap-3.5 shadow-sm active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
             >
               <div className={`w-12 h-12 rounded-full ${chatItem.avatarColor} flex items-center justify-center font-bold text-base shrink-0 shadow-inner`}>
                 {chatItem.name.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-0.5">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white truncate">
                     {chatItem.name}, {chatItem.age}
-                  </h3>
+                  </h2>
                   <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                    <span className="text-[11px] text-slate-400">{chatItem.time}</span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">{chatItem.time}</span>
                     {(unreadMap[chatItem.uid] ?? 0) > 0 && (
                       <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-extrabold text-white bg-red-500 rounded-full shadow-sm opacity-100">
                         {unreadMap[chatItem.uid]}
@@ -471,7 +480,7 @@ function ChatList() {
                   {chatItem.lastMessage}
                 </p>
               </div>
-            </motion.div>
+            </motion.button>
           ))
         )}
       </div>
@@ -503,17 +512,6 @@ function IndividualChat({
   const bio = searchParams.get('bio') || '';
   const fromSource = searchParams.get('from'); // 'feed' or 'chatlist'
   const backTargetHref = fromSource === 'feed' ? '/feed' : '/chat';
-
-  // Handle Escape key press to activate back button navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        router.push(backTargetHref);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [router, backTargetHref]);
 
   const rawInterests = searchParams.get('interests');
   const interests =
@@ -605,6 +603,7 @@ function IndividualChat({
   const stopFn = chat.stop;
 
   const [isPageRetrying, setIsPageRetrying] = React.useState(false);
+  const [isStopped, setIsStopped] = React.useState(false);
 
   const handlePageRetry = async () => {
     if (isPageRetrying) return;
@@ -620,6 +619,7 @@ function IndividualChat({
 
   // Firestore persistent message storage for individual conversations
   const [dbMessages, setDbMessages] = React.useState<any[]>([]);
+  const [dbMessagesLoaded, setDbMessagesLoaded] = React.useState(false);
   // Stores the ID of the first unread message when opening this chat (for "New Messages" divider)
   const [unreadDividerMessageId, setUnreadDividerMessageId] = React.useState<string | null>(null);
   const hasInitializedUnreadRef = React.useRef(false);
@@ -701,6 +701,8 @@ function IndividualChat({
         }
       } catch (err) {
         console.warn('[Firestore Chat Load Warning]:', err);
+      } finally {
+        if (isMounted) setDbMessagesLoaded(true);
       }
     }
 
@@ -843,7 +845,7 @@ function IndividualChat({
   const [isSingleUseValid, setIsSingleUseValid] = React.useState(false);
 
   useEffect(() => {
-    if (shouldGenerateParam === 'true' && tokenParam) {
+    if (fromSource === 'feed' && shouldGenerateParam === 'true' && tokenParam) {
       const consumed = sessionStorage.getItem(`consumed_token_${tokenParam}`);
       if (!consumed) {
         setIsSingleUseValid(true);
@@ -853,11 +855,19 @@ function IndividualChat({
     } else {
       setIsSingleUseValid(false);
     }
-  }, [shouldGenerateParam, tokenParam]);
+  }, [fromSource, shouldGenerateParam, tokenParam]);
 
-  // Auto-send initial icebreaker prompt on mount ONLY if token is valid and unconsumed
+  // Auto-send initial icebreaker prompt on mount ONLY if opened from feed, chat is empty, and token is valid
   useEffect(() => {
-    if (rawParamName && isSingleUseValid && tokenParam && !sentTokensRef.current.has(tokenParam)) {
+    if (
+      fromSource === 'feed' &&
+      dbMessagesLoaded &&
+      dbMessages.length === 0 &&
+      rawParamName &&
+      isSingleUseValid &&
+      tokenParam &&
+      !sentTokensRef.current.has(tokenParam)
+    ) {
       sentTokensRef.current.add(tokenParam);
       sessionStorage.setItem(`consumed_token_${tokenParam}`, 'true');
 
@@ -874,7 +884,7 @@ function IndividualChat({
         console.warn('[Chat Prompt Trigger Error]:', e);
       }
     }
-  }, [rawParamName, age, bio, interests, isSingleUseValid, tokenParam, chat]);
+  }, [fromSource, dbMessagesLoaded, dbMessages.length, rawParamName, age, bio, interests, isSingleUseValid, tokenParam, chat]);
 
   // Scroll to bottom on new messages or tool invocations
   useEffect(() => {
@@ -988,6 +998,24 @@ function IndividualChat({
   }, []);
 
   const [showIndividualClearModal, setShowIndividualClearModal] = React.useState(false);
+  const clearIndividualModalRef = React.useRef<HTMLDivElement>(null);
+  useFocusTrap(showIndividualClearModal, clearIndividualModalRef, () => setShowIndividualClearModal(false));
+
+  // Handle Escape key press step-by-step: close popups first, then navigate back
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showDetailModal || showIndividualClearModal) return;
+        if (showProfileModal) {
+          setShowProfileModal(false);
+          return;
+        }
+        router.push(backTargetHref);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [router, backTargetHref, showDetailModal, showProfileModal, showIndividualClearModal]);
 
   const handleClearIndividualChat = async () => {
     setShowIndividualClearModal(false);
@@ -1015,29 +1043,33 @@ function IndividualChat({
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <Link
             href={backTargetHref}
-            className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            aria-label="Back to messages"
+            className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
 
           {/* Clickable Target User Name/Bio Info Area (With dropdown container) */}
           <div ref={profileDropdownRef} className="relative flex-1 min-w-0">
-            <div
+            <button
+              type="button"
+              aria-expanded={showProfileModal}
+              aria-haspopup="menu"
               onClick={() => setShowProfileModal((prev) => !prev)}
-              className="flex items-center gap-3 w-full cursor-pointer group hover:opacity-90 transition-all"
+              className="flex items-center gap-3 w-full text-left cursor-pointer group hover:opacity-90 transition-all rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
             >
-              <div className="w-10 h-10 rounded-full bg-[#B8E7FF] dark:bg-slate-800 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center font-bold text-sm shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+              <div className="w-10 h-10 rounded-full bg-[#E8F4FC] dark:bg-slate-800 text-[#007ABB] dark:text-[#B8E7FF] flex items-center justify-center font-bold text-sm shrink-0 shadow-sm group-hover:scale-105 transition-transform">
                 {name.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
-                <h1 className="text-base font-bold text-slate-900 dark:text-white truncate group-hover:text-[#00AAFF] dark:group-hover:text-[#B8E7FF] transition-colors">
+                <h1 className="text-base font-bold text-slate-900 dark:text-white truncate group-hover:text-[#007ABB] dark:group-hover:text-[#00669E] transition-colors">
                   {name}{age ? `, ${age}` : ''}
                 </h1>
                 <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                   {interests.length > 0 ? interests.join(' • ') : 'Click to view profile'}
                 </p>
               </div>
-            </div>
+            </button>
 
             {/* Profile Dropdown Menu extending DOWN & RIGHT from user header */}
             <AnimatePresence>
@@ -1053,15 +1085,21 @@ function IndividualChat({
                     mass: 0.5,
                   }}
                   style={{ transformOrigin: 'top left' }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      e.stopPropagation();
+                      setShowProfileModal(false);
+                    }
+                  }}
                   onClick={() => {
                     setShowProfileModal(false);
                     setShowDetailModal(true);
                   }}
-                  className="absolute top-full left-0 mt-3 w-72 sm:w-80 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 hover:border-[#00AAFF]/50 rounded-3xl shadow-2xl p-5 z-50 text-slate-900 dark:text-white space-y-3.5 overflow-hidden cursor-pointer group/modal active:scale-[0.99]"
+                  className="absolute top-full left-0 mt-3 w-72 sm:w-80 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 hover:border-[#007ABB]/50 rounded-3xl shadow-2xl p-5 z-50 text-slate-900 dark:text-white space-y-3.5 overflow-hidden cursor-pointer group/modal active:scale-[0.99]"
                 >
                   {/* User Avatar & Name */}
                   <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 rounded-full bg-[#B8E7FF] dark:bg-slate-800 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center font-extrabold text-xl shrink-0 shadow-md border-2 border-white dark:border-slate-700 overflow-hidden">
+                    <div className="w-14 h-14 rounded-full bg-[#E8F4FC] dark:bg-slate-800 text-[#007ABB] dark:text-[#B8E7FF] flex items-center justify-center font-extrabold text-xl shrink-0 shadow-md border-2 border-white dark:border-slate-700 overflow-hidden">
                       {resolvedTargetProfile.avatarUrl || resolvedTargetProfile.profilePhoto?.url ? (
                         <img
                           src={getOptimizedCloudinaryUrl(resolvedTargetProfile.avatarUrl || resolvedTargetProfile.profilePhoto?.url)}
@@ -1073,10 +1111,10 @@ function IndividualChat({
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h2 className="text-base font-extrabold font-heading text-slate-900 dark:text-white truncate group-hover/modal:text-[#00AAFF] transition-colors">
+                      <h2 className="text-base font-extrabold font-heading text-slate-900 dark:text-white truncate group-hover/modal:text-[#007ABB] transition-colors">
                         {name}{age ? `, ${age}` : ''}
                       </h2>
-                      <p className="text-[11px] font-semibold text-[#00AAFF] dark:text-[#B8E7FF] tracking-wide uppercase">
+                      <p className="text-[11px] font-semibold text-[#007ABB] dark:text-[#B8E7FF] tracking-wide uppercase">
                         Soloberty Member
                       </p>
                     </div>
@@ -1086,7 +1124,7 @@ function IndividualChat({
                         e.stopPropagation();
                         setShowProfileModal(false);
                       }}
-                      className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                      className="p-1.5 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                       aria-label="Close profile menu"
                     >
                       <X className="w-4 h-4" />
@@ -1113,7 +1151,7 @@ function IndividualChat({
                         {interests.map((interest, idx) => (
                           <span
                             key={idx}
-                            className="px-2.5 py-0.5 bg-[#B8E7FF]/30 dark:bg-slate-800 text-[#0088CC] dark:text-[#B8E7FF] border border-[#00AAFF]/20 dark:border-slate-700 rounded-xl text-[11px] font-bold"
+                            className="px-2.5 py-0.5 bg-[#E8F4FC]/30 dark:bg-slate-800 text-[#0088CC] dark:text-[#B8E7FF] border border-[#007ABB]/20 dark:border-slate-700 rounded-xl text-[11px] font-bold"
                           >
                             #{interest}
                           </span>
@@ -1124,10 +1162,18 @@ function IndividualChat({
 
                   {/* View Detailed MatchCard Hint */}
                   <div className="pt-1 text-center border-t border-slate-100 dark:border-slate-800">
-                    <span className="text-[11px] font-bold text-[#00AAFF] dark:text-[#B8E7FF] group-hover/modal:underline flex items-center justify-center gap-1">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowProfileModal(false);
+                        setShowDetailModal(true);
+                      }}
+                      className="w-full py-1.5 rounded-xl text-[11px] font-bold text-[#007ABB] dark:text-[#B8E7FF] hover:underline flex items-center justify-center gap-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
+                    >
                       <span>Tap to view full MatchCard</span>
                       <span>✨</span>
-                    </span>
+                    </button>
                   </div>
                 </motion.div>
               )}
@@ -1139,7 +1185,7 @@ function IndividualChat({
         <button
           type="button"
           onClick={() => setShowIndividualClearModal(true)}
-          className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-300 text-xs font-bold rounded-xl border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
+          className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-300 text-xs font-bold rounded-xl border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
         >
           <Trash2 className="w-3.5 h-3.5" />
           <span>Clear Chat</span>
@@ -1154,7 +1200,12 @@ function IndividualChat({
             onClick={() => setShowIndividualClearModal(false)}
           >
             <div
-              className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 text-slate-900 dark:text-slate-100 shadow-2xl space-y-4"
+              ref={clearIndividualModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Clear Conversation"
+              tabIndex={-1}
+              className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 text-slate-900 dark:text-slate-100 shadow-2xl space-y-4 focus:outline-none"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400">
@@ -1173,14 +1224,14 @@ function IndividualChat({
                 <button
                   type="button"
                   onClick={() => setShowIndividualClearModal(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleClearIndividualChat}
-                  className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
                 >
                   Clear Chat
                 </button>
@@ -1191,7 +1242,11 @@ function IndividualChat({
       </AnimatePresence>
 
       {/* 1. Top: Message Thread (Scrollable) */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div
+        className="flex-1 overflow-y-auto p-4 space-y-4"
+        aria-live="polite"
+        aria-atomic="false"
+      >
         {/* Initial Skeleton UI when generate=true is present and chat messages are empty */}
         {shouldGenerateParam === 'true' && (chat.messages || []).length === 0 && isLoading && (
           <div className="w-full max-w-[90%] my-2 p-4 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm space-y-3 animate-pulse">
@@ -1207,7 +1262,7 @@ function IndividualChat({
         {/* Empty State when no messages exist and not auto-generating */}
         {rawMessages.length === 0 && !isLoading && shouldGenerateParam !== 'true' && (
           <div className="flex flex-col items-center justify-center h-full text-center px-4 py-12 space-y-4">
-            <div className="w-12 h-12 rounded-full bg-[#B8E7FF]/40 dark:bg-slate-800 text-[#00AAFF] dark:text-[#B8E7FF] flex items-center justify-center font-bold text-lg">
+            <div className="w-12 h-12 rounded-full bg-[#E8F4FC]/40 dark:bg-slate-800 text-[#007ABB] dark:text-[#B8E7FF] flex items-center justify-center font-bold text-lg">
               {name.charAt(0)}
             </div>
             <div className="space-y-1 max-w-xs">
@@ -1266,7 +1321,7 @@ function IndividualChat({
                 <div
                   className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-sm ${isOwnMessage
                     ? 'bg-white dark:bg-[#0F172A] text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 rounded-br-none'
-                    : 'bg-[#00AAFF] dark:bg-[#B8E7FF] text-white dark:text-slate-900 rounded-bl-none'
+                    : 'bg-[#007ABB] dark:bg-[#B8E7FF] text-white dark:text-slate-900 rounded-bl-none'
                     }`}
                 >
                   {textContent}
@@ -1310,8 +1365,8 @@ function IndividualChat({
           </div>
         )}
 
-        {/* State 1: Render single thinking indicator ONLY when single-use token is valid and unconsumed, no error, and no user message sent */}
-        {isSingleUseValid && !chatError && !hasToolResults && !rawMessages.some((m) => m.role === 'user' && !getMessageText(m).startsWith('Suggest icebreaker questions')) && (
+        {/* State 1: Render single thinking indicator ONLY when opened from feed, chat is empty, token is valid, no error, not stopped, and no user message sent */}
+        {fromSource === 'feed' && dbMessagesLoaded && dbMessages.length === 0 && isSingleUseValid && !isStopped && !chatError && !hasToolResults && !rawMessages.some((m) => m.role === 'user' && !getMessageText(m).startsWith('Suggest icebreaker questions')) && (
           <div className="flex flex-col items-start w-full max-w-[90%]">
             <ToolInvocationBlock
               toolInvocation={{ state: 'partial-call' }}
@@ -1320,6 +1375,12 @@ function IndividualChat({
               setInput={setInput}
               reload={reloadFn}
             />
+          </div>
+        )}
+
+        {isStopped && !hasToolResults && dbMessages.length === 0 && (
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 text-xs font-semibold my-2 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <span>Stopped icebreaker generation.</span>
           </div>
         )}
 
@@ -1340,13 +1401,27 @@ function IndividualChat({
               }
             }}
             placeholder={`Message ${name}...`}
-            className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#00AAFF]"
+            className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#007ABB]"
           />
+          {fromSource === 'feed' && dbMessagesLoaded && dbMessages.length === 0 && isSingleUseValid && isLoading && !isStopped && typeof stopFn === 'function' && (
+            <button
+              type="button"
+              onClick={() => {
+                setIsStopped(true);
+                stopFn();
+              }}
+              aria-label="Stop generating"
+              className="px-3.5 py-3 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-md transition-all active:scale-95 cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+            >
+              Stop
+            </button>
+          )}
           <button
             type="button"
             onClick={handleCustomSubmit}
             disabled={!input?.trim()}
-            className="p-3 bg-[#00AAFF] hover:bg-[#0088CC] text-white rounded-xl shadow-md shadow-[#00AAFF]/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shrink-0"
+            aria-label="Send message"
+            className="p-3 bg-[#007ABB] hover:bg-[#0088CC] text-white rounded-xl shadow-md shadow-[#007ABB]/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
           >
             <Send className="w-5 h-5" />
           </button>
@@ -1357,6 +1432,7 @@ function IndividualChat({
       <UserDetailModal
         user={showDetailModal ? resolvedTargetProfile : null}
         onClose={() => setShowDetailModal(false)}
+        hideChatButton
       />
     </div>
   );
@@ -1367,7 +1443,7 @@ export default function ChatPage() {
     <Suspense
       fallback={
         <div className="flex h-[calc(100vh-60px)] items-center justify-center bg-slate-50 dark:bg-[#090D16]">
-          <div className="w-8 h-8 border-4 border-[#00AAFF] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-[#007ABB] border-t-transparent rounded-full animate-spin" />
         </div>
       }
     >

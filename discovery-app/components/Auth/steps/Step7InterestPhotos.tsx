@@ -25,6 +25,7 @@ export const Step7InterestPhotos: React.FC<Step7InterestPhotosProps> = ({
 }) => {
   const [imagesError, setImagesError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const interestInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const processFiles = (files: FileList | File[]) => {
     const fileArray = Array.from(files);
@@ -91,7 +92,7 @@ export const Step7InterestPhotos: React.FC<Step7InterestPhotosProps> = ({
       <div className="space-y-1.5 shrink-0 mb-1">
         <div className="flex items-center justify-between">
           <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white">Interest images</h2>
-          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#B8E7FF]/40 dark:bg-[#B8E7FF]/20 text-[#0088CC] dark:text-[#B8E7FF] border border-[#B8E7FF]/60 dark:border-[#B8E7FF]/30">
+          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#E8F4FC]/40 dark:bg-[#B8E7FF]/20 text-[#0088CC] dark:text-[#B8E7FF] border border-[#B8E7FF]/60 dark:border-[#B8E7FF]/30">
             {interestPreviews.length} / 3 images
           </span>
         </div>
@@ -151,18 +152,20 @@ export const Step7InterestPhotos: React.FC<Step7InterestPhotosProps> = ({
           ))}
 
           {interestPreviews.length < 3 && (
-            <label
-              htmlFor="interestImagesInput"
-              className={`aspect-square rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 flex flex-col items-center justify-center transition-all p-2 text-center ${
+            <button
+              type="button"
+              disabled={uploadingPhotos}
+              onClick={() => interestInputRef.current?.click()}
+              className={`aspect-square rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 flex flex-col items-center justify-center transition-all p-2 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB] ${
                 uploadingPhotos
                   ? 'cursor-not-allowed opacity-50'
-                  : 'hover:border-[#00AAFF] cursor-pointer'
+                  : 'hover:border-[#007ABB] cursor-pointer'
               }`}
             >
-              <Upload className="w-5 h-5 text-[#00AAFF] mb-1" />
+              <Upload className="w-5 h-5 text-[#007ABB] mb-1" />
               <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200">Add / Drop Photo</span>
               <span className="text-[9px] text-slate-400 dark:text-slate-500">Max 5MB</span>
-            </label>
+            </button>
           )}
         </div>
 
@@ -178,6 +181,7 @@ export const Step7InterestPhotos: React.FC<Step7InterestPhotosProps> = ({
         )}
 
         <input
+          ref={interestInputRef}
           id="interestImagesInput"
           type="file"
           multiple
@@ -204,7 +208,7 @@ export const Step7InterestPhotos: React.FC<Step7InterestPhotosProps> = ({
           type="button"
           onClick={handleFinishProfile}
           disabled={uploadingPhotos}
-          className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-95"
+          className="flex-1 py-3.5 px-4 bg-[#007ABB] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#007ABB]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-95"
         >
           {uploadingPhotos ? (
             <>

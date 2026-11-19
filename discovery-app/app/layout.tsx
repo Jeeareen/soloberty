@@ -34,6 +34,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className={`${outfit.variable} ${plusJakartaSans.variable} max-w-full overflow-x-hidden`}>
       <head>
+        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
         <script
           id="theme-init"
           dangerouslySetInnerHTML={{

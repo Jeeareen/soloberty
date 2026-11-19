@@ -114,7 +114,7 @@ export default function SettingsPage() {
 
             <div className="py-3 flex items-center justify-between hover:bg-slate-50 px-2 rounded-xl transition-colors cursor-pointer">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
+                <div className="p-2 bg-[#FFF3EB] text-[#CC5500] rounded-xl">
                   <MapPin className="w-5 h-5" />
                 </div>
                 <div>
@@ -130,13 +130,13 @@ export default function SettingsPage() {
               className="py-3 flex items-center justify-between hover:bg-sky-50/80 px-2 rounded-xl transition-colors cursor-pointer group"
             >
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-sky-100 text-[#00AAFF] rounded-xl group-hover:scale-105 transition-transform">
+                <div className="p-2 bg-sky-100 text-[#007ABB] rounded-xl group-hover:scale-105 transition-transform">
                   <Sparkles className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
                     FE-AA1: Motion & State Lab
-                    <span className="text-[10px] font-bold px-2 py-0.5 bg-[#00AAFF]/10 text-[#00AAFF] rounded-full border border-[#00AAFF]/20">
+                    <span className="text-[10px] font-bold px-2 py-0.5 bg-[#007ABB]/10 text-[#007ABB] rounded-full border border-[#007ABB]/20">
                       Assignment Demo
                     </span>
                   </div>
@@ -145,7 +145,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-[#00AAFF] group-hover:translate-x-0.5 transition-transform" />
+              <ChevronRight className="w-4 h-4 text-[#007ABB] group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
         </div>

@@ -128,7 +128,7 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
                     <motion.div
                       layoutId="locationPrivacyPill"
                       layoutDependency={formData.locationType}
-                      className="absolute inset-0 bg-[#00AAFF] dark:bg-[#B8E7FF] rounded-xl shadow-md"
+                      className="absolute inset-0 bg-[#007ABB] dark:bg-[#B8E7FF] rounded-xl shadow-md"
                       transition={{
                         type: 'spring',
                         stiffness: 500,
@@ -247,7 +247,7 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
                   className={`w-full h-[46px] pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border ${
                     locationError
                       ? 'border-rose-500 dark:border-rose-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
-                      : 'border-slate-200 dark:border-slate-700 focus:border-[#00AAFF]'
+                      : 'border-slate-200 dark:border-slate-700 focus:border-[#007ABB]'
                   } rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none transition-all`}
                 />
 
@@ -323,7 +323,7 @@ export const Step5Location: React.FC<Step5LocationProps> = ({
         <button
           type="submit"
           disabled={detectingGps}
-          className="flex-1 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="flex-1 py-3.5 px-4 bg-[#007ABB] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#007ABB]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
         >
           Continue to Photos
           <ArrowRight className="w-4 h-4" />

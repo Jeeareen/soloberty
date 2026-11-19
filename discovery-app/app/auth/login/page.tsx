@@ -138,9 +138,9 @@ export default function LoginPage() {
                 duration: 0.25,
                 ease: 'easeOut',
               }}
-              className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#B8E7FF]/40 dark:bg-[#B8E7FF]/20 text-[#00AAFF] dark:text-[#B8E7FF] border border-[#00AAFF]/30 dark:border-[#B8E7FF]/30 mt-0 mb-2 shadow-md shadow-[#00AAFF]/15"
+              className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#E8F4FC]/40 dark:bg-[#B8E7FF]/20 text-[#007ABB] dark:text-[#B8E7FF] border border-[#007ABB]/30 dark:border-[#B8E7FF]/30 mt-0 mb-2 shadow-md shadow-[#007ABB]/15"
             >
-              <SolobertyLogo className="w-7 h-7 fill-[#00AAFF] dark:fill-[#B8E7FF]" color="#00AAFF" />
+              <SolobertyLogo className="w-7 h-7 fill-[#007ABB] dark:fill-[#B8E7FF]" color="#007ABB" />
             </motion.div>
             <motion.h1
               initial={{ opacity: 0, scale: 0.96, y: -4 }}
@@ -152,7 +152,7 @@ export default function LoginPage() {
               }}
               className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white origin-center"
             >
-              Welcome back to <span className="text-[#00AAFF] dark:text-[#B8E7FF] font-heading font-extrabold">Soloberty</span>
+              Welcome back to <span className="text-[#007ABB] dark:text-[#B8E7FF] font-heading font-extrabold">Soloberty</span>
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, scale: 0.98, y: -2 }}
@@ -220,35 +220,43 @@ export default function LoginPage() {
               className="space-y-4"
             >
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <label
+                  htmlFor="login-email"
+                  className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400"
+                >
                   Email Address
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
                   <input
+                    id="login-email"
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@example.com"
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#00AAFF] transition-colors"
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#007ABB] transition-colors"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <label
+                  htmlFor="login-password"
+                  className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400"
+                >
                   Password
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
                   <input
+                    id="login-password"
                     type="password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#00AAFF] transition-colors"
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#007ABB] transition-colors"
                   />
                 </div>
               </div>
@@ -256,7 +264,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading || redirectCountdown !== null}
-                className="w-full mt-2 py-3.5 px-4 bg-[#00AAFF] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#00AAFF]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full mt-2 py-3.5 px-4 bg-[#007ABB] hover:bg-[#0088CC] dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] text-white dark:text-slate-900 font-extrabold text-sm rounded-xl shadow-lg shadow-[#007ABB]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {loading ? (
                   <>

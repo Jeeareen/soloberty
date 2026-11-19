@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UserProfile, PREDEFINED_INTERESTS } from '../../types/user';
 import { User, ChevronLeft, ChevronRight, X, MapPin } from 'lucide-react';
 import { getOptimizedCloudinaryUrl } from '../../lib/cloudinary';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface UserPreviewCardProps {
   users: UserProfile[];
@@ -14,6 +15,7 @@ interface UserPreviewCardProps {
   onNext: () => void;
   onClose: () => void;
   onSelectUser?: (user: UserProfile) => void;
+  pauseFocusTrap?: boolean;
 }
 
 export const UserPreviewCard: React.FC<UserPreviewCardProps> = ({
@@ -24,8 +26,14 @@ export const UserPreviewCard: React.FC<UserPreviewCardProps> = ({
   onNext,
   onClose,
   onSelectUser,
+  pauseFocusTrap = false,
 }) => {
-  if (!users || users.length === 0) return null;
+  const previewRef = useRef<HTMLDivElement | null>(null);
+  const firstUserRef = useRef<HTMLDivElement | null>(null);
+  const isOpen = Boolean(users && users.length > 0);
+  useFocusTrap(isOpen && !pauseFocusTrap, previewRef, onClose, firstUserRef);
+
+  if (!isOpen) return null;
 
   const isMulti = users.length > 1;
   // Display up to 3 cards for the current window if multi, or single card
@@ -39,16 +47,21 @@ export const UserPreviewCard: React.FC<UserPreviewCardProps> = ({
   return (
     <AnimatePresence>
       <motion.div
+        ref={previewRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={clusterTitle || 'Member Preview'}
+        tabIndex={-1}
         initial={{ opacity: 0, y: 40, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 30, scale: 0.96 }}
         transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-        className="fixed bottom-20 md:bottom-8 left-1/2 -translate-x-1/2 z-[1000] w-[calc(100%-2rem)] max-w-md bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-2xl overflow-hidden p-4 sm:p-5"
+        className="fixed bottom-20 md:bottom-8 left-1/2 -translate-x-1/2 z-[1000] w-[calc(100%-2rem)] max-w-md bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-2xl overflow-hidden p-4 sm:p-5 focus:outline-none"
       >
         {/* Header with Title and Close Button */}
         <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#00AAFF] animate-pulse" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#007ABB] animate-pulse" />
             <h3 className="text-sm font-heading font-extrabold text-slate-900 dark:text-white truncate">
               {clusterTitle || (isMulti ? `${users.length} People Nearby` : 'Member Preview')}
             </h3>
@@ -64,8 +77,8 @@ export const UserPreviewCard: React.FC<UserPreviewCardProps> = ({
         </div>
 
         {/* User Card(s) List */}
-        <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-0.5">
-          {visibleUsers.map((u) => {
+        <div className="space-y-3 max-h-[50vh] overflow-y-auto p-1">
+          {visibleUsers.map((u, idx) => {
             const interests = (u.interests || []).slice(0, 3).map((id) => {
               const item = PREDEFINED_INTERESTS.find((p) => p.id === id);
               return item ? { id, name: item.name, icon: item.icon } : { id, name: id, icon: '✨' };
@@ -74,6 +87,7 @@ export const UserPreviewCard: React.FC<UserPreviewCardProps> = ({
             return (
               <div
                 key={u.uid}
+                ref={idx === 0 ? firstUserRef : undefined}
                 role="button"
                 tabIndex={0}
                 onClick={() => onSelectUser?.(u)}
@@ -83,7 +97,7 @@ export const UserPreviewCard: React.FC<UserPreviewCardProps> = ({
                     onSelectUser?.(u);
                   }
                 }}
-                className="flex items-start gap-3.5 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 transition-all hover:bg-blue-50/50 dark:hover:bg-slate-800 hover:border-[#00AAFF]/40 cursor-pointer active:scale-[0.98] group"
+                className="flex items-start gap-3.5 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 transition-all hover:bg-blue-50/50 dark:hover:bg-slate-800 hover:border-[#007ABB]/40 cursor-pointer active:scale-[0.98] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
               >
                 {/* User Avatar */}
                 <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-700 shrink-0 border border-slate-300 dark:border-slate-600">
@@ -95,7 +109,7 @@ export const UserPreviewCard: React.FC<UserPreviewCardProps> = ({
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-[#B8E7FF] dark:bg-slate-800 text-[#00AAFF]">
+                    <div className="w-full h-full flex items-center justify-center bg-[#E8F4FC] dark:bg-slate-800 text-[#007ABB]">
                       <User className="w-6 h-6" />
                     </div>
                   )}
@@ -109,7 +123,7 @@ export const UserPreviewCard: React.FC<UserPreviewCardProps> = ({
                     </h4>
                     {u.location?.city && (
                       <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-0.5 shrink-0">
-                        <MapPin className="w-3 h-3 text-[#00AAFF]" />
+                        <MapPin className="w-3 h-3 text-[#007ABB]" />
                         {u.location.type === 'approximate' ? '~ ' : ''}{u.location.city.split(',')[0]}
                       </span>
                     )}
@@ -139,7 +153,7 @@ export const UserPreviewCard: React.FC<UserPreviewCardProps> = ({
 
         {/* Click to view full card hint */}
         <div className="mt-2 text-center">
-          <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 group-hover:text-[#00AAFF] transition-colors">
+          <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 group-hover:text-[#007ABB] transition-colors">
             Tap a profile to view detailed card
           </span>
         </div>

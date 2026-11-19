@@ -22,7 +22,7 @@ const MapCanvas = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex h-full w-full flex-col items-center justify-center bg-slate-50 dark:bg-[#090D16] text-slate-500 space-y-3">
-        <Loader2 className="w-8 h-8 animate-spin text-[#00AAFF]" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#007ABB]" />
         <p className="text-sm font-semibold">Loading Map Canvas...</p>
       </div>
     ),
@@ -212,6 +212,7 @@ function MapPageContent() {
 
   return (
     <div className="relative w-full h-[calc(100vh-56px-60px)] md:h-[calc(100vh-56px)] overflow-hidden bg-[#F8FAFC] dark:bg-[#090D16]">
+      <h1 className="sr-only">Soloberty Member Map</h1>
       {/* Top Distance Filter Bar */}
       <DistanceFilter
         selectedDistance={distanceFilter}
@@ -235,7 +236,7 @@ function MapPageContent() {
       {/* Loading Indicator Pill (Bottom Left) */}
       {loading && (
         <div className="absolute bottom-24 md:bottom-6 left-4 z-[999] flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-lg text-xs font-bold text-slate-700 dark:text-slate-200">
-          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#00AAFF]" />
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#007ABB]" />
           <span>Searching area...</span>
         </div>
       )}
@@ -269,6 +270,7 @@ function MapPageContent() {
         onNext={handleNext}
         onClose={handleClosePreview}
         onSelectUser={(u) => setDetailedUser(u)}
+        pauseFocusTrap={Boolean(detailedUser)}
       />
 
       {/* Detailed MatchCard Modal */}
@@ -285,7 +287,7 @@ export default function MapPage() {
     <Suspense
       fallback={
         <div className="flex h-full w-full flex-col items-center justify-center bg-slate-50 dark:bg-[#090D16] text-slate-500 space-y-3">
-          <Loader2 className="w-8 h-8 animate-spin text-[#00AAFF]" />
+          <Loader2 className="w-8 h-8 animate-spin text-[#007ABB]" />
           <p className="text-sm font-semibold">Loading Map...</p>
         </div>
       }
