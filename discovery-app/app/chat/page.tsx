@@ -11,10 +11,15 @@ import { db, auth } from '../../lib/firebase/config';
 import { useProfiles } from '../../hooks/useProfiles';
 import { useAuth } from '../../lib/hooks/useAuth';
 import { useUnreadMessages } from '../../hooks/useUnreadMessages';
+import dynamic from 'next/dynamic';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
-import { UserDetailModal } from '../../components/Map/UserDetailModal';
 import type { UserProfile } from '../../types/user';
 import { getOptimizedCloudinaryUrl } from '../../lib/cloudinary';
+
+const UserDetailModal = dynamic(
+  () => import('../../components/Map/UserDetailModal').then((m) => m.UserDetailModal),
+  { ssr: false }
+);
 
 interface ToolInvocationBlockProps {
   toolInvocation: any;
@@ -446,12 +451,9 @@ function ChatList() {
           </div>
         ) : (
           chatItems.map((chatItem, idx) => (
-            <motion.button
+            <button
               type="button"
               key={idx}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2, delay: idx * 0.05 }}
               onClick={() => {
                 router.push(
                   `/chat?name=${encodeURIComponent(chatItem.name)}&age=${chatItem.age}&bio=${encodeURIComponent(chatItem.bio)}&interests=${encodeURIComponent(chatItem.interests.join(','))}&uid=${chatItem.uid}&from=chatlist`
@@ -480,7 +482,7 @@ function ChatList() {
                   {chatItem.lastMessage}
                 </p>
               </div>
-            </motion.button>
+            </button>
           ))
         )}
       </div>
@@ -1429,11 +1431,13 @@ function IndividualChat({
       </div>
 
       {/* Detailed MatchCard Modal */}
-      <UserDetailModal
-        user={showDetailModal ? resolvedTargetProfile : null}
-        onClose={() => setShowDetailModal(false)}
-        hideChatButton
-      />
+      {showDetailModal && (
+        <UserDetailModal
+          user={resolvedTargetProfile}
+          onClose={() => setShowDetailModal(false)}
+          hideChatButton
+        />
+      )}
     </div>
   );
 }

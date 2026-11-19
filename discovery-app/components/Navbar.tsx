@@ -444,7 +444,7 @@ export const Navbar: React.FC = () => {
       {/* Mobile Bottom Navigation Bar (Visible only on screens < md) */}
       <nav
         aria-label="Mobile Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 w-screen max-w-none z-50 bg-[#007ABB]/95 dark:bg-[#0F172A]/95 backdrop-blur-lg border-t border-white/20 dark:border-slate-800/80 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] px-3 py-1.5 flex items-center justify-around pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+        className="md:hidden fixed bottom-0 left-0 right-0 w-screen max-w-none z-50 bg-[#007ABB] dark:bg-[#0F172A]/95 backdrop-blur-lg border-t border-white/20 dark:border-slate-800/80 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] px-3 py-1.5 flex items-center justify-around pb-[max(0.5rem,env(safe-area-inset-bottom))]"
       >
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -458,14 +458,14 @@ export const Navbar: React.FC = () => {
               key={item.href}
               href={item.href}
               className={`relative flex flex-col items-center justify-center py-1 px-3.5 rounded-2xl text-[11px] font-extrabold transition-all active:scale-95 ${isActive
-                  ? 'text-white dark:text-[#007ABB]'
-                  : 'text-white/70 dark:text-slate-400 hover:text-white dark:hover:text-slate-200'
+                  ? 'text-white dark:text-[#B8E7FF]'
+                  : 'text-white dark:text-slate-300 hover:text-white dark:hover:text-slate-100'
                 }`}
             >
               {isActive && (
                 <motion.div
                   layoutId="activeMobileTab"
-                  className="absolute inset-0 bg-white/25 dark:bg-[#007ABB]/20 rounded-2xl -z-0"
+                  className="absolute inset-0 bg-black/25 dark:bg-[#007ABB]/25 rounded-2xl -z-0"
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               )}
