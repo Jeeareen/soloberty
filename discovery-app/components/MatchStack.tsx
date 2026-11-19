@@ -318,7 +318,9 @@ export const RenderCardFace: React.FC<{
 
 export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComplete }) => {
   const router = useRouter();
-  const { profiles, loading, error } = useProfiles();
+  const hasInitialCards = Boolean(propCards && propCards.length > 0);
+  const { profiles, loading: profilesLoading, error } = useProfiles({ enabled: !hasInitialCards });
+  const loading = hasInitialCards ? false : profilesLoading;
   const { user } = useAuth();
 
   const [mounted, setMounted] = useState(false);
@@ -431,17 +433,19 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
     };
   }, [whyYouTwoModalOpen, authModalOpen]);
 
-  // Restore swiping position from sessionStorage or default to 0
-  const [currentIndex, setCurrentIndex] = useState(() => {
-    if (typeof window !== 'undefined') {
+  // Restore swiping position from sessionStorage after hydration to avoid SSR mismatch
+  const [currentIndex, setCurrentIndex] = useState(0);
+  useEffect(() => {
+    try {
       const savedIndex = sessionStorage.getItem('soloberty_matchstack_index');
       if (savedIndex !== null) {
         const parsed = parseInt(savedIndex, 10);
-        if (!isNaN(parsed) && parsed >= 0) return parsed;
+        if (!isNaN(parsed) && parsed > 0) setCurrentIndex(parsed);
       }
+    } catch {
+      // Ignore storage access errors
     }
-    return 0;
-  });
+  }, []);
 
   const [undoCount, setUndoCount] = useState(0);
   const [flippedCardIds, setFlippedCardIds] = useState<Record<string, boolean>>({});

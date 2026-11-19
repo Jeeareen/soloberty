@@ -3,12 +3,18 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase/config';
 import type { UserProfile } from '../types/user';
 
-export function useProfiles() {
+export function useProfiles(options?: { enabled?: boolean }) {
+  const enabled = options?.enabled ?? true;
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(enabled);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
+
     let isMounted = true;
 
     async function fetchProfiles() {
@@ -50,7 +56,7 @@ export function useProfiles() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [enabled]);
 
   return { profiles, loading, error };
 }
