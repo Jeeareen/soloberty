@@ -148,6 +148,10 @@ Keyboard-Only Pass:
 
 Notes for AUDIT.md:
 - Navbar active tab (`#007ABB` on `linear-gradient` white background): WAVE may flag 1 contrast false-positive because it ignores CSS `linear-gradient` on the sibling `motion.div` and compares `#007ABB` against the `<header>` background `#007ABB` (1:1). Visually the text sits on solid white (`#FFFFFF`), which has 4.55:1+ WCAG AA contrast.
+- `/chat` performance & mobile nav contrast fixes:
+  - Lazy-loaded `UserDetailModal` via `next/dynamic(..., { ssr: false })` and mounted it only when `showDetailModal` is open (removes `MatchStack.tsx` from initial `/chat` bundle).
+  - Removed `opacity: 0` entrance animation on `/chat` conversation list rows (`motion.button` -> `button`) so rows paint immediately for LCP.
+  - Fixed Mobile Bottom Nav contrast (`bg-[#007ABB]` solid, `text-white` for inactive tabs, `bg-black/25` for active tab) to resolve the Lighthouse mobile `color-contrast` failure.
 
 
 

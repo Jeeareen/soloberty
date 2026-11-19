@@ -1446,8 +1446,16 @@ export default function ChatPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-[calc(100vh-60px)] items-center justify-center bg-slate-50 dark:bg-[#090D16]">
-          <div className="w-8 h-8 border-4 border-[#007ABB] border-t-transparent rounded-full animate-spin" />
+        <div className="flex flex-col h-[calc(100vh-56px-60px)] md:h-[calc(100vh-56px)] bg-slate-50 dark:bg-[#090D16] text-slate-900 dark:text-white transition-colors duration-200">
+          <header className="h-16 px-5 bg-white dark:bg-[#0F172A] border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 shadow-sm">
+            <div>
+              <h1 className="text-xl font-extrabold text-slate-900 dark:text-white">Messages</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Your active conversations</p>
+            </div>
+          </header>
+          <div className="flex-1 flex items-center justify-center">
+            <div className="w-8 h-8 border-4 border-[#007ABB] border-t-transparent rounded-full animate-spin" />
+          </div>
         </div>
       }
     >
