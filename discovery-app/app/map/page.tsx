@@ -23,17 +23,30 @@ const UserDetailModal = dynamic(
   { ssr: false }
 );
 
+const MapTilePreviewPlaceholder = () => (
+  <div className="relative flex h-full w-full flex-col items-center justify-center bg-slate-50 dark:bg-[#090D16] text-slate-500 overflow-hidden">
+    <img
+      src="https://a.tile.openstreetmap.org/12/2234/1420.png"
+      alt=""
+      width={288}
+      height={288}
+      loading="eager"
+      fetchPriority="high"
+      className="w-72 h-72 object-cover rounded-2xl opacity-90 shadow-sm pointer-events-none select-none"
+    />
+    <div className="absolute bottom-24 md:bottom-6 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-lg text-xs font-bold text-slate-700 dark:text-slate-200">
+      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#007ABB]" />
+      <span>Loading Map...</span>
+    </div>
+  </div>
+);
+
 // Leaflet requires window/DOM, so dynamically import MapCanvas with ssr: false
 const MapCanvas = dynamic(
   () => import('../../components/Map/MapCanvas').then((mod) => mod.MapCanvas),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex h-full w-full flex-col items-center justify-center bg-slate-50 dark:bg-[#090D16] text-slate-500 space-y-3">
-        <Loader2 className="w-8 h-8 animate-spin text-[#007ABB]" />
-        <p className="text-sm font-semibold">Loading Map Canvas...</p>
-      </div>
-    ),
+    loading: () => <MapTilePreviewPlaceholder />,
   }
 );
 
@@ -288,9 +301,8 @@ export default function MapPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-full w-full flex-col items-center justify-center bg-slate-50 dark:bg-[#090D16] text-slate-500 space-y-3">
-          <Loader2 className="w-8 h-8 animate-spin text-[#007ABB]" />
-          <p className="text-sm font-semibold">Loading Map...</p>
+        <div className="relative w-full h-[calc(100vh-56px-60px)] md:h-[calc(100vh-56px)] overflow-hidden bg-[#F8FAFC] dark:bg-[#090D16]">
+          <MapTilePreviewPlaceholder />
         </div>
       }
     >

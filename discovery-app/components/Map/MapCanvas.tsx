@@ -117,6 +117,8 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     // Dark-mode aware / clean OpenStreetMap standard tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
+      keepBuffer: 0,
+      updateWhenIdle: true,
       noWrap: false, // let tiles repeat horizontally if needed, while vertical bounds stay strictly locked
       bounds: earthBounds,
       attribution:

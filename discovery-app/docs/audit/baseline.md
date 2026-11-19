@@ -149,7 +149,7 @@ Keyboard-Only Pass:
 Notes for AUDIT.md:
 - Navbar active tab (`#007ABB` on `linear-gradient` white background): WAVE may flag 1 contrast false-positive because it ignores CSS `linear-gradient` on the sibling `motion.div` and compares `#007ABB` against the `<header>` background `#007ABB` (1:1). Visually the text sits on solid white (`#FFFFFF`), which has 4.55:1+ WCAG AA contrast.
 - `/feed` SSR LCP optimization: converted `app/feed/page.tsx` to a Server Component that fetches completed public profiles via Firestore REST API (`revalidate: 60`) and passes `initialCards` to `<FeedClient>` → `<MatchStack>`, eliminating the client-side `Loading profiles...` spinner and Firestore waterfall on initial paint (PageSpeed Insights Mobile Performance: **100**).
-- `/map` LCP & bundle optimization: removed the `locatingUser` gate in `app/map/page.tsx` so `<MapCanvas>` mounts immediately at `DEFAULT_CENTER` without blocking up to 4s on Auth + `navigator.geolocation`, and lazy-loaded `UserPreviewCard` and `UserDetailModal` via `next/dynamic(..., { ssr: false })` only when opened.
+- `/map` LCP & bundle optimization: removed the `locatingUser` gate in `app/map/page.tsx` so `<MapCanvas>` mounts immediately at `DEFAULT_CENTER` without blocking up to 4s on Auth + `navigator.geolocation`, lazy-loaded `UserPreviewCard` and `UserDetailModal` via `next/dynamic(..., { ssr: false })` only when opened, rendered an eager high-priority center Vienna tile preview in the `/map` Suspense/loading shell for early LCP discovery, and set `keepBuffer: 0` + `updateWhenIdle: true` on Leaflet's `TileLayer` to avoid downloading 30 off-screen buffer tiles.
 
 
 
