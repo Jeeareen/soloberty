@@ -156,7 +156,6 @@ export const Navbar: React.FC = () => {
           <div className="flex items-center shrink-0">
             <Link
               href="/feed"
-              prefetch={false}
               className="flex items-center gap-2 text-lg sm:text-xl font-heading font-extrabold text-white dark:text-slate-900 tracking-tight hover:opacity-90 transition-colors"
             >
               <SolobertyLogo className="w-7 h-7 fill-white dark:fill-slate-900" />
@@ -179,7 +178,6 @@ export const Navbar: React.FC = () => {
                   <MotionLink
                     key={item.href}
                     href={item.href}
-                    prefetch={false}
                     aria-current={isActive ? 'page' : undefined}
                     scroll={false}
                     initial="rest"
@@ -356,7 +354,6 @@ export const Navbar: React.FC = () => {
                     {/* Health Status Tile */}
                     <Link
                       href="/health"
-                      prefetch={false}
                       onClick={() => setMenuOpen(false)}
                       className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                     >
@@ -375,7 +372,6 @@ export const Navbar: React.FC = () => {
                     {/* FE-AA1 Assignment Lab Option */}
                     <Link
                       href="/demo/motion-button"
-                      prefetch={false}
                       onClick={() => setMenuOpen(false)}
                       className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                     >
@@ -402,7 +398,6 @@ export const Navbar: React.FC = () => {
                     {user && (
                       <Link
                         href="/auth/changePassword"
-                        prefetch={false}
                         onClick={() => setMenuOpen(false)}
                         className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                       >
@@ -431,7 +426,6 @@ export const Navbar: React.FC = () => {
                     ) : (
                       <Link
                         href="/auth/login"
-                        prefetch={false}
                         onClick={() => setMenuOpen(false)}
                         className="w-full py-2.5 px-3 bg-[#007ABB] dark:bg-[#B8E7FF] hover:bg-[#0088CC] dark:hover:bg-[#99D8FF] active:scale-[0.98] text-white dark:text-slate-900 font-bold text-xs rounded-2xl shadow-md shadow-[#007ABB]/20 transition-all flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                       >
@@ -450,7 +444,7 @@ export const Navbar: React.FC = () => {
       {/* Mobile Bottom Navigation Bar (Visible only on screens < md) */}
       <nav
         aria-label="Mobile Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 w-screen max-w-none z-50 bg-[#007ABB] dark:bg-[#0F172A]/95 backdrop-blur-lg border-t border-white/20 dark:border-slate-800/80 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] px-3 py-1.5 flex items-center justify-around pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+        className="md:hidden fixed bottom-0 left-0 right-0 w-screen max-w-none z-50 bg-[#007ABB]/95 dark:bg-[#0F172A]/95 backdrop-blur-lg border-t border-white/20 dark:border-slate-800/80 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] px-3 py-1.5 flex items-center justify-around pb-[max(0.5rem,env(safe-area-inset-bottom))]"
       >
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -463,16 +457,15 @@ export const Navbar: React.FC = () => {
             <Link
               key={item.href}
               href={item.href}
-              prefetch={false}
               className={`relative flex flex-col items-center justify-center py-1 px-3.5 rounded-2xl text-[11px] font-extrabold transition-all active:scale-95 ${isActive
-                  ? 'text-white dark:text-[#B8E7FF]'
-                  : 'text-white dark:text-slate-300 hover:text-white dark:hover:text-slate-100'
+                  ? 'text-white dark:text-[#007ABB]'
+                  : 'text-white/70 dark:text-slate-400 hover:text-white dark:hover:text-slate-200'
                 }`}
             >
               {isActive && (
                 <motion.div
                   layoutId="activeMobileTab"
-                  className="absolute inset-0 bg-black/25 dark:bg-[#007ABB]/25 rounded-2xl -z-0"
+                  className="absolute inset-0 bg-white/25 dark:bg-[#007ABB]/20 rounded-2xl -z-0"
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               )}

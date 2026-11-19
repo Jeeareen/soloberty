@@ -1,7 +1,5 @@
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import app from './config';
-
-const getStorageInstance = () => getStorage(app);
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from './config';
 
 /**
  * Uploads a user's single profile photo to Firebase Storage
@@ -13,7 +11,7 @@ export async function uploadProfilePhoto(uid: string, file: File): Promise<strin
   try {
     const ext = file.name.split('.').pop() || 'jpg';
     const timestamp = Date.now();
-    const storageRef = ref(getStorageInstance(), `profiles/${uid}/profile-photo/profile-${timestamp}.${ext}`);
+    const storageRef = ref(storage, `profiles/${uid}/profile-photo/profile-${timestamp}.${ext}`);
 
     const snapshot = await uploadBytes(storageRef, file);
     const downloadUrl = await getDownloadURL(snapshot.ref);
@@ -32,7 +30,6 @@ export async function uploadProfilePhoto(uid: string, file: File): Promise<strin
  */
 export async function uploadInterestImages(uid: string, files: File[]): Promise<string[]> {
   try {
-    const storage = getStorageInstance();
     const uploadPromises = files.slice(0, 3).map(async (file, index) => {
       const ext = file.name.split('.').pop() || 'jpg';
       const timestamp = Date.now();
