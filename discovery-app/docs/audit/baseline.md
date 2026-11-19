@@ -157,6 +157,7 @@ Notes for AUDIT.md:
   - Replaced centered loading spinner in `ProfileEditor.tsx` with an immediate `<h1>My Profile</h1>` header + layout-matched skeleton (reserving `INTEREST PHOTOS` aspect-square grid space to eliminate the `0.059` CLS and reduce LCP delay).
   - Added `loading="eager"` and `fetchPriority="high"` on the profile avatar image.
   - Replaced nested `<main>` with `<div>` in `app/profile/page.tsx` (since `app/layout.tsx` already provides `<main>`).
+  - Global Firebase Auth & Firestore waterfall fixes: switched `lib/firebase/config.ts` from `getAuth()` to `initializeAuth()` without `browserPopupRedirectResolver` (removing ~400 KB of unused Google OAuth `gapi` + auth iframe scripts on every page), seeded `localStorage` profile cache directly from `AuthContext.tsx` to eliminate the duplicate Firestore read on `/profile`, waited on `authLoading` in `ProfileEditor.tsx` so the skeleton doesn't flash empty state (fixing the `0.059` CLS), and added `preconnect` links for `identitytoolkit.googleapis.com` and `firestore.googleapis.com` in `app/layout.tsx`.
 
 
 

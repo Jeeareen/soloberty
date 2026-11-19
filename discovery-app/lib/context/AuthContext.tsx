@@ -29,9 +29,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     try {
       const userDoc = await getDoc(doc(db, 'users', fbUser.uid));
-      const isCompleted = Boolean(userDoc.exists() && userDoc.data()?.profileCompleted);
+      const data = userDoc.exists() ? userDoc.data() : null;
+      const isCompleted = Boolean(data?.profileCompleted);
 
-      if (isCompleted) {
+      if (isCompleted && data) {
+        // Seed localStorage profile cache from this live Firestore read so /profile doesn't need a duplicate round-trip
+        try {
+          const cachedProfile = {
+            name: data.name || 'Soloberty Explorer',
+            age: data.age || 24,
+            gender: data.gender || 'male',
+            email: data.email || fbUser.email || '',
+            bio: data.bio || '',
+            locationType: data.location?.type || 'approximate',
+            city: data.location?.city || 'Vienna, AT',
+            interests: data.interests || [],
+            profilePhotoUrl: data.profilePhoto?.url || data.avatarUrl || '',
+            avatarPublicId: data.avatarPublicId || data.profilePhoto?.publicId || '',
+            interestImageUrls: (data.interestImages || []).map((img: any) => img.url),
+            interestImagesList: data.interestImages || [],
+            locationCoordinates: data.location?.coordinates || null,
+            _syncedAt: Date.now(),
+          };
+          localStorage.setItem(`user_profile_${fbUser.uid}`, JSON.stringify(cachedProfile));
+        } catch {
+          // Ignore storage quota errors
+        }
+
         setUser({
           uid: fbUser.uid,
           email: fbUser.email || '',

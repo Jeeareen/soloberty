@@ -252,7 +252,7 @@ const ProfileMatchCardPreview: React.FC<{
 };
 
 export const ProfileEditor: React.FC = () => {
-  const { user, refreshProfileStatus } = useAuth();
+  const { user, loading: authLoading, refreshProfileStatus } = useAuth();
   const router = useRouter();
 
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
@@ -360,11 +360,21 @@ export const ProfileEditor: React.FC = () => {
       const profileKey = `user_profile_${user.uid}`;
       const cached = localStorage.getItem(profileKey);
       if (cached) {
-        const loadedState: ProfileDraftState = JSON.parse(cached);
+        const parsed = JSON.parse(cached);
+        const loadedState: ProfileDraftState = parsed;
         setProfileData(loadedState);
         setSavedProfileData(loadedState);
         setProfilePhotoPreview(loadedState.profilePhotoUrl || null);
-        setInterestPreviews([...loadedState.interestImageUrls]);
+        setInterestPreviews([...(loadedState.interestImageUrls || [])]);
+        if (parsed.locationCoordinates) {
+          setSelectedLocationData({
+            city: loadedState.city,
+            country: '',
+            code: '',
+            lat: parsed.locationCoordinates.lat,
+            lng: parsed.locationCoordinates.lng,
+          });
+        }
         setLoading(false);
       }
     } catch (e) {
@@ -372,8 +382,10 @@ export const ProfileEditor: React.FC = () => {
     }
   }, [user?.uid]);
 
-  // 2. Fetch live UserProfile from Firestore
+  // 2. Fetch live UserProfile from Firestore (skip duplicate fetch if AuthContext just synced it)
   useEffect(() => {
+    if (authLoading) return;
+
     async function fetchUserProfile() {
       if (!user?.uid) {
         setLoading(false);
@@ -381,6 +393,18 @@ export const ProfileEditor: React.FC = () => {
       }
 
       const cacheKey = `user_profile_${user.uid}`;
+      try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed._syncedAt && Date.now() - parsed._syncedAt < 15000) {
+            setLoading(false);
+            return;
+          }
+        }
+      } catch {
+        // Proceed to Firestore fetch
+      }
 
       // Background Firestore Sync
       try {
@@ -437,7 +461,7 @@ export const ProfileEditor: React.FC = () => {
     }
 
     fetchUserProfile();
-  }, [user]);
+  }, [user, authLoading]);
 
   // Autocomplete Location Search
   useEffect(() => {
