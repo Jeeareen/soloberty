@@ -1,7 +1,6 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
-import { getStorage, type FirebaseStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'demo-api-key',
@@ -17,7 +16,6 @@ const app: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebas
 
 export const auth: Auth = getAuth(app);
 export const db: Firestore = getFirestore(app);
-export const storage: FirebaseStorage = getStorage(app);
 
 // Messaging helper (only initialized in browser environments where supported)
 export async function getFirebaseMessaging() {
