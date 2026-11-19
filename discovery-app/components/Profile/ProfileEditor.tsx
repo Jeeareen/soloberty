@@ -889,9 +889,53 @@ export const ProfileEditor: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] w-full space-y-4">
-        <Loader2 className="w-10 h-10 text-[#007ABB] animate-[spin_0.8s_cubic-bezier(0.5,0.1,0.4,0.9)_infinite]" />
-        <p className="text-sm font-extrabold tracking-wide text-slate-500 dark:text-slate-400">Loading your profile...</p>
+      <div className="w-full px-4 sm:px-8 mt-2 sm:mt-4 mb-4 sm:mb-8 space-y-6">
+        <div className="flex items-center justify-between px-1">
+          <div>
+            <h1 className="text-2xl sm:text-4xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white">
+              My Profile
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+              Your public Soloberty member profile and card preview
+            </p>
+          </div>
+          <div className="h-10 w-32 rounded-xl bg-slate-200/80 dark:bg-slate-800 animate-pulse" aria-hidden="true" />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-10 gap-8 sm:gap-12 w-full" aria-busy="true" aria-label="Loading your profile">
+          <div className="lg:col-span-7 space-y-8">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 pb-6 border-b border-slate-200/80 dark:border-slate-800">
+              <div className="w-28 h-28 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse shrink-0" />
+              <div className="space-y-3 flex-1 pt-2 w-full max-w-xs">
+                <div className="h-9 w-48 rounded-xl bg-slate-200 dark:bg-slate-800 animate-pulse mx-auto sm:mx-0" />
+                <div className="h-6 w-36 rounded-lg bg-slate-200/80 dark:bg-slate-800/80 animate-pulse mx-auto sm:mx-0" />
+              </div>
+            </div>
+            <div className="space-y-2.5">
+              <div className="h-4 w-20 rounded bg-slate-200 dark:bg-slate-800 animate-pulse" />
+              <div className="h-28 w-full rounded-2xl bg-slate-200/70 dark:bg-slate-800/60 animate-pulse" />
+            </div>
+            <div className="space-y-3">
+              <div className="h-4 w-20 rounded bg-slate-200 dark:bg-slate-800 animate-pulse" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+                <div className="aspect-[3/1] rounded-2xl bg-slate-200/70 dark:bg-slate-800/60 animate-pulse" />
+                <div className="aspect-[3/1] rounded-2xl bg-slate-200/70 dark:bg-slate-800/60 animate-pulse" />
+                <div className="aspect-[3/1] rounded-2xl bg-slate-200/70 dark:bg-slate-800/60 animate-pulse" />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="h-4 w-28 rounded bg-slate-200 dark:bg-slate-800 animate-pulse" />
+              <div className="grid grid-cols-3 gap-3.5">
+                <div className="aspect-square rounded-2xl bg-slate-200/70 dark:bg-slate-800/60 animate-pulse" />
+                <div className="aspect-square rounded-2xl bg-slate-200/70 dark:bg-slate-800/60 animate-pulse" />
+                <div className="aspect-square rounded-2xl bg-slate-200/70 dark:bg-slate-800/60 animate-pulse" />
+              </div>
+            </div>
+          </div>
+          <div className="lg:col-span-3 flex flex-col items-center">
+            <div className="w-full max-w-[420px] h-[540px] rounded-[2rem] bg-slate-200/70 dark:bg-slate-800/60 animate-pulse" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -989,6 +1033,8 @@ export const ProfileEditor: React.FC = () => {
                   <img
                     src={getOptimizedCloudinaryUrl(profilePhotoPreview || profileData.profilePhotoUrl)}
                     alt={profileData.name}
+                    loading="eager"
+                    fetchPriority="high"
                     className="w-28 h-28 object-cover rounded-full border-4 border-white dark:border-slate-800 ring-4 ring-[#007ABB]/20 dark:ring-[#B8E7FF]/20 shadow-xl shrink-0"
                   />
                 ) : (
