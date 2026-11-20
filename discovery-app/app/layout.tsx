@@ -35,6 +35,8 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className={`${outfit.variable} ${plusJakartaSans.variable} max-w-full overflow-x-hidden`}>
       <head>
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://tile.openstreetmap.org" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://tile.openstreetmap.org" />
         <script
           id="theme-init"
           dangerouslySetInnerHTML={{
