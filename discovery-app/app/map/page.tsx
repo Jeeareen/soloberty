@@ -3,8 +3,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '../../lib/hooks/useAuth';
-import { db } from '../../lib/firebase/config';
-import { doc, getDoc } from 'firebase/firestore';
 import type { UserProfile } from '../../types/user';
 import { useUserMarkers, type ViewportBounds } from '../../hooks/useUserMarkers';
 import { DistanceFilter, type DistanceOption } from '../../components/Map/DistanceFilter';
@@ -108,6 +106,10 @@ function MapPageContent() {
 
       if (user?.uid) {
         try {
+          const [{ doc, getDoc }, { db }] = await Promise.all([
+            import('firebase/firestore'),
+            import('../../lib/firebase/config'),
+          ]);
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
             const data = userDoc.data() as UserProfile;
@@ -124,27 +126,32 @@ function MapPageContent() {
         }
       }
 
-      // Check browser geolocation as fallback without blocking initial map mount
+      // Defer browser geolocation fallback so it does not compete with initial map load
       if (typeof window !== 'undefined' && 'geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            if (isMounted) {
-              const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-              setCurrentUserLocation(coords);
-            }
-          },
-          () => {
-            // Keep default center
-          },
-          { timeout: 4000 }
-        );
+        geoTimeoutId = setTimeout(() => {
+          if (!isMounted) return;
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              if (isMounted) {
+                const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                setCurrentUserLocation(coords);
+              }
+            },
+            () => {
+              // Keep default center
+            },
+            { timeout: 4000 }
+          );
+        }, 1200);
       }
     }
 
+    let geoTimeoutId: ReturnType<typeof setTimeout> | null = null;
     loadCurrentLocation();
 
     return () => {
       isMounted = false;
+      if (geoTimeoutId !== null) clearTimeout(geoTimeoutId);
     };
   }, [user?.uid, authLoading]);
 
@@ -291,19 +298,20 @@ function MapPageContent() {
 export default function MapPage() {
   return (
     <div className="relative w-full h-[calc(100vh-56px-60px)] md:h-[calc(100vh-56px)] overflow-hidden bg-[#F8FAFC] dark:bg-[#090D16]">
-      {/* Persistent center Vienna tile preview behind Leaflet so early LCP image stays mounted */}
+      {/* Persistent local Vienna map preview behind Leaflet (360x360 natural, rendered 320x320 -> zero upscaling penalty, beats 256x256 tiles for fast LCP) */}
       <div
         className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none select-none"
         aria-hidden="true"
       >
         <img
-          src="https://a.tile.openstreetmap.org/12/2234/1420.png"
+          src="/map-preview-vienna.webp"
           alt=""
-          width={288}
-          height={288}
+          width={360}
+          height={360}
           loading="eager"
+          decoding="sync"
           fetchPriority="high"
-          className="w-72 h-72 object-cover rounded-2xl opacity-90 shadow-sm"
+          className="w-[320px] h-[320px] object-cover rounded-2xl shadow-sm"
         />
       </div>
 

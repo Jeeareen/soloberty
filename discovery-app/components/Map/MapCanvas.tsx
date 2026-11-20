@@ -121,7 +121,6 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       keepBuffer: 0,
       updateWhenIdle: true,
       updateWhenZooming: false,
-      crossOrigin: true,
       noWrap: false, // let tiles repeat horizontally if needed, while vertical bounds stay strictly locked
       bounds: earthBounds,
       attribution:

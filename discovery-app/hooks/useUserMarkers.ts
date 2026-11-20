@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { db } from '../lib/firebase/config';
 import { UserProfile } from '../types/user';
 
 export interface ViewportBounds {
@@ -69,6 +67,10 @@ export function useUserMarkers(
     setError(null);
 
     try {
+      const [{ collection, query, where, getDocs, limit }, { db }] = await Promise.all([
+        import('firebase/firestore'),
+        import('../lib/firebase/config'),
+      ]);
       const usersRef = collection(db, 'users');
       // Query completed profiles directly (no composite index required)
       const q = query(
@@ -120,8 +122,33 @@ export function useUserMarkers(
   }, [bounds, currentUid]);
 
   useEffect(() => {
-    fetchUsersInBounds();
-  }, [fetchUsersInBounds]);
+    if (!bounds) return;
+    // Defer Firestore SDK hydration & query until after initial paint/idle so map LCP is unblocked
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let idleId: number | null = null;
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      idleId = window.requestIdleCallback(
+        () => {
+          fetchUsersInBounds();
+        },
+        { timeout: 600 }
+      );
+    } else {
+      timeoutId = setTimeout(() => {
+        fetchUsersInBounds();
+      }, 300);
+    }
+
+    return () => {
+      if (idleId !== null && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [bounds, fetchUsersInBounds]);
 
   const refetch = () => {
     if (bounds) {
