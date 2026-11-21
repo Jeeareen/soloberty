@@ -30,7 +30,9 @@ export const AuthSwitch: React.FC = () => {
             whileHover="hover"
             animate="rest"
             className={`relative flex-1 py-2.5 text-center text-xs sm:text-sm font-extrabold rounded-xl transition-colors shrink-0 flex items-center justify-center ${
-              item.active ? 'text-white dark:text-slate-900' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              item.active
+                ? 'bg-[#007ABB] dark:bg-[#B8E7FF] text-white dark:text-slate-900 shadow-md'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             {item.active && (

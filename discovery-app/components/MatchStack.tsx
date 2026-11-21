@@ -113,7 +113,7 @@ export const RenderCardFace: React.FC<{
             {card.avatarUrl ? (
               <img
                 src={getOptimizedCloudinaryUrl(card.avatarUrl)}
-                alt={card.name}
+                alt=""
                 decoding="async"
                 loading={isBackground ? 'lazy' : 'eager'}
                 fetchPriority={isBackground ? undefined : 'high'}
@@ -187,7 +187,7 @@ export const RenderCardFace: React.FC<{
                     </li>
                   ))
                 ) : (
-                  <li className="text-xs text-slate-400 italic">No interests listed</li>
+                  <li className="text-xs text-slate-600 dark:text-slate-400 italic">No interests listed</li>
                 )}
               </ul>
             </div>
@@ -216,7 +216,7 @@ export const RenderCardFace: React.FC<{
 
             {/* Middle: Bio */}
             <div className="mt-3 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 leading-relaxed overflow-y-auto flex-1 space-y-1 pr-1 touch-pan-y">
-              <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1">
+              <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-400 block mb-1">
                 Bio
               </span>
               <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{card.bio}</p>
@@ -225,7 +225,7 @@ export const RenderCardFace: React.FC<{
             {/* Bottom Section: Interest Photos & Action Buttons */}
             <div className="mt-auto pt-3 border-t border-gray-100 dark:border-slate-800 space-y-2.5 shrink-0">
               <div className="space-y-1">
-                <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+                <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
                   Interest Photos
                 </span>
                 {card.interestImages && card.interestImages.length > 0 ? (
@@ -246,7 +246,7 @@ export const RenderCardFace: React.FC<{
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-400 italic">No interest photos available</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 italic">No interest photos available</p>
                 )}
               </div>
 
@@ -270,7 +270,7 @@ export const RenderCardFace: React.FC<{
                       `/chat?name=${encodeURIComponent(card.name)}&age=${card.age}&bio=${encodeURIComponent(card.bio)}&interests=${encodeURIComponent((card.interests || []).join(','))}&uid=${card.uid}&generate=true&token=${token}&from=feed`
                     );
                   }}
-                  className={`flex-1 py-3 px-3 bg-[#007ABB] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs font-extrabold rounded-xl shadow-md shadow-[#007ABB]/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer ${activeBackFocus === 'chat' ? 'ring-4 ring-[#007ABB]/50 outline-none scale-[1.02]' : 'opacity-80'
+                  className={`flex-1 py-3 px-3 bg-[#007ABB] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs font-extrabold rounded-xl shadow-md shadow-[#007ABB]/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer ${activeBackFocus === 'chat' ? 'ring-4 ring-[#007ABB]/50 outline-none scale-[1.02]' : ''
                     }`}
                 >
                   <MessageSquare className="w-4 h-4 shrink-0" />
@@ -294,7 +294,7 @@ export const RenderCardFace: React.FC<{
                       onWhyYouTwo(card);
                     }
                   }}
-                  className={`flex-1 py-3 px-3 bg-[#CC5500] hover:bg-[#A84400] text-white text-xs font-extrabold rounded-xl shadow-md shadow-[#CC5500]/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer ${activeBackFocus === 'whyYouTwo' ? 'ring-4 ring-[#CC5500]/50 outline-none scale-[1.02]' : 'opacity-80'
+                  className={`flex-1 py-3 px-3 bg-[#C25000] hover:bg-[#A84400] text-white text-xs font-extrabold rounded-xl shadow-md shadow-[#C25000]/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer ${activeBackFocus === 'whyYouTwo' ? 'ring-4 ring-[#C25000]/50 outline-none scale-[1.02]' : ''
                     }`}
                 >
                   <Lightbulb className="w-4 h-4 shrink-0" />
@@ -1070,7 +1070,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
 
                   {/* Section 1: Shared Interests */}
                   <div className="space-y-2">
-                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                       1. Shared Interests
                     </h4>
                     {whyYouTwoResult.sharedInterests && whyYouTwoResult.sharedInterests.length > 0 ? (
@@ -1093,7 +1093,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
 
                   {/* Section 2: Complementary Interests */}
                   <div className="space-y-2">
-                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                       2. Complementary Interests
                     </h4>
                     {whyYouTwoResult.complementaryInterests && whyYouTwoResult.complementaryInterests.length > 0 ? (
@@ -1125,7 +1125,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
 
                   {/* Section 3: Connection Idea */}
                   <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                       3. Connection Idea
                     </h4>
                     <div className="p-3.5 bg-[#FFF3EB]0/10 border border-purple-500/20 rounded-xl text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200 leading-relaxed">

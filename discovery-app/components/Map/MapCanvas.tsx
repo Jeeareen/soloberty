@@ -251,7 +251,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
 
         const clusterHtml = `
           <div class="relative flex flex-col items-center justify-center transition-transform active:scale-95 cursor-pointer">
-            <div class="relative flex items-center justify-center min-w-11 h-11 px-2.5 rounded-full bg-[#10B981] text-white font-heading font-black text-xs shadow-2xl ring-4 ring-[#10B981]/35 border-2 border-white dark:border-slate-800">
+            <div class="relative flex items-center justify-center min-w-11 h-11 px-2.5 rounded-full bg-[#047857] text-white font-heading font-black text-xs shadow-2xl ring-4 ring-[#047857]/35 border-2 border-white dark:border-slate-800">
               <span class="text-xs leading-none">${bucketUsers.length}</span>
             </div>
             <span class="mt-1 px-2.5 py-0.5 rounded-full bg-white/95 dark:bg-slate-900/95 text-[10px] font-heading font-extrabold text-slate-800 dark:text-slate-100 shadow-md border border-slate-200 dark:border-slate-700 whitespace-nowrap">
@@ -298,7 +298,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
 
         const clusterHtml = `
           <div class="relative flex flex-col items-center justify-center transition-transform active:scale-95 cursor-pointer">
-            <div class="relative flex items-center justify-center min-w-10 h-10 px-2 rounded-full bg-[#10B981] text-white font-heading font-black text-xs shadow-xl ring-4 ring-[#10B981]/35 border-2 border-white dark:border-slate-800">
+            <div class="relative flex items-center justify-center min-w-10 h-10 px-2 rounded-full bg-[#047857] text-white font-heading font-black text-xs shadow-xl ring-4 ring-[#047857]/35 border-2 border-white dark:border-slate-800">
               <span class="text-xs leading-none">${bucketUsers.length}</span>
             </div>
             <span class="mt-1 px-2 py-0.5 rounded-full bg-white/95 dark:bg-slate-900/95 text-[10px] font-heading font-extrabold text-slate-800 dark:text-slate-100 shadow-md border border-slate-200 dark:border-slate-700 whitespace-nowrap">
@@ -346,7 +346,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         const count = bucketUsers.length;
         const clusterHtml = `
           <div class="relative flex flex-col items-center justify-center transition-transform active:scale-95 cursor-pointer">
-            <div class="relative flex items-center justify-center min-w-10 h-10 px-2 rounded-full bg-[#10B981] text-white font-heading font-black text-xs shadow-xl ring-4 ring-[#10B981]/35 border-2 border-white dark:border-slate-800">
+            <div class="relative flex items-center justify-center min-w-10 h-10 px-2 rounded-full bg-[#047857] text-white font-heading font-black text-xs shadow-xl ring-4 ring-[#047857]/35 border-2 border-white dark:border-slate-800">
               <span class="text-xs leading-none">${count}</span>
             </div>
             <span class="mt-1 px-2 py-0.5 rounded-full bg-white/95 dark:bg-slate-900/95 text-[10px] font-heading font-extrabold text-slate-800 dark:text-slate-100 shadow-md border border-slate-200 dark:border-slate-700 whitespace-nowrap">
@@ -406,7 +406,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         // EXACTLY ONE USER AT THIS LOCATION: Show with emerald green location pin
         markerHtml = `
           <div class="relative flex items-center justify-center w-10 h-10 transition-transform active:scale-95 ${opacityClass}">
-            <svg class="w-10 h-10 text-[#10B981] drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="w-10 h-10 text-[#047857] drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
               <circle cx="12" cy="10" r="3.5" fill="white" />
             </svg>
@@ -415,7 +415,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       } else {
         // MULTIPLE USERS AT THIS LOCATION (2, 3, 4...): Show emerald green circle with number
         markerHtml = `
-          <div class="relative flex items-center justify-center min-w-10 h-10 px-2 rounded-full bg-[#10B981] text-white font-heading font-black text-xs shadow-xl ring-4 ring-[#10B981]/35 border-2 border-white dark:border-slate-800 transition-transform active:scale-95 cursor-pointer ${opacityClass}">
+          <div class="relative flex items-center justify-center min-w-10 h-10 px-2 rounded-full bg-[#047857] text-white font-heading font-black text-xs shadow-xl ring-4 ring-[#047857]/35 border-2 border-white dark:border-slate-800 transition-transform active:scale-95 cursor-pointer ${opacityClass}">
             <span class="text-xs leading-none">${count}</span>
           </div>
         `;

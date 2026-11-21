@@ -186,7 +186,7 @@ export const Navbar: React.FC = () => {
                     className={`relative flex items-center justify-center gap-2 px-3 sm:px-5 my-1.5 h-[calc(100%-12px)] text-xs sm:text-sm font-bold transition-colors whitespace-nowrap shrink-0 rounded-xl ${isAuthTab ? 'w-24 sm:w-28 text-center' : ''
                       } ${isActive
                         ? 'text-[#007ABB] dark:text-[#005E91] focus-visible:outline focus-visible:outline-2 focus-visible:outline-black focus-visible:-outline-offset-2'
-                        : 'text-white/90 dark:text-slate-800/90 hover:text-white dark:hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white dark:focus-visible:outline-black focus-visible:-outline-offset-2'
+                        : 'text-white dark:text-slate-900 hover:text-white dark:hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white dark:focus-visible:outline-black focus-visible:-outline-offset-2'
                       }`}
                   >
                     {isActive && (
@@ -270,7 +270,7 @@ export const Navbar: React.FC = () => {
                   >
                     {/* Settings Title */}
                     <div className="px-2 pt-1 pb-1 flex items-center justify-between">
-                      <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400">
+                      <span className="text-xs font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                         Settings
                       </span>
                     </div>
@@ -281,7 +281,7 @@ export const Navbar: React.FC = () => {
                         {user?.email?.[0]?.toUpperCase() || <Mail className="w-4 h-4" />}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
+                        <div className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                           Mail Info
                         </div>
                         <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
@@ -459,7 +459,7 @@ export const Navbar: React.FC = () => {
               href={item.href}
               className={`relative flex flex-col items-center justify-center py-1 px-3.5 rounded-2xl text-[11px] font-extrabold transition-all active:scale-95 ${isActive
                   ? 'text-white dark:text-[#007ABB]'
-                  : 'text-white/70 dark:text-slate-400 hover:text-white dark:hover:text-slate-200'
+                  : 'text-white/95 dark:text-slate-300 hover:text-white dark:hover:text-slate-100'
                 }`}
             >
               {isActive && (

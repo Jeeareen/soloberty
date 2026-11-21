@@ -41,7 +41,7 @@ function ChatListShell() {
         <button
           type="button"
           disabled
-          className="px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-300 text-xs font-bold rounded-xl border border-rose-200 dark:border-rose-800 flex items-center gap-1.5 opacity-60"
+          className="px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs font-bold rounded-xl border border-rose-200 dark:border-rose-800 flex items-center gap-1.5 opacity-60"
         >
           <Trash2 className="w-3.5 h-3.5" />
           <span>Clear All</span>
@@ -129,7 +129,7 @@ function SignedInChatList({ authUid }: { authUid: string }) {
               lastMessage: data.lastMessage || 'New conversation',
               lastTimestamp,
               isCleared: false,
-              avatarColor: 'bg-[#E8F4FC] text-[#007ABB]',
+              avatarColor: 'bg-[#E8F4FC] text-[#005E91]',
             });
           }
         } catch (err) {
@@ -215,7 +215,7 @@ function SignedInChatList({ authUid }: { authUid: string }) {
         <button
           type="button"
           onClick={() => setShowClearConfirmModal(true)}
-          className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-300 text-xs font-bold rounded-xl border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+          className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 text-xs font-bold rounded-xl border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
         >
           <Trash2 className="w-3.5 h-3.5" />
           <span>Clear All</span>

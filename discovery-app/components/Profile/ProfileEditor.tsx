@@ -116,7 +116,7 @@ const ProfileMatchCardPreview: React.FC<{
   return (
     <div className="flex flex-col items-center justify-center w-full sticky top-4 sm:top-6 [perspective:1000px] overflow-hidden">
       <div className="flex items-center justify-between w-full max-w-[420px] mb-3 px-1">
-        <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-400">
           Your Live MatchCard
         </span>
       </div>
@@ -163,8 +163,16 @@ const ProfileMatchCardPreview: React.FC<{
               )}
 
               {/* Profile Picture Name Overlay */}
-              <div className="absolute inset-x-0 bottom-0 p-4">
-                <h2 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight truncate text-white">
+              <div
+                className={`absolute inset-x-0 bottom-0 p-4 ${
+                  photoUrl ? 'bg-gradient-to-t from-black/65 via-black/30 to-transparent' : ''
+                }`}
+              >
+                <h2
+                  className={`text-xl sm:text-2xl font-heading font-extrabold tracking-tight truncate ${
+                    photoUrl ? 'text-white' : 'text-slate-900 dark:text-white'
+                  }`}
+                >
                   {name || 'Soloberty Member'}
                 </h2>
               </div>
@@ -180,7 +188,7 @@ const ProfileMatchCardPreview: React.FC<{
 
               {/* 3 Interests as Bulletpoints (1.25x font size) */}
               <div className="space-y-1.5 flex-1">
-                <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+                <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
                   Interests
                 </span>
                 <ul className="space-y-2.5 pt-0.5">
@@ -221,7 +229,7 @@ const ProfileMatchCardPreview: React.FC<{
 
             {/* Middle: Bio (1x font size, auto-wrapping without horizontal scrolling) */}
             <div className="mt-3 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 leading-relaxed overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex-1 space-y-1 pr-1">
-              <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1">
+              <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-400 block mb-1">
                 Bio
               </span>
               <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{bio || 'No bio provided yet.'}</p>
@@ -230,7 +238,7 @@ const ProfileMatchCardPreview: React.FC<{
             {/* Bottom Section: Interest Photos & Chat Button Aligned to Bottom */}
             <div className="mt-auto pt-3 border-t border-gray-100 dark:border-slate-800 space-y-2.5 shrink-0">
               <div className="space-y-1">
-                <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+                <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
                   Interest Photos
                 </span>
                 {interestPhotos.length > 0 ? (
@@ -253,7 +261,7 @@ const ProfileMatchCardPreview: React.FC<{
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-400 italic">No interest photos uploaded</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 italic">No interest photos uploaded</p>
                 )}
               </div>
 
@@ -1066,7 +1074,7 @@ export const ProfileEditor: React.FC = () => {
                       return (
                         <div
                           key={id}
-                          className="aspect-[3/1] flex items-center justify-center gap-2.5 px-3.5 py-2 text-center bg-[#E8F4FC]/40 dark:bg-[#B8E7FF]/15 text-[#0088CC] dark:text-[#B8E7FF] rounded-2xl border border-[#B8E7FF]/60 dark:border-[#B8E7FF]/30 shadow-sm transition-all hover:scale-[1.02]"
+                          className="aspect-[3/1] flex items-center justify-center gap-2.5 px-3.5 py-2 text-center bg-[#E8F4FC]/40 dark:bg-[#B8E7FF]/15 text-[#005E91] dark:text-[#B8E7FF] rounded-2xl border border-[#B8E7FF]/60 dark:border-[#B8E7FF]/30 shadow-sm transition-all hover:scale-[1.02]"
                         >
                           <span className="text-xl sm:text-2xl shrink-0">{interest?.icon || '✨'}</span>
                           <span className="text-xs sm:text-sm font-bold truncate">
@@ -1083,7 +1091,7 @@ export const ProfileEditor: React.FC = () => {
 
               {/* Interest Photos Section */}
               <div className="space-y-3 min-h-[120px]">
-                <h3 className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <h3 className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                   Interest Photos
                 </h3>
                 {interestPreviews.length > 0 ? (
@@ -1104,7 +1112,7 @@ export const ProfileEditor: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-400 italic">No interest photos uploaded yet.</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 italic">No interest photos uploaded yet.</p>
                 )}
               </div>
             </div>

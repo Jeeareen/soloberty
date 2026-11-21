@@ -114,7 +114,7 @@ export const Step1Credentials: React.FC<Step1CredentialsProps> = ({
               className={`w-full pl-[35px] pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border ${emailError
                   ? 'border-rose-500 dark:border-rose-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
                   : 'border-slate-200 dark:border-slate-700 focus:border-[#007ABB]'
-                } rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none transition-colors`}
+                } rounded-xl text-sm font-semibold text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none transition-colors`}
             />
           </div>
           {emailError && (
@@ -156,7 +156,7 @@ export const Step1Credentials: React.FC<Step1CredentialsProps> = ({
               className={`w-full pl-[35px] pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border ${passwordError
                   ? 'border-rose-500 dark:border-rose-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
                   : 'border-slate-200 dark:border-slate-700 focus:border-[#007ABB]'
-                } rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none transition-colors`}
+                } rounded-xl text-sm font-semibold text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none transition-colors`}
             />
           </div>
           {passwordError && (
@@ -194,7 +194,7 @@ export const Step1Credentials: React.FC<Step1CredentialsProps> = ({
               className={`w-full pl-[35px] pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border ${confirmPasswordError
                   ? 'border-rose-500 dark:border-rose-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
                   : 'border-slate-200 dark:border-slate-700 focus:border-[#007ABB]'
-                } rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none transition-colors`}
+                } rounded-xl text-sm font-semibold text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none transition-colors`}
             />
           </div>
           {confirmPasswordError && (
