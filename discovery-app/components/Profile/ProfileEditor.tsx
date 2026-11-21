@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../lib/hooks/useAuth';
-import { db } from '../../lib/firebase/config';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { PREDEFINED_INTERESTS, type UserProfile } from '../../types/user';
 import { getOptimizedCloudinaryUrl } from '../../lib/cloudinary';
 import { useRouter } from 'next/navigation';
@@ -391,8 +389,12 @@ export const ProfileEditor: React.FC = () => {
 
       const cacheKey = `user_profile_${user.uid}`;
 
-      // Background Firestore Sync
+      // Background Firestore Sync (lazy-loaded to keep initial page hydration light)
       try {
+        const [{ doc, getDoc }, { db }] = await Promise.all([
+          import('firebase/firestore'),
+          import('../../lib/firebase/config'),
+        ]);
         const userDocRef = doc(db, 'users', user.uid);
         const snapshot = await getDoc(userDocRef);
 
@@ -758,8 +760,13 @@ export const ProfileEditor: React.FC = () => {
       let finalAvatarUrl = profileData.profilePhotoUrl;
       let finalAvatarPublicId = currentAvatarPublicId;
 
-      // Dynamically import Cloudinary write helpers only when saving profile edits
-      const { uploadToCloudinary, deleteFromCloudinary } = await import('../../lib/cloudinary');
+      // Dynamically import Cloudinary & Firestore write helpers only when saving profile edits
+      const [{ uploadToCloudinary, deleteFromCloudinary }, { doc, setDoc, serverTimestamp }, { db }] =
+        await Promise.all([
+          import('../../lib/cloudinary'),
+          import('firebase/firestore'),
+          import('../../lib/firebase/config'),
+        ]);
 
       // Handle Avatar Upload / Replacement / Deletion
       if (profilePhotoFile) {
@@ -987,22 +994,22 @@ export const ProfileEditor: React.FC = () => {
           {!isEditMode ? (
             /* Static View Mode */
             <div className="space-y-8">
-              {/* Header Identity Row: Profile picture 1.5x, Gender symbol left to Name, comma Age, aligned location pin */}
+              {/* Header Identity Row: Profile picture, Gender symbol left to Name, comma Age, aligned location pin */}
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 pb-6 border-b border-slate-200/80 dark:border-slate-800">
                 {profilePhotoPreview || profileData.profilePhotoUrl ? (
                   <img
                     src={getAvatarCloudinaryUrl(profilePhotoPreview || profileData.profilePhotoUrl)}
                     alt={profileData.name}
-                    width={112}
-                    height={112}
+                    width={80}
+                    height={80}
                     loading="eager"
                     fetchPriority="high"
                     decoding="async"
-                    className="w-28 h-28 object-cover rounded-full border-4 border-white dark:border-slate-800 ring-4 ring-[#007ABB]/20 dark:ring-[#B8E7FF]/20 shadow-xl shrink-0"
+                    className="w-20 h-20 sm:w-28 sm:h-28 object-cover rounded-full border-4 border-white dark:border-slate-800 ring-4 ring-[#007ABB]/20 dark:ring-[#B8E7FF]/20 shadow-xl shrink-0"
                   />
                 ) : (
-                  <div className="w-28 h-28 rounded-full bg-[#E8F4FC] dark:bg-slate-800 text-[#007ABB] dark:text-[#B8E7FF] flex items-center justify-center border-4 border-white dark:border-slate-800 ring-4 ring-[#007ABB]/20 dark:ring-[#B8E7FF]/20 shadow-xl shrink-0">
-                    <User className="w-12 h-12" />
+                  <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-[#E8F4FC] dark:bg-slate-800 text-[#007ABB] dark:text-[#B8E7FF] flex items-center justify-center border-4 border-white dark:border-slate-800 ring-4 ring-[#007ABB]/20 dark:ring-[#B8E7FF]/20 shadow-xl shrink-0">
+                    <User className="w-10 h-10 sm:w-12 sm:h-12" />
                   </div>
                 )}
 
@@ -1031,20 +1038,20 @@ export const ProfileEditor: React.FC = () => {
 
               {/* About Me Section */}
               <div className="space-y-2.5">
-                <h3 className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <h3 className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   About Me
                 </h3>
-                <p className="text-base sm:text-lg text-slate-700 dark:text-slate-200 leading-relaxed bg-white/70 dark:bg-slate-800/50 p-5 sm:p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 shadow-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+                <p className="min-h-[84px] text-base sm:text-lg text-slate-700 dark:text-slate-200 leading-relaxed bg-white/70 dark:bg-slate-800/50 p-5 sm:p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 shadow-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
                   {profileData.bio || 'No bio provided yet.'}
                 </p>
               </div>
 
               {/* Interests Section: 3:1 Aspect Ratio Rectangle Cards */}
               <div className="space-y-3">
-                <h3 className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <h3 className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Interests
                 </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 min-h-[130px] sm:min-h-[68px]">
                   {profileData.interests.length > 0 ? (
                     profileData.interests.map((id) => {
                       const interest = PREDEFINED_INTERESTS.find((i) => i.id === id);
