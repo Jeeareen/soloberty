@@ -1,12 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../../lib/hooks/useAuth';
 import { db } from '../../lib/firebase/config';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { PREDEFINED_INTERESTS, type UserProfile } from '../../types/user';
-import { uploadToCloudinary, deleteFromCloudinary, getOptimizedCloudinaryUrl } from '../../lib/cloudinary';
+import { getOptimizedCloudinaryUrl } from '../../lib/cloudinary';
 import { useRouter } from 'next/navigation';
 import {
   Pencil,
@@ -20,8 +19,15 @@ import {
   Loader2,
   User,
   Navigation,
-  MessageSquare,
 } from 'lucide-react';
+
+// Resize 112x112 avatar to 256px (2x retina) for faster LCP on mobile
+function getAvatarCloudinaryUrl(url?: string | null): string {
+  if (!url || typeof url !== 'string') return '';
+  if (!url.includes('/upload/')) return url;
+  if (url.includes('/upload/f_auto,q_auto,')) return url;
+  return url.replace('/upload/', '/upload/f_auto,q_auto,w_256,c_fill,g_face/');
+}
 
 // Gender Icon Symbol helper component (Female pink, Male blue, Other gray)
 const GenderSymbol: React.FC<{ gender: string; className?: string }> = ({
@@ -119,7 +125,7 @@ const ProfileMatchCardPreview: React.FC<{
       <div className="w-full max-w-[420px] flex justify-center overflow-hidden py-1">
 
       {/* Active Card Container (Fluid responsive width on mobile, locked 2:3 aspect ratio) */}
-      <motion.div
+      <div
         role="button"
         tabIndex={0}
         aria-label={`${name}, ${bio}. Tap to flip card`}
@@ -133,22 +139,25 @@ const ProfileMatchCardPreview: React.FC<{
         onPointerDown={() => setIsHeld(true)}
         onPointerUp={() => setIsHeld(false)}
         onPointerCancel={() => setIsHeld(false)}
-        animate={{ rotateY: isFlipped ? 180 : 0 }}
-        transition={{ rotateY: { duration: 0.4, ease: 'easeInOut' } }}
-        className="relative flex w-full max-w-[400px] aspect-[2/3] h-auto max-h-[75vh] cursor-pointer flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 [transform-style:preserve-3d] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#007ABB]/60"
+        style={{ transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+        className="relative flex w-full max-w-[400px] aspect-[2/3] h-auto max-h-[75vh] cursor-pointer flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 [transform-style:preserve-3d] transition-transform duration-400 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#007ABB]/60"
       >
         {/* Inner Tap/Hold Scale Container */}
-        <motion.div
-          animate={{ scale: isHeld ? 1.05 : 1 }}
-          transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-          className="relative h-full w-full [transform-style:preserve-3d]"
+        <div
+          className={`relative h-full w-full [transform-style:preserve-3d] transition-transform duration-200 ${isHeld ? 'scale-105' : 'scale-100'}`}
         >
           {/* Front Face */}
           <div className="absolute inset-0 flex flex-col bg-white dark:bg-[#0F172A] rounded-xl overflow-hidden [backface-visibility:hidden]">
             {/* Rectangular PP taking top ~35% with Name, Gender Symbol & Age overlay */}
             <div className="relative w-full h-52 sm:h-56 shrink-0 bg-slate-100 dark:bg-slate-800 overflow-hidden">
               {photoUrl ? (
-                <img src={getOptimizedCloudinaryUrl(photoUrl)} alt={name} className="w-full h-full object-cover" />
+                <img
+                  src={getOptimizedCloudinaryUrl(photoUrl)}
+                  alt={name}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <div className="w-full h-full bg-[#E8F4FC] dark:bg-slate-800 text-[#007ABB] dark:text-[#B8E7FF] flex items-center justify-center">
                   <User className="w-20 h-20" />
@@ -244,8 +253,8 @@ const ProfileMatchCardPreview: React.FC<{
 
             </div>
           </div>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
       </div>
     </div>
   );
@@ -749,6 +758,9 @@ export const ProfileEditor: React.FC = () => {
       let finalAvatarUrl = profileData.profilePhotoUrl;
       let finalAvatarPublicId = currentAvatarPublicId;
 
+      // Dynamically import Cloudinary write helpers only when saving profile edits
+      const { uploadToCloudinary, deleteFromCloudinary } = await import('../../lib/cloudinary');
+
       // Handle Avatar Upload / Replacement / Deletion
       if (profilePhotoFile) {
         // Upload new avatar to scoped folder users/<userId>/avatar
@@ -887,18 +899,9 @@ export const ProfileEditor: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] w-full space-y-4">
-        <Loader2 className="w-10 h-10 text-[#007ABB] animate-[spin_0.8s_cubic-bezier(0.5,0.1,0.4,0.9)_infinite]" />
-        <p className="text-sm font-extrabold tracking-wide text-slate-500 dark:text-slate-400">Loading your profile...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="w-full px-4 sm:px-8 mt-2 sm:mt-4 mb-4 sm:mb-8 space-y-6">
-      {/* Top Header & Edit Mode Toggle Button */}
+      {/* Top Header & Edit Mode Toggle Button (renders immediately for fast LCP & 0 CLS) */}
       <div className="flex items-center justify-between px-1">
         <div>
           <h1 className="text-2xl sm:text-4xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white">
@@ -911,7 +914,9 @@ export const ProfileEditor: React.FC = () => {
           </p>
         </div>
 
-        {isEditMode ? (
+        {loading ? (
+          <div className="h-10 w-28 rounded-xl bg-slate-200/70 dark:bg-slate-800 animate-pulse" aria-hidden="true" />
+        ) : isEditMode ? (
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -954,26 +959,25 @@ export const ProfileEditor: React.FC = () => {
 
       {/* Success Notification Alert */}
       {saveSuccess && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
+        <div
+          role="status"
+          aria-live="polite"
           className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-sm"
         >
           <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <span>Your profile has been updated successfully!</span>
-        </motion.div>
+        </div>
       )}
 
       {/* Error Alert */}
       {error && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
+        <div
+          role="alert"
           className="p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-rose-700 dark:text-rose-300 rounded-2xl flex items-center gap-3 text-xs sm:text-sm shadow-sm"
         >
           <AlertCircle className="w-5 h-5 text-rose-500 dark:text-rose-400 shrink-0" />
           <span>{error}</span>
-        </motion.div>
+        </div>
       )}
 
       {/* Unboxed 2-Column Responsive Layout Grid (70% Left / 30% Right) */}
@@ -987,8 +991,13 @@ export const ProfileEditor: React.FC = () => {
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 pb-6 border-b border-slate-200/80 dark:border-slate-800">
                 {profilePhotoPreview || profileData.profilePhotoUrl ? (
                   <img
-                    src={getOptimizedCloudinaryUrl(profilePhotoPreview || profileData.profilePhotoUrl)}
+                    src={getAvatarCloudinaryUrl(profilePhotoPreview || profileData.profilePhotoUrl)}
                     alt={profileData.name}
+                    width={112}
+                    height={112}
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                     className="w-28 h-28 object-cover rounded-full border-4 border-white dark:border-slate-800 ring-4 ring-[#007ABB]/20 dark:ring-[#B8E7FF]/20 shadow-xl shrink-0"
                   />
                 ) : (
@@ -1166,38 +1175,20 @@ export const ProfileEditor: React.FC = () => {
                   ].map((opt) => {
                     const isActive = profileData.locationType === opt.id;
                     return (
-                      <motion.button
+                      <button
                         key={opt.id}
                         type="button"
-                        initial="rest"
-                        whileHover="hover"
-                        animate="rest"
                         onClick={() => {
                           setProfileData((prev) => ({ ...prev, locationType: opt.id as 'approximate' | 'exact' }));
                           setShowCityDropdown(false);
                           setIsGpsDetected(false);
                           setSelectedLocationData(null);
                         }}
-                        className="relative flex-1 py-3 px-3.5 text-left transition-colors duration-200 z-10 rounded-xl cursor-pointer"
+                        className={`relative flex-1 py-3 px-3.5 text-left transition-all duration-200 z-10 rounded-xl cursor-pointer ${
+                          isActive ? 'bg-[#007ABB] dark:bg-[#B8E7FF] shadow-md' : 'hover:bg-slate-200/50 dark:hover:bg-slate-700/50'
+                        }`}
                       >
-                        {isActive && (
-                          <motion.div
-                            layoutId="profileLocationPrivacyPill"
-                            className="absolute inset-0 bg-[#007ABB] dark:bg-[#B8E7FF] rounded-xl shadow-md"
-                            transition={{
-                              type: 'spring',
-                              stiffness: 500,
-                              damping: 30,
-                              mass: 0.7,
-                            }}
-                          />
-                        )}
-                        <motion.div
-                          variants={{
-                            rest: { scale: 1 },
-                            hover: { scale: 1.02 },
-                          }}
-                          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                        <div
                           className={`relative z-10 space-y-0.5 ${isActive ? 'text-white dark:text-slate-900' : 'text-slate-700 dark:text-white'}`}
                         >
                           <div className="font-bold text-xs sm:text-sm">{opt.title}</div>
@@ -1208,8 +1199,8 @@ export const ProfileEditor: React.FC = () => {
                           >
                             {opt.desc}
                           </p>
-                        </motion.div>
-                      </motion.button>
+                        </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -1274,48 +1265,41 @@ export const ProfileEditor: React.FC = () => {
                       />
 
                       {/* OpenFreeMap / Photon Geocoding City Autocomplete Dropdown */}
-                      <AnimatePresence>
-                        {showCityDropdown &&
-                          profileData.locationType === 'approximate' &&
-                          citySuggestions.length > 0 && (
-                            <motion.div
-                              initial={{ opacity: 0, y: 5 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: 5 }}
-                              className="absolute left-0 right-0 bottom-full mb-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 max-h-44 overflow-y-auto p-1.5 space-y-0.5 ring-1 ring-slate-900/5"
-                            >
-                              {citySuggestions.map((item, idx) => (
-                                <button
-                                  key={`${item.city}-${item.code}-${idx}`}
-                                  type="button"
-                                  onClick={() => {
-                                    const selectedCityStr = `${item.city}, ${item.code}`;
-                                    setProfileData((prev) => ({ ...prev, city: selectedCityStr }));
-                                    setSelectedLocationData({
-                                      city: item.city,
-                                      country: item.country,
-                                      code: item.code,
-                                      lat: item.lat,
-                                      lng: item.lng,
-                                    });
-                                    setIsCityValid(true);
-                                    setCitySuggestions([]);
-                                    setShowCityDropdown(false);
-                                  }}
-                                  className="w-full px-3.5 py-2.5 rounded-xl hover:bg-blue-50 dark:hover:bg-slate-700 text-left flex items-center justify-between text-xs font-semibold text-slate-800 dark:text-slate-100 transition-colors group cursor-pointer"
-                                >
-                                  <span className="flex items-center gap-2 group-hover:text-blue-900 dark:group-hover:text-blue-300 font-bold">
-                                    <MapPin className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 shrink-0" />
-                                    {item.city}
-                                  </span>
-                                  <span className="px-2 py-0.5 bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-300 font-extrabold text-[10px] rounded-md border border-blue-100 dark:border-slate-600 shrink-0">
-                                    {item.code}
-                                  </span>
-                                </button>
-                              ))}
-                            </motion.div>
-                          )}
-                      </AnimatePresence>
+                      {showCityDropdown &&
+                        profileData.locationType === 'approximate' &&
+                        citySuggestions.length > 0 && (
+                          <div className="absolute left-0 right-0 bottom-full mb-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 max-h-44 overflow-y-auto p-1.5 space-y-0.5 ring-1 ring-slate-900/5">
+                            {citySuggestions.map((item, idx) => (
+                              <button
+                                key={`${item.city}-${item.code}-${idx}`}
+                                type="button"
+                                onClick={() => {
+                                  const selectedCityStr = `${item.city}, ${item.code}`;
+                                  setProfileData((prev) => ({ ...prev, city: selectedCityStr }));
+                                  setSelectedLocationData({
+                                    city: item.city,
+                                    country: item.country,
+                                    code: item.code,
+                                    lat: item.lat,
+                                    lng: item.lng,
+                                  });
+                                  setIsCityValid(true);
+                                  setCitySuggestions([]);
+                                  setShowCityDropdown(false);
+                                }}
+                                className="w-full px-3.5 py-2.5 rounded-xl hover:bg-blue-50 dark:hover:bg-slate-700 text-left flex items-center justify-between text-xs font-semibold text-slate-800 dark:text-slate-100 transition-colors group cursor-pointer"
+                              >
+                                <span className="flex items-center gap-2 group-hover:text-blue-900 dark:group-hover:text-blue-300 font-bold">
+                                  <MapPin className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 shrink-0" />
+                                  {item.city}
+                                </span>
+                                <span className="px-2 py-0.5 bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-300 font-extrabold text-[10px] rounded-md border border-blue-100 dark:border-slate-600 shrink-0">
+                                  {item.code}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
                     </div>
                   )}
                 </div>
@@ -1445,23 +1429,14 @@ export const ProfileEditor: React.FC = () => {
       </div>
 
       {/* WebRTC Live Camera Stream Modal Overlay */}
-      <AnimatePresence>
-        {showCameraModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
+      {showCameraModal && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Capture Profile Photo"
+            className="bg-white rounded-3xl p-5 max-w-sm w-full shadow-2xl flex flex-col items-center space-y-4 border border-slate-100"
           >
-            <motion.div
-              role="dialog"
-              aria-modal="true"
-              aria-label="Capture Profile Photo"
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-3xl p-5 max-w-sm w-full shadow-2xl flex flex-col items-center space-y-4 border border-slate-100"
-            >
               <div className="flex items-center justify-between w-full pb-1 border-b border-slate-100">
                 <span className="text-sm font-bold text-slate-800 flex items-center gap-2">
                   <Camera className="w-4 h-4 text-[#007ABB]" />
@@ -1506,10 +1481,9 @@ export const ProfileEditor: React.FC = () => {
                   Capture Photo
                 </button>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
