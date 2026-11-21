@@ -240,7 +240,15 @@ const ProfileMatchCardPreview: React.FC<{
                         key={idx}
                         className="aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100"
                       >
-                        <img src={getOptimizedCloudinaryUrl(url)} alt={`Interest ${idx + 1}`} className="w-full h-full object-cover" />
+                        {isFlipped && (
+                          <img
+                            src={getOptimizedCloudinaryUrl(url)}
+                            alt={`Interest ${idx + 1}`}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-cover"
+                          />
+                        )}
                       </div>
                     ))}
                   </div>
@@ -448,7 +456,7 @@ export const ProfileEditor: React.FC = () => {
     }
 
     fetchUserProfile();
-  }, [user]);
+  }, [user?.uid]);
 
   // Autocomplete Location Search
   useEffect(() => {
@@ -909,12 +917,12 @@ export const ProfileEditor: React.FC = () => {
   return (
     <div className="w-full px-4 sm:px-8 mt-2 sm:mt-4 mb-4 sm:mb-8 space-y-6">
       {/* Top Header & Edit Mode Toggle Button (renders immediately for fast LCP & 0 CLS) */}
-      <div className="flex items-center justify-between px-1">
+      <div className="flex items-center justify-between gap-3 px-1">
         <div>
-          <h1 className="text-2xl sm:text-4xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-3xl sm:text-4xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white">
             My Profile
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
             {isEditMode
               ? 'Edit your location, bio, interests, and profile pictures'
               : 'Your public Soloberty member profile and card preview'}
@@ -1019,7 +1027,7 @@ export const ProfileEditor: React.FC = () => {
                     <div className="w-8 sm:w-9 flex items-center justify-start shrink-0">
                       <GenderSymbol gender={profileData.gender} className="w-8 h-8 sm:w-9 sm:h-9" />
                     </div>
-                    <h2 className="text-3xl sm:text-4xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white truncate">
+                    <h2 className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white truncate min-h-[32px] sm:min-h-[36px]">
                       {profileData.name}{profileData.age ? `, ${profileData.age}` : ''}
                     </h2>
                   </div>
@@ -1074,7 +1082,7 @@ export const ProfileEditor: React.FC = () => {
               </div>
 
               {/* Interest Photos Section */}
-              <div className="space-y-3">
+              <div className="space-y-3 min-h-[120px]">
                 <h3 className="text-xs font-heading font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   Interest Photos
                 </h3>
@@ -1088,6 +1096,8 @@ export const ProfileEditor: React.FC = () => {
                         <img
                           src={getOptimizedCloudinaryUrl(url)}
                           alt={`Interest ${idx + 1}`}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover"
                         />
                       </div>
