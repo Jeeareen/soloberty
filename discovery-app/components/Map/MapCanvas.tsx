@@ -186,6 +186,20 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     };
   }, [onBoundsChange]);
 
+  // 2B. Fly to targetLocation whenever it resolves or updates (e.g. after Allow Location click)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !targetLocation) return;
+
+    map.whenReady(() => {
+      if (!map.getContainer()) return;
+      map.flyTo([targetLocation.lat, targetLocation.lng], targetLocation.zoom ?? 12, {
+        duration: 1.4,
+        easeLinearity: 0.25,
+      });
+    });
+  }, [targetLocation?.lat, targetLocation?.lng, targetLocation?.zoom]);
+
   // 3. Render Zoom-Based Clustering & Markers
   useEffect(() => {
     const map = mapRef.current;

@@ -244,43 +244,53 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user: profile,
           </div>
         </motion.div>
 
-        {/* Auth Required Modal */}
+        {/* Auth Required Modal (matches MatchStack Login Required modal) */}
         {authModalOpen && (
           <div
-            className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+            className="fixed inset-0 z-[2100] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-in fade-in duration-200"
             onClick={() => setAuthModalOpen(false)}
           >
             <div
-              className="w-full max-w-sm rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-4 text-center"
+              className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 text-slate-900 dark:text-slate-100 shadow-2xl space-y-4"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="w-12 h-12 rounded-full bg-[#007ABB]/10 text-[#007ABB] flex items-center justify-center mx-auto">
-                <LogIn className="w-6 h-6" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-base font-heading font-extrabold text-slate-900 dark:text-white">
-                  Sign in required
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {authModalFeature === 'chat'
-                    ? 'You need an account to start chatting with members.'
-                    : 'Sign in to use Why You Two and analyze profile compatibility.'}
-                </p>
-              </div>
-              <div className="flex gap-2 pt-2">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-2">
+                  <LogIn className="w-5 h-5 text-[#007ABB] dark:text-[#B8E7FF]" />
+                  <h3 className="text-base font-extrabold font-heading">
+                    Login Required
+                  </h3>
+                </div>
                 <button
                   type="button"
                   onClick={() => setAuthModalOpen(false)}
-                  className="flex-1 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  aria-label="Close modal"
                 >
-                  Cancel
+                  <X className="w-5 h-5" />
                 </button>
+              </div>
+
+              {/* Modal Message */}
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                {authModalFeature === 'whyYouTwo'
+                  ? 'Please log in to generate AI "Why You Two?" compatibility insights.'
+                  : 'Please log in to start a direct conversation.'}
+              </p>
+
+              {/* Action Button */}
+              <div className="pt-2">
                 <button
                   type="button"
-                  onClick={() => router.push('/login')}
-                  className="flex-1 py-2 text-xs font-extrabold text-white bg-[#007ABB] hover:bg-[#0088CC] rounded-xl transition-all shadow-md shadow-[#007ABB]/20 cursor-pointer"
+                  onClick={() => {
+                    setAuthModalOpen(false);
+                    router.push('/auth/login');
+                  }}
+                  className="w-full py-3 px-4 bg-[#007ABB] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs sm:text-sm font-extrabold rounded-xl shadow-md shadow-[#007ABB]/20 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
                 >
-                  Sign in
+                  <LogIn className="w-4 h-4 shrink-0" />
+                  <span>Go to Login Page</span>
                 </button>
               </div>
             </div>

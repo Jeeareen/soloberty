@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { motion } from 'motion/react';
 
 export type DistanceOption = 5 | 25 | 50 | 100 | 'any';
 
@@ -34,12 +35,24 @@ export const DistanceFilter: React.FC<DistanceFilterProps> = ({
                 type="button"
                 aria-pressed={isSelected}
                 onClick={() => onChange(opt.value)}
-                className={`relative h-7 px-3 flex items-center justify-center text-xs font-heading font-extrabold rounded-lg transition-all duration-150 cursor-pointer leading-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB] ${
+                className={`relative h-7 px-3 flex items-center justify-center text-xs font-heading font-extrabold rounded-lg transition-colors duration-150 cursor-pointer leading-none select-none whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB] ${
                   isSelected
-                    ? 'bg-[#007ABB] dark:bg-[#B8E7FF] text-white dark:text-slate-900 shadow-sm'
+                    ? 'text-white dark:text-slate-900'
                     : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
+                {isSelected && (
+                  <motion.div
+                    layoutId="activeDistancePill"
+                    className="absolute inset-0 bg-[#007ABB] dark:bg-[#B8E7FF] rounded-lg shadow-sm"
+                    transition={{
+                      type: 'spring',
+                      stiffness: 500,
+                      damping: 32,
+                      mass: 0.7,
+                    }}
+                  />
+                )}
                 <span className="relative z-10">{opt.label}</span>
               </button>
             );

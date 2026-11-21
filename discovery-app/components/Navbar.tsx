@@ -12,11 +12,14 @@ import {
   LogIn,
   User as UserIcon,
   Bell,
+  BellOff,
   Mail,
   Activity,
   Lock,
   Moon,
   Sun,
+  Eye,
+  EyeOff,
   Sparkles,
   Compass,
   MapPin,
@@ -66,22 +69,52 @@ export const Navbar: React.FC = () => {
   const { notificationsEnabled, toggleNotifications } = useNotification();
   const [menuOpen, setMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Initialize Dark Mode state from localStorage & documentElement
+  const userScope = user?.uid || 'guest';
+
+  // Initialize & sync Dark Mode + Reduced Motion per user (user-dependent preferences)
   useEffect(() => {
-    const isDark =
-      document.documentElement.classList.contains('dark') ||
-      localStorage.getItem('soloberty_theme') === 'dark';
-    setDarkMode(isDark);
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-      document.body.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.body.classList.remove('dark');
+    try {
+      const storedTheme = localStorage.getItem(`soloberty_theme_${userScope}`);
+      const isDark = storedTheme === 'dark';
+      setDarkMode(isDark);
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        document.body.classList.add('dark');
+        localStorage.setItem('soloberty_theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.body.classList.remove('dark');
+        localStorage.setItem('soloberty_theme', 'light');
+      }
+
+      const storedReduced =
+        localStorage.getItem(`soloberty_reduced_motion_${userScope}`) === 'true';
+      setReducedMotion(storedReduced);
+      localStorage.setItem('soloberty_reduced_motion', String(storedReduced));
+      window.dispatchEvent(
+        new CustomEvent('soloberty_reduced_motion_change', { detail: storedReduced })
+      );
+    } catch {
+      // ignore storage errors
     }
-  }, []);
+  }, [userScope]);
+
+  const toggleReducedMotion = () => {
+    const next = !reducedMotion;
+    setReducedMotion(next);
+    try {
+      localStorage.setItem(`soloberty_reduced_motion_${userScope}`, String(next));
+      localStorage.setItem('soloberty_reduced_motion', String(next));
+      window.dispatchEvent(
+        new CustomEvent('soloberty_reduced_motion_change', { detail: next })
+      );
+    } catch {
+      // ignore storage errors
+    }
+  };
 
   const toggleDarkMode = () => {
     const nextMode = !darkMode;
@@ -89,10 +122,12 @@ export const Navbar: React.FC = () => {
     if (nextMode) {
       document.documentElement.classList.add('dark');
       document.body.classList.add('dark');
+      localStorage.setItem(`soloberty_theme_${userScope}`, 'dark');
       localStorage.setItem('soloberty_theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
       document.body.classList.remove('dark');
+      localStorage.setItem(`soloberty_theme_${userScope}`, 'light');
       localStorage.setItem('soloberty_theme', 'light');
     }
   };
@@ -155,7 +190,7 @@ export const Navbar: React.FC = () => {
           {/* Brand Logo & Title (Left-aligned) */}
           <div className="flex items-center shrink-0">
             <Link
-              href="/feed"
+              href="/"
               className="flex items-center gap-2 text-lg sm:text-xl font-heading font-extrabold text-white dark:text-slate-900 tracking-tight hover:opacity-90 transition-colors"
             >
               <SolobertyLogo className="w-7 h-7 fill-white dark:fill-slate-900" />
@@ -297,7 +332,7 @@ export const Navbar: React.FC = () => {
                     >
                       <div className="flex items-center gap-2.5">
                         <div className="p-1.5 bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 rounded-xl">
-                          <Bell className="w-4 h-4" />
+                          {notificationsEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
                         </div>
                         <div>
                           <div className="text-xs font-bold text-slate-900 dark:text-white">Notifications</div>
@@ -346,6 +381,34 @@ export const Navbar: React.FC = () => {
                         <motion.div
                           className="w-4 h-4 bg-white dark:bg-slate-900 rounded-full shadow-sm"
                           animate={{ x: darkMode ? 16 : 0 }}
+                          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                        />
+                      </div>
+                    </button>
+
+                    {/* Reduced Motion Toggle Tile */}
+                    <button
+                      onClick={toggleReducedMotion}
+                      className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 bg-sky-100 dark:bg-sky-950/60 text-[#007ABB] dark:text-[#B8E7FF] rounded-xl">
+                          {reducedMotion ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-slate-900 dark:text-white">Reduced Motion</div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                            {reducedMotion ? 'Animations disabled' : 'Animations enabled'}
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className={`w-9 h-5 rounded-full p-0.5 transition-colors relative ${reducedMotion ? 'bg-[#007ABB] dark:bg-[#B8E7FF]' : 'bg-slate-300 dark:bg-slate-700'
+                          }`}
+                      >
+                        <motion.div
+                          className="w-4 h-4 bg-white dark:bg-slate-900 rounded-full shadow-sm"
+                          animate={{ x: reducedMotion ? 16 : 0 }}
                           transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                         />
                       </div>

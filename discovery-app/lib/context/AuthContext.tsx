@@ -14,6 +14,15 @@ import type { User, AuthContextType } from '../../types/auth';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function setAuthCookie(loggedIn: boolean) {
+  if (typeof document === 'undefined') return;
+  if (loggedIn) {
+    document.cookie = 'soloberty_auth=1; path=/; max-age=2592000; SameSite=Lax';
+  } else {
+    document.cookie = 'soloberty_auth=; path=/; max-age=0; SameSite=Lax';
+  }
+}
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isProfileCompleted, setIsProfileCompleted] = useState<boolean>(false);
@@ -24,6 +33,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!fbUser) {
       setUser(null);
       setIsProfileCompleted(false);
+      setAuthCookie(false);
       return;
     }
 
@@ -40,14 +50,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           profileCompleted: true,
         });
         setIsProfileCompleted(true);
+        setAuthCookie(true);
       } else {
         setUser(null);
         setIsProfileCompleted(false);
+        setAuthCookie(false);
       }
     } catch (err) {
       console.warn('Error checking Firestore user profile status:', err);
       setUser(null);
       setIsProfileCompleted(false);
+      setAuthCookie(false);
     }
   };
 
@@ -78,6 +91,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         uid: res.user.uid,
         email: res.user.email || email,
       });
+      setAuthCookie(true);
     } catch (err: any) {
       const msg = err?.message || 'Failed to log in. Please check your credentials.';
       setError(msg);
@@ -112,6 +126,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(true);
       await signOut(auth);
       setUser(null);
+      setAuthCookie(false);
     } catch (err: any) {
       setError(err?.message || 'Failed to sign out');
     } finally {

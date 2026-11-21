@@ -29,7 +29,7 @@ interface NotificationContextType {
 }
 
 const NotificationContext = createContext<NotificationContextType>({
-  notificationsEnabled: true,
+  notificationsEnabled: false,
   toggleNotifications: async () => { },
   notifyNewMessage: () => { },
 });
@@ -40,15 +40,17 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
-  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false);
   const [activeBanner, setActiveBanner] = useState<InAppNotification | null>(null);
   const isDraggingRef = useRef<boolean>(false);
 
-  // Initialize preference from localStorage & register service worker if already granted
+  const userScope = user?.uid || 'guest';
+
+  // Initialize preference per user from localStorage & register service worker if already granted
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('soloberty_notifications_enabled');
-      const isEnabled = stored !== null ? stored === 'true' : true;
+      const stored = localStorage.getItem(`soloberty_notifications_enabled_${userScope}`);
+      const isEnabled = stored === 'true';
       setNotificationsEnabled(isEnabled);
 
       if (isEnabled && isNotificationSupported() && Notification.permission === 'granted' && 'serviceWorker' in navigator) {
@@ -61,21 +63,21 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     } catch (e) {
       console.warn('[NotificationProvider init error]:', e);
     }
-  }, [user?.uid]);
+  }, [user?.uid, userScope]);
 
   const toggleNotifications = useCallback(async () => {
     if (!notificationsEnabled) {
       const granted = await requestNotificationPermission();
       setNotificationsEnabled(true);
-      localStorage.setItem('soloberty_notifications_enabled', 'true');
+      localStorage.setItem(`soloberty_notifications_enabled_${userScope}`, 'true');
       if (granted && user?.uid) {
         registerFcmToken(user.uid).catch(() => { });
       }
     } else {
       setNotificationsEnabled(false);
-      localStorage.setItem('soloberty_notifications_enabled', 'false');
+      localStorage.setItem(`soloberty_notifications_enabled_${userScope}`, 'false');
     }
-  }, [notificationsEnabled, user?.uid]);
+  }, [notificationsEnabled, user?.uid, userScope]);
 
   const notifyNewMessage = useCallback(
     (notif: InAppNotification) => {

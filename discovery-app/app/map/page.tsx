@@ -6,7 +6,8 @@ import { useAuth } from '../../lib/hooks/useAuth';
 import type { UserProfile } from '../../types/user';
 import { useUserMarkers, type ViewportBounds } from '../../hooks/useUserMarkers';
 import { DistanceFilter, type DistanceOption } from '../../components/Map/DistanceFilter';
-import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Loader2, AlertCircle, RefreshCw, MapPin, SlidersHorizontal, Navigation, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { COUNTRY_CENTERS, extractCountryCode } from '../../lib/mapUtils';
@@ -96,6 +97,53 @@ function MapPageContent() {
   // Detailed MatchCard Modal state
   const [detailedUser, setDetailedUser] = useState<UserProfile | null>(null);
 
+  // Location permission / map intro modal state for unlogged users
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [locationGranted, setLocationGranted] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [requestingLocation, setRequestingLocation] = useState(false);
+
+  const dismissMapIntro = useCallback(() => {
+    setShowLocationPrompt(false);
+    setLocationError(null);
+    try {
+      localStorage.setItem('soloberty_map_intro_seen', '1');
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
+
+  const requestBrowserLocation = useCallback(() => {
+    if (typeof window === 'undefined' || !('geolocation' in navigator)) {
+      setLocationError('Geolocation is not supported by your browser.');
+      return;
+    }
+    setLocationError(null);
+    setRequestingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCurrentUserLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+        setLocationGranted(true);
+        setRequestingLocation(false);
+        dismissMapIntro();
+      },
+      (err) => {
+        setRequestingLocation(false);
+        if (err.code === 1) {
+          setLocationError(
+            'Location is blocked in your browser. Click the lock/tune icon next to the URL to allow location access.'
+          );
+        } else {
+          setLocationError('Could not detect your location. Please try again.');
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }, [dismissMapIntro]);
+
   // Wait for auth to resolve before determining initial user location
   useEffect(() => {
     let isMounted = true;
@@ -105,6 +153,7 @@ function MapPageContent() {
       if (authLoading) return;
 
       if (user?.uid) {
+        setShowLocationPrompt(false);
         try {
           const [{ doc, getDoc }, { db }] = await Promise.all([
             import('firebase/firestore'),
@@ -124,34 +173,58 @@ function MapPageContent() {
         } catch (e) {
           console.warn('Error reading current user location from Firestore:', e);
         }
+        return;
       }
 
-      // Defer browser geolocation fallback so it does not compete with initial map load
+      // Unlogged user: show one-time map intro & check geolocation permission
+      let hasSeenIntro = false;
+      try {
+        hasSeenIntro = localStorage.getItem('soloberty_map_intro_seen') === '1';
+      } catch {
+        hasSeenIntro = false;
+      }
+
       if (typeof window !== 'undefined' && 'geolocation' in navigator) {
-        geoTimeoutId = setTimeout(() => {
-          if (!isMounted) return;
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              if (isMounted) {
-                const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                setCurrentUserLocation(coords);
+        try {
+          if (navigator.permissions?.query) {
+            const status = await navigator.permissions.query({
+              name: 'geolocation' as PermissionName,
+            });
+            if (!isMounted) return;
+            if (status.state === 'granted') {
+              setLocationGranted(true);
+              navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                  if (isMounted) {
+                    setCurrentUserLocation({
+                      lat: pos.coords.latitude,
+                      lng: pos.coords.longitude,
+                    });
+                  }
+                },
+                () => {},
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+              );
+              if (!hasSeenIntro) {
+                setShowLocationPrompt(true);
               }
-            },
-            () => {
-              // Keep default center
-            },
-            { timeout: 4000 }
-          );
-        }, 1200);
+              return;
+            }
+          }
+        } catch {
+          // Permissions API not supported; fall through to prompt
+        }
+      }
+
+      if (isMounted && !hasSeenIntro) {
+        setShowLocationPrompt(true);
       }
     }
 
-    let geoTimeoutId: ReturnType<typeof setTimeout> | null = null;
     loadCurrentLocation();
 
     return () => {
       isMounted = false;
-      if (geoTimeoutId !== null) clearTimeout(geoTimeoutId);
     };
   }, [user?.uid, authLoading]);
 
@@ -291,6 +364,109 @@ function MapPageContent() {
           onClose={() => setDetailedUser(null)}
         />
       )}
+
+      {/* Location Permission & Map Intro Modal for Unlogged Users (matches Match Feed tips design) */}
+      <AnimatePresence>
+        {showLocationPrompt && !user && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[2100] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4"
+            onClick={dismissMapIntro}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 12 }}
+              transition={{ type: 'spring', stiffness: 450, damping: 28 }}
+              className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 text-slate-900 dark:text-slate-100 shadow-2xl space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <h2 className="text-base font-extrabold font-heading">
+                  How Map Works
+                </h2>
+                <button
+                  type="button"
+                  onClick={dismissMapIntro}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  aria-label="Close guide"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <ul className="space-y-3 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
+                <li className="flex items-start gap-2.5">
+                  <SlidersHorizontal className="w-4 h-4 text-[#007ABB] dark:text-[#B8E7FF] shrink-0 mt-0.5" />
+                  <span>
+                    <strong className="text-slate-900 dark:text-white">Use the km radius filter</strong>{' '}
+                    at the top to adjust your search area.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <MapPin className="w-4 h-4 text-[#007ABB] dark:text-[#B8E7FF] shrink-0 mt-0.5" />
+                  <span>
+                    <strong className="text-slate-900 dark:text-white">Tap any pin or cluster</strong>{' '}
+                    to preview profiles and start a chat.
+                  </span>
+                </li>
+                {!locationGranted && (
+                  <li className="flex items-start gap-2.5">
+                    <Navigation className="w-4 h-4 text-[#CC5500] dark:text-[#FF8533] shrink-0 mt-0.5" />
+                    <span>
+                      <strong className="text-slate-900 dark:text-white">Allow location</strong>{' '}
+                      below to center the map on your neighborhood.
+                    </span>
+                  </li>
+                )}
+              </ul>
+
+              {locationError && (
+                <p className="text-[11px] font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 rounded-xl px-3 py-2 leading-relaxed">
+                  {locationError}
+                </p>
+              )}
+
+              {locationGranted ? (
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={dismissMapIntro}
+                    className="w-full py-2.5 px-4 bg-[#007ABB] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs sm:text-sm font-extrabold rounded-xl shadow-md shadow-[#007ABB]/20 transition-all active:scale-95 cursor-pointer"
+                  >
+                    Got it, let&apos;s explore
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={dismissMapIntro}
+                    className="flex-1 py-2.5 px-3 text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                  >
+                    Not Now
+                  </button>
+                  <button
+                    type="button"
+                    disabled={requestingLocation}
+                    onClick={requestBrowserLocation}
+                    className="flex-1 py-2.5 px-3 bg-[#007ABB] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs sm:text-sm font-extrabold rounded-xl shadow-md shadow-[#007ABB]/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
+                  >
+                    {requestingLocation ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <MapPin className="w-4 h-4 shrink-0" />
+                    )}
+                    <span>Allow Location</span>
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
