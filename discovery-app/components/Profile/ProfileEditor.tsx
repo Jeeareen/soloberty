@@ -108,6 +108,11 @@ const ProfileMatchCardPreview: React.FC<{
   const router = useRouter();
   const [isFlipped, setIsFlipped] = useState(false);
   const [isHeld, setIsHeld] = useState(false);
+  const isSafari = React.useMemo(() => {
+    if (typeof navigator === 'undefined') return false;
+    const ua = navigator.userAgent;
+    return /AppleWebKit/i.test(ua) && !/Chrome|CriOS|FxiOS|Edg|OPR|Android/i.test(ua);
+  }, []);
 
   const selectedInterests = interests.map(
     (id) => PREDEFINED_INTERESTS.find((i) => i.id === id) || { id, name: id, icon: '✨' }
@@ -137,12 +142,20 @@ const ProfileMatchCardPreview: React.FC<{
         onPointerDown={() => setIsHeld(true)}
         onPointerUp={() => setIsHeld(false)}
         onPointerCancel={() => setIsHeld(false)}
-        style={{ transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
-        className="relative flex w-full max-w-[400px] aspect-[2/3] h-auto max-h-[75vh] cursor-pointer flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 [transform-style:preserve-3d] transition-transform duration-400 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#007ABB]/60"
+        style={{
+          transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+          transformStyle: 'preserve-3d',
+          WebkitTransformStyle: 'preserve-3d',
+        }}
+        className="relative flex w-full max-w-[400px] aspect-[2/3] h-auto max-h-[75vh] cursor-pointer flex-col transition-transform duration-400 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#007ABB]/60"
       >
         {/* Inner Tap/Hold Scale Container */}
         <div
-          className={`relative h-full w-full [transform-style:preserve-3d] transition-transform duration-200 ${isHeld ? 'scale-105' : 'scale-100'}`}
+          style={{
+            transformStyle: 'preserve-3d',
+            WebkitTransformStyle: 'preserve-3d',
+          }}
+          className={`relative h-full w-full transition-transform duration-200 ${isHeld ? 'scale-105' : ''}`}
         >
           {/* Front Face */}
           <div
@@ -150,8 +163,15 @@ const ProfileMatchCardPreview: React.FC<{
               WebkitBackfaceVisibility: 'hidden',
               backfaceVisibility: 'hidden',
               transform: 'rotateY(0deg) translateZ(1px)',
+              ...(isSafari
+                ? {
+                    visibility: isFlipped ? 'hidden' : 'visible',
+                    opacity: isFlipped ? 0 : 1,
+                    transition: 'opacity 0.05s linear 0.18s, visibility 0s linear 0.18s',
+                  }
+                : {}),
             }}
-            className="absolute inset-0 flex flex-col bg-white dark:bg-[#0F172A] rounded-xl overflow-hidden"
+            className="absolute inset-0 flex flex-col bg-white dark:bg-[#0F172A] rounded-[14px] border-2 border-slate-300 dark:border-slate-700 overflow-hidden"
           >
             {/* Rectangular PP taking top ~35% with Name, Gender Symbol & Age overlay */}
             <div className="relative w-full h-52 sm:h-56 shrink-0 bg-slate-100 dark:bg-slate-800 overflow-hidden">
@@ -230,8 +250,17 @@ const ProfileMatchCardPreview: React.FC<{
               WebkitBackfaceVisibility: 'hidden',
               backfaceVisibility: 'hidden',
               transform: 'rotateY(180deg) translateZ(1px)',
+              WebkitTransform: 'rotateY(180deg) translateZ(1px)',
+              ...(isSafari
+                ? {
+                    visibility: isFlipped ? 'visible' : 'hidden',
+                    opacity: isFlipped ? 1 : 0,
+                    pointerEvents: isFlipped ? 'auto' : 'none',
+                    transition: 'opacity 0.05s linear 0.18s, visibility 0s linear 0.18s',
+                  }
+                : {}),
             }}
-            className="absolute inset-0 flex flex-col p-6 bg-white dark:bg-[#0F172A] rounded-xl"
+            className="absolute inset-0 flex flex-col p-6 bg-white dark:bg-[#0F172A] rounded-[14px] border-2 border-slate-300 dark:border-slate-700 overflow-hidden"
           >
             {/* Top: Name, Age, Gender (1.25x font size) */}
             <div className="flex items-center gap-2 pb-3 border-b border-gray-100 dark:border-slate-800 shrink-0">
