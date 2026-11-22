@@ -103,7 +103,13 @@ export const RenderCardFace: React.FC<{
     );
 
     return (
-      <div className="relative h-full w-full [transform-style:preserve-3d] transform-gpu">
+      <div
+        style={{
+          transformStyle: 'preserve-3d',
+          WebkitTransformStyle: 'preserve-3d',
+        }}
+        className="relative h-full w-full"
+      >
         {/* Front Face */}
         <div
           aria-hidden={isBackground || isFlipped ? true : undefined}
