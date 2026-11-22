@@ -167,7 +167,7 @@ const ProfileMatchCardPreview: React.FC<{
                 ? {
                     visibility: isFlipped ? 'hidden' : 'visible',
                     opacity: isFlipped ? 0 : 1,
-                    transition: 'opacity 0.05s linear 0.19s, visibility 0s linear 0.19s',
+                    transition: 'opacity 0.05s linear 0.18s, visibility 0s linear 0.18s',
                   }
                 : {}),
             }}
@@ -256,7 +256,7 @@ const ProfileMatchCardPreview: React.FC<{
                     visibility: isFlipped ? 'visible' : 'hidden',
                     opacity: isFlipped ? 1 : 0,
                     pointerEvents: isFlipped ? 'auto' : 'none',
-                    transition: 'opacity 0.05s linear 0.19s, visibility 0s linear 0.19s',
+                    transition: 'opacity 0.05s linear 0.18s, visibility 0s linear 0.18s',
                   }
                 : {}),
             }}
