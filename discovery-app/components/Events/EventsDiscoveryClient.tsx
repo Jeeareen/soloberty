@@ -373,6 +373,7 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
               maxLength={300}
               value={aiPrompt}
               onChange={(e) => setAiPrompt(e.target.value)}
+              aria-label="Search events with Scout AI"
               placeholder="Ask Scout AI: e.g. 'chill live music this weekend' or 'outdoor sports'..."
               className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#007ABB]"
             />
