@@ -43,10 +43,12 @@ const EVENTS_PER_PAGE = 15;
 
 interface EventsDiscoveryClientProps {
   initialEvents?: AppEvent[];
+  initialCommunityEvents?: AppEvent[];
 }
 
 export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
   initialEvents = [],
+  initialCommunityEvents = [],
 }) => {
   const { user } = useAuth();
   const router = useRouter();
@@ -60,8 +62,10 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
     setFocusedFrom(params.get('from'));
   }, []);
   const [ticketmasterEvents, setTicketmasterEvents] = useState<AppEvent[]>(initialEvents);
-  const [communityEvents, setCommunityEvents] = useState<AppEvent[]>([]);
-  const [loading, setLoading] = useState(initialEvents.length === 0);
+  const [communityEvents, setCommunityEvents] = useState<AppEvent[]>(initialCommunityEvents);
+  const [loading, setLoading] = useState(
+    initialEvents.length === 0 && initialCommunityEvents.length === 0
+  );
   const [userCoords, setUserCoords] = useState(DEFAULT_COORDS);
   const [userInterests, setUserInterests] = useState<string[]>([]);
 
@@ -501,10 +505,11 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {paginatedEvents.map((ev) => (
+            {paginatedEvents.map((ev, idx) => (
               <EventCard
                 key={ev.id}
                 event={ev}
+                priority={idx === 0}
                 aiReason={aiReasonMap.get(ev.id)}
                 currentUserId={user?.uid}
                 userCoords={userCoords}

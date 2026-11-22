@@ -32,6 +32,7 @@ const CATEGORY_GRADIENTS: Record<EventCategory, string> = {
 
 interface EventCardProps {
   event: AppEvent;
+  priority?: boolean;
   aiReason?: string;
   currentUserId?: string;
   userCoords?: { lat: number; lng: number } | null;
@@ -45,6 +46,7 @@ interface EventCardProps {
 
 export const EventCard: React.FC<EventCardProps> = ({
   event,
+  priority = false,
   aiReason,
   currentUserId,
   userCoords,
@@ -133,7 +135,9 @@ export const EventCard: React.FC<EventCardProps> = ({
           <img
             src={event.imageUrl}
             alt={event.title}
-            loading="lazy"
+            loading={priority ? 'eager' : 'lazy'}
+            fetchPriority={priority ? 'high' : 'auto'}
+            decoding={priority ? 'sync' : 'async'}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         )}
