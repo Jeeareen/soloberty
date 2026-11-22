@@ -94,6 +94,11 @@ export const RenderCardFace: React.FC<{
 }> = React.memo(
   ({ card, isBackground = false, isFlipped = false, hideChatButton = false, activeBackFocus = 'chat', onWhyYouTwo, onRequireAuth }) => {
     const router = useRouter();
+    const isSafari = React.useMemo(() => {
+      if (typeof navigator === 'undefined') return false;
+      const ua = navigator.userAgent;
+      return /AppleWebKit/i.test(ua) && !/Chrome|CriOS|FxiOS|Edg|OPR|Android/i.test(ua);
+    }, []);
     const cardInterests = React.useMemo(
       () =>
         (card.interests || []).map(
@@ -117,8 +122,12 @@ export const RenderCardFace: React.FC<{
             WebkitBackfaceVisibility: 'hidden',
             backfaceVisibility: 'hidden',
             transform: 'rotateY(0deg) translateZ(1px)',
-            visibility: isFlipped ? 'hidden' : 'visible',
-            transition: 'visibility 0s linear 0.25s',
+            ...(isSafari
+              ? {
+                  visibility: isFlipped ? 'hidden' : 'visible',
+                  transition: isFlipped ? 'visibility 0s linear 0.22s' : 'visibility 0s linear 0s',
+                }
+              : {}),
           }}
           className="absolute inset-0 flex flex-col bg-white dark:bg-[#0F172A] rounded-[14px] border-2 border-slate-300 dark:border-slate-700 overflow-hidden"
         >
@@ -222,8 +231,16 @@ export const RenderCardFace: React.FC<{
               backfaceVisibility: 'hidden',
               transform: 'rotateY(180deg) translateZ(1px)',
               WebkitTransform: 'rotateY(180deg) translateZ(1px)',
-              visibility: isFlipped ? 'visible' : 'hidden',
-              transition: 'visibility 0s linear 0.25s',
+              ...(isSafari
+                ? {
+                    visibility: isFlipped ? 'visible' : 'hidden',
+                    opacity: isFlipped ? 1 : 0,
+                    pointerEvents: isFlipped ? 'auto' : 'none',
+                    transition: isFlipped
+                      ? 'opacity 0.05s linear 0.22s, visibility 0s linear 0.22s'
+                      : 'opacity 0s linear 0s, visibility 0s linear 0s',
+                  }
+                : {}),
             }}
             className="absolute inset-0 flex flex-col p-6 bg-white dark:bg-[#0F172A] rounded-[14px] border-2 border-slate-300 dark:border-slate-700 overflow-hidden"
           >
