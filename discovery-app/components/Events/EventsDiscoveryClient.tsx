@@ -349,7 +349,7 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
             setEditingEvent(null);
             setIsCreateOpen(true);
           }}
-          className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-[#CC5500] hover:bg-[#B34A00] text-white text-xs sm:text-sm font-extrabold shadow-lg shadow-[#CC5500]/20 transition-all active:scale-95 cursor-pointer shrink-0 whitespace-nowrap"
+          className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-[#B84A00] hover:bg-[#9E3F00] text-white text-xs sm:text-sm font-extrabold shadow-lg shadow-[#B84A00]/20 transition-all active:scale-95 cursor-pointer shrink-0 whitespace-nowrap"
         >
           <Plus className="w-4 h-4 shrink-0" />
           <span>Create Event</span>

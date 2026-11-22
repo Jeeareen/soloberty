@@ -151,7 +151,7 @@ export const EventCard: React.FC<EventCardProps> = ({
           <span
             className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider backdrop-blur-md shadow-sm ${
               event.source === 'community'
-                ? 'bg-[#CC5500] text-white'
+                ? 'bg-[#B84A00] text-white'
                 : 'bg-slate-900/80 text-white'
             }`}
           >
@@ -176,9 +176,9 @@ export const EventCard: React.FC<EventCardProps> = ({
         )}
 
         <div>
-          <h3 className="text-base font-extrabold font-heading text-slate-900 dark:text-white line-clamp-1">
+          <h2 className="text-base font-extrabold font-heading text-slate-900 dark:text-white line-clamp-1">
             {event.title}
-          </h3>
+          </h2>
           <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
             {event.description}
           </p>
