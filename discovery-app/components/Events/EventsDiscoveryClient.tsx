@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   Plus,
   Sparkles,
@@ -49,10 +49,16 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
   initialEvents = [],
 }) => {
   const { user } = useAuth();
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const focusedEventId = searchParams.get('eventId');
-  const focusedFrom = searchParams.get('from');
+  const [focusedEventId, setFocusedEventId] = useState<string | null>(null);
+  const [focusedFrom, setFocusedFrom] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    setFocusedEventId(params.get('eventId'));
+    setFocusedFrom(params.get('from'));
+  }, []);
   const [ticketmasterEvents, setTicketmasterEvents] = useState<AppEvent[]>(initialEvents);
   const [communityEvents, setCommunityEvents] = useState<AppEvent[]>([]);
   const [loading, setLoading] = useState(initialEvents.length === 0);
@@ -451,7 +457,11 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
           </span>
           <button
             type="button"
-            onClick={() => router.push('/discover')}
+            onClick={() => {
+              setFocusedEventId(null);
+              setFocusedFrom(null);
+              router.push('/discover');
+            }}
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white/80 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-900 text-[#007ABB] dark:text-[#B8E7FF] font-extrabold cursor-pointer shadow-sm whitespace-nowrap shrink-0"
           >
             <X className="w-3.5 h-3.5 shrink-0" />

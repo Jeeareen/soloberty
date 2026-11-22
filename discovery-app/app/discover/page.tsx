@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import { EventsDiscoveryClient } from '../../components/Events/EventsDiscoveryClient';
 import { MOCK_TICKETMASTER_EVENTS } from '../../lib/events/mockEvents';
 
@@ -9,9 +8,5 @@ export const metadata = {
 };
 
 export default function DiscoverPage() {
-  return (
-    <Suspense fallback={null}>
-      <EventsDiscoveryClient initialEvents={MOCK_TICKETMASTER_EVENTS} />
-    </Suspense>
-  );
+  return <EventsDiscoveryClient initialEvents={MOCK_TICKETMASTER_EVENTS} />;
 }
