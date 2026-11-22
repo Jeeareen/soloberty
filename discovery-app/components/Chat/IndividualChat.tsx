@@ -378,6 +378,7 @@ export function IndividualChat({
             senderUid: data.senderUid || '',
             receiverUid: data.receiverUid || '',
             content: data.content || '',
+            sharedEvent: data.sharedEvent || null,
             toolInvocations: data.toolInvocations || [],
             createdAt: data.createdAt,
           });
@@ -1041,14 +1042,64 @@ export function IndividualChat({
               >
               {/* Message text bubble (never render prompt text) */}
               {textContent && !isPromptMessage ? (
-                <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-sm ${isOwnMessage
-                    ? 'bg-white dark:bg-[#0F172A] text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 rounded-br-none'
-                    : 'bg-[#007ABB] dark:bg-[#B8E7FF] text-white dark:text-slate-900 rounded-bl-none'
-                    }`}
-                >
-                  {textContent}
-                </div>
+                (() => {
+                  const fallbackEventIdMatch = /eventId=([^&\s]+)/.exec(textContent);
+                  const fallbackMapPathMatch = /(\/map\?[^\s]+)/.exec(textContent);
+                  const sharedEventId: string | null =
+                    message.sharedEvent?.id ||
+                    (fallbackEventIdMatch ? decodeURIComponent(fallbackEventIdMatch[1]) : null);
+                  const sharedMapHref: string | null =
+                    message.sharedEvent?.id &&
+                    typeof message.sharedEvent?.lat === 'number' &&
+                    typeof message.sharedEvent?.lng === 'number'
+                      ? `/map?mode=events&eventId=${encodeURIComponent(
+                          message.sharedEvent.id
+                        )}&lat=${message.sharedEvent.lat}&lng=${message.sharedEvent.lng}&zoom=14`
+                      : fallbackMapPathMatch
+                        ? fallbackMapPathMatch[1]
+                        : null;
+                  const displayText = textContent
+                    .replace(/\n?🗺️\s*View on Map:\s*https?:\/\/[^\s]+/gi, '')
+                    .replace(/\n?🗺️\s*View on Map:\s*\/map[^\s]*/gi, '')
+                    .trim();
+
+                  return (
+                    <div
+                      className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-sm space-y-2.5 ${isOwnMessage
+                        ? 'bg-white dark:bg-[#0F172A] text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 rounded-br-none'
+                        : 'bg-[#007ABB] dark:bg-[#B8E7FF] text-white dark:text-slate-900 rounded-bl-none'
+                        }`}
+                    >
+                      <div className="whitespace-pre-line break-words">{displayText}</div>
+                      {(sharedEventId || sharedMapHref) && (
+                        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                          {sharedEventId && (
+                            <Link
+                              href={`/discover?eventId=${encodeURIComponent(sharedEventId)}&from=chat`}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-colors shadow-sm ${isOwnMessage
+                                ? 'bg-[#007ABB] hover:bg-[#00669E] text-white'
+                                : 'bg-white hover:bg-slate-100 text-[#007ABB] dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-[#B8E7FF]'
+                                }`}
+                            >
+                              <span>See Event</span>
+                            </Link>
+                          )}
+                          {sharedMapHref && (
+                            <Link
+                              href={sharedMapHref}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-colors shadow-sm ${isOwnMessage
+                                ? 'bg-[#CC5500] hover:bg-[#B34A00] text-white'
+                                : 'bg-white/20 hover:bg-white/30 text-white dark:bg-slate-900/20 dark:hover:bg-slate-900/30 dark:text-slate-900'
+                                }`}
+                            >
+                              <span>View on Map</span>
+                            </Link>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()
               ) : null}
 
               {/* Tool Invocations: Render State 2 -> State 3 (and hide once user sends a message) */}

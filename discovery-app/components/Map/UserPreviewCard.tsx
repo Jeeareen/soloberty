@@ -36,8 +36,8 @@ export const UserPreviewCard: React.FC<UserPreviewCardProps> = ({
   if (!isOpen) return null;
 
   const isMulti = users.length > 1;
-  // Display up to 3 cards for the current window if multi, or single card
-  const pageSize = 3;
+  // Display up to 2 cards for the current window if multi, or single card
+  const pageSize = 2;
   const totalPages = Math.ceil(users.length / pageSize);
   const activePage = Math.floor(currentIndex / pageSize);
   const visibleUsers = isMulti

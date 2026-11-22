@@ -4,11 +4,26 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '../../lib/hooks/useAuth';
 import type { UserProfile } from '../../types/user';
+import type { AppEvent } from '../../types/event';
+import { fetchCommunityEvents } from '../../lib/events/firestoreEvents';
 import { useUserMarkers, type ViewportBounds } from '../../hooks/useUserMarkers';
 import { DistanceFilter, type DistanceOption } from '../../components/Map/DistanceFilter';
-import { Loader2, AlertCircle, RefreshCw, MapPin, SlidersHorizontal, Navigation, X } from 'lucide-react';
+import {
+  Loader2,
+  AlertCircle,
+  RefreshCw,
+  MapPin,
+  SlidersHorizontal,
+  Navigation,
+  X,
+  Users,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Suspense } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { COUNTRY_CENTERS, extractCountryCode } from '../../lib/mapUtils';
 
@@ -24,7 +39,7 @@ const UserDetailModal = dynamic(
 
 const MapLoadingPill = () => (
   <div className="relative flex h-full w-full pointer-events-none">
-    <div className="absolute bottom-24 md:bottom-6 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-lg text-xs font-bold text-slate-700 dark:text-slate-200">
+    <div className="absolute bottom-4 md:bottom-6 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-lg text-xs font-bold text-slate-700 dark:text-slate-200">
       <Loader2 className="w-3.5 h-3.5 animate-spin text-[#007ABB]" />
       <span>Loading Map...</span>
     </div>
@@ -47,12 +62,38 @@ function MapPageContent() {
   const { user, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
 
-  // Check if URL specifies target coordinates/zoom (e.g. from MatchCard location tap)
+  // Check if URL specifies target coordinates/zoom (e.g. from MatchCard or EventCard location tap)
   const queryLat = searchParams.get('lat');
   const queryLng = searchParams.get('lng');
   const queryZoom = searchParams.get('zoom');
   const queryCity = searchParams.get('city');
   const queryUid = searchParams.get('uid');
+  const queryMode = searchParams.get('mode');
+  const queryEventId = searchParams.get('eventId');
+  const queryFromLat = searchParams.get('fromLat');
+  const queryFromLng = searchParams.get('fromLng');
+
+  const queryFromCoords = useMemo(() => {
+    if (queryFromLat && queryFromLng) {
+      const lat = parseFloat(queryFromLat);
+      const lng = parseFloat(queryFromLng);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        return { lat, lng };
+      }
+    }
+    return null;
+  }, [queryFromLat, queryFromLng]);
+
+  // People | Events toggle state
+  const [mapMode, setMapMode] = useState<'people' | 'events'>(
+    queryMode === 'events' ? 'events' : 'people'
+  );
+  const [mapEvents, setMapEvents] = useState<AppEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [selectedEvents, setSelectedEvents] = useState<AppEvent[]>([]);
+  const [selectedEventTitle, setSelectedEventTitle] = useState<string>('');
+  const [activeEventDetail, setActiveEventDetail] = useState<AppEvent | null>(null);
+  const [eventListPage, setEventListPage] = useState<number>(0);
 
   const targetCoords = useMemo(() => {
     if (queryLat && queryLng) {
@@ -83,6 +124,12 @@ function MapPageContent() {
   const [currentUserLocation, setCurrentUserLocation] = useState<{ lat: number; lng: number } | null>(
     null
   );
+  const [initialLocationReady, setInitialLocationReady] = useState<boolean>(Boolean(queryFromCoords));
+  const [manualLocationTarget, setManualLocationTarget] = useState<{
+    lat: number;
+    lng: number;
+    zoom: number;
+  } | null>(null);
   const initialZoomLevel = 12;
 
   // Filter & Viewport states
@@ -122,10 +169,12 @@ function MapPageContent() {
     setRequestingLocation(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setCurrentUserLocation({
+        const detected = {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
-        });
+        };
+        setCurrentUserLocation(detected);
+        setManualLocationTarget({ ...detected, zoom: initialZoomLevel });
         setLocationGranted(true);
         setRequestingLocation(false);
         dismissMapIntro();
@@ -154,6 +203,27 @@ function MapPageContent() {
 
       if (user?.uid) {
         setShowLocationPrompt(false);
+        const cacheKey = `soloberty_user_coords_${user.uid}`;
+        try {
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (
+              parsed &&
+              typeof parsed.lat === 'number' &&
+              typeof parsed.lng === 'number' &&
+              (parsed.lat !== 0 || parsed.lng !== 0)
+            ) {
+              if (isMounted) {
+                setCurrentUserLocation(parsed);
+                setInitialLocationReady(true);
+              }
+            }
+          }
+        } catch {
+          // ignore cache errors
+        }
+
         try {
           const [{ doc, getDoc }, { db }] = await Promise.all([
             import('firebase/firestore'),
@@ -164,16 +234,29 @@ function MapPageContent() {
             const data = userDoc.data() as UserProfile;
             const coords = data.location?.coordinates;
             if (coords && (coords.lat !== 0 || coords.lng !== 0)) {
+              try {
+                localStorage.setItem(cacheKey, JSON.stringify(coords));
+              } catch {
+                // ignore storage errors
+              }
               if (isMounted) {
                 setCurrentUserLocation(coords);
-                return;
               }
             }
           }
         } catch (e) {
           console.warn('Error reading current user location from Firestore:', e);
+        } finally {
+          if (isMounted) {
+            setInitialLocationReady(true);
+          }
         }
         return;
+      }
+
+      // Unlogged user: open directly at Vienna immediately
+      if (isMounted) {
+        setInitialLocationReady(true);
       }
 
       // Unlogged user: show one-time map intro & check geolocation permission
@@ -202,7 +285,7 @@ function MapPageContent() {
                     });
                   }
                 },
-                () => {},
+                () => { },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
               );
               if (!hasSeenIntro) {
@@ -231,6 +314,59 @@ function MapPageContent() {
   // Hook to fetch and cache user profiles falling in the visible bounds
   const { users, loading, error, refetch } = useUserMarkers(viewportBounds, user?.uid);
 
+  // Sync mode if URL queryMode changes
+  useEffect(() => {
+    if (queryMode === 'events') {
+      setMapMode('events');
+    } else if (queryMode === 'people') {
+      setMapMode('people');
+    }
+  }, [queryMode]);
+
+  // Fetch events when in events mode
+  useEffect(() => {
+    if (mapMode !== 'events') return;
+    let active = true;
+    async function loadEvents() {
+      setEventsLoading(true);
+      try {
+        const center = targetCoords || currentUserLocation || DEFAULT_CENTER;
+        const [tmRes, commList] = await Promise.all([
+          fetch(`/api/events?lat=${center.lat}&lng=${center.lng}&radius=50`)
+            .then((r) => (r.ok ? r.json() : { events: [] }))
+            .catch(() => ({ events: [] })),
+          fetchCommunityEvents(),
+        ]);
+        if (!active) return;
+        const combined = [
+          ...commList,
+          ...(Array.isArray(tmRes?.events) ? tmRes.events : []),
+        ];
+        setMapEvents(combined);
+      } finally {
+        if (active) setEventsLoading(false);
+      }
+    }
+    loadEvents();
+    return () => {
+      active = false;
+    };
+  }, [mapMode, currentUserLocation?.lat, currentUserLocation?.lng, targetCoords?.lat, targetCoords?.lng]);
+
+  // Auto-select focused event when arriving from an EventCard location tag
+  const hasAutoSelectedEventRef = useRef(false);
+  useEffect(() => {
+    if (!queryEventId || hasAutoSelectedEventRef.current || mapEvents.length === 0) return;
+    const match = mapEvents.find((ev) => ev.id === queryEventId);
+    if (match) {
+      hasAutoSelectedEventRef.current = true;
+      setTimeout(() => {
+        setSelectedEvents([match]);
+        setSelectedEventTitle(match.title);
+      }, 1200);
+    }
+  }, [queryEventId, mapEvents]);
+
   const handleSelectClusterOrUser = useCallback((selected: UserProfile[], title: string) => {
     setSelectedUsers(selected);
     setSelectedTitle(title);
@@ -244,11 +380,11 @@ function MapPageContent() {
   }, []);
 
   const handlePrev = useCallback(() => {
-    setPreviewIndex((prev) => Math.max(0, prev - 3));
+    setPreviewIndex((prev) => Math.max(0, prev - 2));
   }, []);
 
   const handleNext = useCallback(() => {
-    setPreviewIndex((prev) => prev + 3);
+    setPreviewIndex((prev) => prev + 2);
   }, []);
 
   // When arriving from a matchcard (queryUid present), automatically select target user and display their preview card
@@ -297,27 +433,101 @@ function MapPageContent() {
         onChange={setDistanceFilter}
       />
 
-      {/* Map Canvas (mounts immediately at DEFAULT_CENTER; pans once user location resolves) */}
-      <MapCanvas
-        initialCenter={DEFAULT_CENTER}
-        initialZoom={initialZoomLevel}
-        targetLocation={
-          targetCoords
-            ? { lat: targetCoords.lat, lng: targetCoords.lng, zoom: targetZoom }
-            : currentUserLocation
-              ? { lat: currentUserLocation.lat, lng: currentUserLocation.lng, zoom: initialZoomLevel }
-              : null
-        }
-        users={users}
-        currentUserLocation={currentUserLocation}
-        distanceFilter={distanceFilter}
-        onBoundsChange={setViewportBounds}
-        onSelectClusterOrUser={handleSelectClusterOrUser}
-      />
+      {/* People | Events Toggle Pill */}
+      <div className="absolute top-[74px] left-1/2 -translate-x-1/2 z-[1000] pointer-events-auto">
+        <div className="inline-flex items-center p-1 rounded-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-700 shadow-lg">
+          <button
+            type="button"
+            onClick={() => {
+              setMapMode('people');
+              setSelectedEvents([]);
+              setSelectedEventTitle('');
+              setActiveEventDetail(null);
+            }}
+            className={`relative inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-colors cursor-pointer ${
+              mapMode === 'people'
+                ? 'text-white'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            {mapMode === 'people' && (
+              <motion.span
+                layoutId="activeMapModePill"
+                transition={{
+                  type: 'spring',
+                  stiffness: 500,
+                  damping: 32,
+                  mass: 0.7,
+                }}
+                className="absolute inset-0 rounded-full bg-[#007ABB] shadow-sm"
+              />
+            )}
+            <Users className="relative z-10 w-3.5 h-3.5" />
+            <span className="relative z-10">People</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMapMode('events');
+              handleClosePreview();
+            }}
+            className={`relative inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-colors cursor-pointer ${
+              mapMode === 'events'
+                ? 'text-white'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            {mapMode === 'events' && (
+              <motion.span
+                layoutId="activeMapModePill"
+                transition={{
+                  type: 'spring',
+                  stiffness: 500,
+                  damping: 32,
+                  mass: 0.7,
+                }}
+                className="absolute inset-0 rounded-full bg-[#CC5500] shadow-sm"
+              />
+            )}
+            <Calendar className="relative z-10 w-3.5 h-3.5" />
+            <span className="relative z-10">Events</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Map Canvas (opens directly at user's location when signed in, or Vienna when unlogged) */}
+      {initialLocationReady ? (
+        <MapCanvas
+          initialCenter={
+            queryFromCoords || (user && currentUserLocation ? currentUserLocation : DEFAULT_CENTER)
+          }
+          initialZoom={initialZoomLevel}
+          targetLocation={
+            targetCoords
+              ? { lat: targetCoords.lat, lng: targetCoords.lng, zoom: targetZoom }
+              : manualLocationTarget
+          }
+          users={users}
+          events={mapEvents}
+          mode={mapMode}
+          currentUserLocation={currentUserLocation}
+          distanceFilter={distanceFilter}
+          onBoundsChange={setViewportBounds}
+          onSelectClusterOrUser={handleSelectClusterOrUser}
+          onSelectEvents={(evs, title) => {
+            setSelectedEvents(evs);
+            setSelectedEventTitle(title);
+            setActiveEventDetail(null);
+            setEventListPage(0);
+          }}
+        />
+      ) : (
+        <MapLoadingPill />
+      )}
 
       {/* Loading Indicator Pill (Bottom Left) */}
-      {loading && (
-        <div className="absolute bottom-24 md:bottom-6 left-4 z-[999] flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-lg text-xs font-bold text-slate-700 dark:text-slate-200">
+      {(loading || eventsLoading) && (
+        <div className="absolute bottom-4 md:bottom-6 left-4 z-[999] flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-lg text-xs font-bold text-slate-700 dark:text-slate-200">
           <Loader2 className="w-3.5 h-3.5 animate-spin text-[#007ABB]" />
           <span>Searching area...</span>
         </div>
@@ -355,6 +565,168 @@ function MapPageContent() {
           onSelectUser={(u) => setDetailedUser(u)}
           pauseFocusTrap={Boolean(detailedUser)}
         />
+      )}
+
+      {/* Selected Event(s) Bottom Preview Card / Cluster List */}
+      {selectedEvents.length > 0 && mapMode === 'events' && (
+        <div className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-[1050] w-[calc(100%-2rem)] max-w-md">
+          <div className="rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-700 shadow-2xl p-4 space-y-3">
+            {activeEventDetail || selectedEvents.length === 1 ? (
+              (() => {
+                const ev = activeEventDetail || selectedEvents[0];
+                const canReturnToList = Boolean(activeEventDetail && selectedEvents.length > 1);
+                return (
+                  <>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-[#CC5500]/15 text-[#CC5500] dark:text-[#FF8533]">
+                            {ev.category}
+                          </span>
+                          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                            {ev.source === 'community' ? 'Community' : 'Ticketmaster'}
+                          </span>
+                        </div>
+                        <h3 className="text-base font-extrabold font-heading text-slate-900 dark:text-white truncate">
+                          {ev.title}
+                        </h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (canReturnToList) {
+                            setActiveEventDetail(null);
+                          } else {
+                            setSelectedEvents([]);
+                            setSelectedEventTitle('');
+                            setActiveEventDetail(null);
+                          }
+                        }}
+                        aria-label={canReturnToList ? 'Back to events list' : 'Close event preview'}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer shrink-0"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">
+                      {ev.description}
+                    </p>
+
+                    <div className="flex items-center justify-between gap-2 pt-1 text-xs">
+                      <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 font-semibold truncate">
+                        <MapPin className="w-3.5 h-3.5 text-[#CC5500] shrink-0" />
+                        <span className="truncate">
+                          {ev.venue} · {ev.city}
+                        </span>
+                      </div>
+                      <Link
+                        href={`/discover?eventId=${encodeURIComponent(ev.id)}`}
+                        className="px-3 py-1.5 rounded-xl bg-[#007ABB] hover:bg-[#00669E] text-white font-extrabold inline-flex items-center gap-1 transition-colors shrink-0"
+                      >
+                        <span>See Event</span>
+                      </Link>
+                    </div>
+                  </>
+                );
+              })()
+            ) : (
+              <>
+                <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-6 h-6 rounded-full bg-[#CC5500] text-white text-xs font-black flex items-center justify-center shrink-0">
+                      {selectedEvents.length}
+                    </span>
+                    <h3 className="text-sm font-extrabold font-heading text-slate-900 dark:text-white truncate">
+                      {selectedEventTitle || `${selectedEvents.length} Events Nearby`}
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedEvents([]);
+                      setSelectedEventTitle('');
+                      setActiveEventDetail(null);
+                    }}
+                    aria-label="Close events list"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {selectedEvents
+                    .slice(eventListPage * 2, eventListPage * 2 + 2)
+                    .map((ev) => (
+                      <div
+                        key={ev.id}
+                        className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700/70 flex items-center justify-between gap-2.5"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setActiveEventDetail(ev)}
+                          className="min-w-0 flex-1 text-left cursor-pointer"
+                        >
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-[#CC5500]/15 text-[#CC5500] dark:text-[#FF8533]">
+                              {ev.category}
+                            </span>
+                            <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                              {ev.source === 'community' ? 'Community' : 'Ticketmaster'}
+                            </span>
+                          </div>
+                          <p className="text-xs font-extrabold text-slate-900 dark:text-white truncate">
+                            {ev.title}
+                          </p>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                            {ev.venue} · {ev.city}
+                          </p>
+                        </button>
+
+                        <Link
+                          href={`/discover?eventId=${encodeURIComponent(ev.id)}`}
+                          className="px-2.5 py-1.5 rounded-xl bg-[#007ABB] hover:bg-[#00669E] text-white text-[11px] font-extrabold inline-flex items-center gap-1 shrink-0"
+                        >
+                          <span>See Event</span>
+                        </Link>
+                      </div>
+                    ))}
+                </div>
+
+                {selectedEvents.length > 2 && (
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                      type="button"
+                      disabled={eventListPage === 0}
+                      onClick={() => setEventListPage((p) => Math.max(0, p - 1))}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                      <span>Prev</span>
+                    </button>
+                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                      Page {eventListPage + 1} of {Math.ceil(selectedEvents.length / 2)}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={(eventListPage + 1) * 2 >= selectedEvents.length}
+                      onClick={() =>
+                        setEventListPage((p) =>
+                          (p + 1) * 2 < selectedEvents.length ? p + 1 : p
+                        )
+                      }
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      <span>Next</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Detailed MatchCard Modal (lazy-loaded only when opened) */}
@@ -474,9 +846,9 @@ function MapPageContent() {
 export default function MapPage() {
   return (
     <div className="relative w-full h-[calc(100vh-56px-60px)] md:h-[calc(100vh-56px)] overflow-hidden bg-[#F8FAFC] dark:bg-[#090D16]">
-      {/* Persistent local Vienna map preview behind Leaflet (360x360 natural, rendered 320x320 -> zero upscaling penalty, beats 256x256 tiles for fast LCP) */}
+      {/* Full-bleed frosted map preview backdrop behind Leaflet for fast LCP & clean loading state */}
       <div
-        className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none select-none"
+        className="absolute inset-0 z-0 pointer-events-none select-none overflow-hidden"
         aria-hidden="true"
       >
         <img
@@ -487,7 +859,7 @@ export default function MapPage() {
           loading="eager"
           decoding="sync"
           fetchPriority="high"
-          className="w-[320px] h-[320px] object-cover rounded-2xl shadow-sm"
+          className="w-full h-full object-cover blur-[2px] opacity-55 dark:opacity-35 scale-105"
         />
       </div>
 

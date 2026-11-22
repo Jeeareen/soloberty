@@ -24,9 +24,9 @@ export const DistanceFilter: React.FC<DistanceFilterProps> = ({
 }) => {
   return (
     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] max-w-md">
-      <div className="bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-xl p-1.5 flex items-center justify-center">
+      <div className="bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-xl p-1 sm:p-1.5 flex items-center justify-center">
         {/* Distance Selector Pills */}
-        <div className="relative flex items-center gap-1 bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl">
+        <div className="relative flex items-center gap-0.5 sm:gap-1 bg-slate-100/80 dark:bg-slate-800/80 p-0.5 sm:p-1 rounded-xl">
           {DISTANCE_OPTIONS.map((opt) => {
             const isSelected = selectedDistance === opt.value;
             return (
@@ -35,7 +35,7 @@ export const DistanceFilter: React.FC<DistanceFilterProps> = ({
                 type="button"
                 aria-pressed={isSelected}
                 onClick={() => onChange(opt.value)}
-                className={`relative h-7 px-3 flex items-center justify-center text-xs font-heading font-extrabold rounded-lg transition-colors duration-150 cursor-pointer leading-none select-none whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB] ${
+                className={`relative h-7 px-2 sm:px-3 flex items-center justify-center text-[11px] sm:text-xs font-heading font-extrabold rounded-lg transition-colors duration-150 cursor-pointer leading-none select-none whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB] ${
                   isSelected
                     ? 'text-white dark:text-slate-900'
                     : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'

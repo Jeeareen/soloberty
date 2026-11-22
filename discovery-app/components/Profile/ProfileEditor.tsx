@@ -972,9 +972,9 @@ export const ProfileEditor: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsEditMode(true)}
-            className="px-5 py-2.5 bg-[#007ABB] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs sm:text-sm font-extrabold rounded-xl shadow-md shadow-[#007ABB]/20 transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
+            className="px-3 sm:px-5 py-2 sm:py-2.5 bg-[#007ABB] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-[11px] sm:text-sm font-extrabold rounded-xl shadow-md shadow-[#007ABB]/20 transition-all flex items-center gap-1.5 sm:gap-2 shrink-0 whitespace-nowrap active:scale-95 cursor-pointer"
           >
-            <Pencil className="w-4 h-4" />
+            <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
             Edit Profile
           </button>
         )}
@@ -1010,8 +1010,8 @@ export const ProfileEditor: React.FC = () => {
           {!isEditMode ? (
             /* Static View Mode */
             <div className="space-y-8">
-              {/* Header Identity Row: Profile picture, Gender symbol left to Name, comma Age, aligned location pin */}
-              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 pb-6 border-b border-slate-200/80 dark:border-slate-800">
+              {/* Header Identity Row: Profile picture left of Name, comma Age, aligned location pin */}
+              <div className="flex flex-row items-center sm:items-start gap-4 sm:gap-6 pb-6 border-b border-slate-200/80 dark:border-slate-800">
                 {profilePhotoPreview || profileData.profilePhotoUrl ? (
                   <img
                     src={getAvatarCloudinaryUrl(profilePhotoPreview || profileData.profilePhotoUrl)}
@@ -1029,23 +1029,23 @@ export const ProfileEditor: React.FC = () => {
                   </div>
                 )}
 
-                <div className="space-y-3 text-center sm:text-left flex-1 pt-2">
+                <div className="space-y-2 sm:space-y-3 text-left flex-1 min-w-0 sm:pt-2">
                   {/* Gender Icon Left to Name, Age separated by comma */}
-                  <div className="flex items-center justify-center sm:justify-start gap-2.5">
-                    <div className="w-8 sm:w-9 flex items-center justify-start shrink-0">
-                      <GenderSymbol gender={profileData.gender} className="w-8 h-8 sm:w-9 sm:h-9" />
+                  <div className="flex items-center justify-start gap-2 sm:gap-2.5 min-w-0">
+                    <div className="w-7 sm:w-9 flex items-center justify-start shrink-0">
+                      <GenderSymbol gender={profileData.gender} className="w-7 h-7 sm:w-9 sm:h-9" />
                     </div>
-                    <h2 className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white truncate min-h-[32px] sm:min-h-[36px]">
+                    <h2 className="text-xl sm:text-3xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white truncate min-h-[28px] sm:min-h-[36px]">
                       {profileData.name}{profileData.age ? `, ${profileData.age}` : ''}
                     </h2>
                   </div>
 
                   {/* Location Pin & City: Left side 100% aligned with Gender Icon */}
-                  <div className="flex items-center justify-center sm:justify-start gap-2.5 text-sm font-semibold text-slate-600 dark:text-slate-400">
-                    <div className="w-8 sm:w-9 flex items-center justify-start shrink-0">
-                      <MapPin className="w-6 h-6 sm:w-7 sm:h-7 text-[#007ABB]" />
+                  <div className="flex items-center justify-start gap-2 sm:gap-2.5 text-sm font-semibold text-slate-600 dark:text-slate-400">
+                    <div className="w-7 sm:w-9 flex items-center justify-start shrink-0">
+                      <MapPin className="w-5 h-5 sm:w-7 sm:h-7 text-[#007ABB]" />
                     </div>
-                    <span className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-200">
+                    <span className="text-sm sm:text-lg font-bold text-slate-800 dark:text-slate-200 truncate">
                       {profileData.city || 'Vienna, AT'}
                     </span>
                   </div>
