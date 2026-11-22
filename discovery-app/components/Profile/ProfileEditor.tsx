@@ -147,7 +147,7 @@ const ProfileMatchCardPreview: React.FC<{
           transformStyle: 'preserve-3d',
           WebkitTransformStyle: 'preserve-3d',
         }}
-        className="relative flex w-full max-w-[400px] aspect-[2/3] h-auto max-h-[75vh] cursor-pointer flex-col transition-transform duration-400 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#007ABB]/60"
+        className="relative flex w-full max-w-[400px] aspect-[2/3] h-auto max-h-[75vh] cursor-pointer flex-col transition-transform duration-500 ease-in-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#007ABB]/60"
       >
         {/* Inner Tap/Hold Scale Container */}
         <div
@@ -167,7 +167,7 @@ const ProfileMatchCardPreview: React.FC<{
                 ? {
                     visibility: isFlipped ? 'hidden' : 'visible',
                     opacity: isFlipped ? 0 : 1,
-                    transition: 'opacity 0.05s linear 0.18s, visibility 0s linear 0.18s',
+                    transition: 'opacity 0.05s linear 0.22s, visibility 0s linear 0.22s',
                   }
                 : {}),
             }}
@@ -256,7 +256,7 @@ const ProfileMatchCardPreview: React.FC<{
                     visibility: isFlipped ? 'visible' : 'hidden',
                     opacity: isFlipped ? 1 : 0,
                     pointerEvents: isFlipped ? 'auto' : 'none',
-                    transition: 'opacity 0.05s linear 0.18s, visibility 0s linear 0.18s',
+                    transition: 'opacity 0.05s linear 0.22s, visibility 0s linear 0.22s',
                   }
                 : {}),
             }}
