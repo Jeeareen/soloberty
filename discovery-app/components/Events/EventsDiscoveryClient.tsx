@@ -361,6 +361,7 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            if (!aiPrompt.trim()) return;
             runAiSearch();
           }}
           className="flex flex-col sm:flex-row gap-2.5"
@@ -380,8 +381,8 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
           <div className="flex items-stretch gap-2">
             <button
               type="submit"
-              disabled={aiLoading || loading}
-              className="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 rounded-xl bg-[#007ABB] hover:bg-[#00669E] text-white text-xs font-extrabold inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
+              disabled={aiLoading || loading || !aiPrompt.trim()}
+              className="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 rounded-xl bg-[#007ABB] hover:bg-[#00669E] text-white text-xs font-extrabold inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {aiLoading ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
