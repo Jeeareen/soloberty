@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { motion } from 'motion/react';
 import {
   Plus,
   Sparkles,
@@ -27,8 +27,16 @@ import {
   deleteCommunityEvent,
 } from '../../lib/events/firestoreEvents';
 import { EventCard } from './EventCard';
-import { CreateEventModal } from './CreateEventModal';
-import { ShareEventModal } from './ShareEventModal';
+
+const CreateEventModal = dynamic(
+  () => import('./CreateEventModal').then((mod) => mod.CreateEventModal),
+  { ssr: false }
+);
+
+const ShareEventModal = dynamic(
+  () => import('./ShareEventModal').then((mod) => mod.ShareEventModal),
+  { ssr: false }
+);
 
 const DEFAULT_COORDS = { lat: 48.2082, lng: 16.3738 };
 const EVENTS_PER_PAGE = 15;
@@ -100,11 +108,13 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
     };
   }, [user?.uid]);
 
-  // Fetch Ticketmaster + Firestore community events
+  // Fetch Ticketmaster + Firestore community events without wiping SSR initialEvents
   useEffect(() => {
     let active = true;
     async function loadAll() {
-      setLoading(true);
+      if (initialEvents.length === 0) {
+        setLoading(true);
+      }
       try {
         const [tmRes, commList] = await Promise.all([
           fetch(`/api/events?lat=${userCoords.lat}&lng=${userCoords.lng}&radius=50`)
@@ -113,7 +123,7 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
           fetchCommunityEvents(),
         ]);
         if (!active) return;
-        if (Array.isArray(tmRes?.events)) {
+        if (Array.isArray(tmRes?.events) && tmRes.events.length > 0) {
           setTicketmasterEvents(tmRes.events);
         }
         setCommunityEvents(commList);
@@ -125,7 +135,7 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
     return () => {
       active = false;
     };
-  }, [userCoords.lat, userCoords.lng]);
+  }, [userCoords.lat, userCoords.lng, initialEvents.length]);
 
   const allEvents = useMemo(() => {
     const combined = [...communityEvents, ...ticketmasterEvents];
@@ -391,20 +401,13 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
                 key={cat}
                 type="button"
                 onClick={() => setSelectedCategory(cat)}
-                className={`relative h-9 px-3.5 rounded-full text-xs font-bold whitespace-nowrap inline-flex items-center justify-center transition-colors cursor-pointer border ${
+                className={`relative h-9 px-3.5 rounded-full text-xs font-bold whitespace-nowrap inline-flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer border ${
                   isSelected
-                    ? 'border-transparent text-white dark:text-slate-900'
+                    ? 'bg-slate-900 dark:bg-white border-transparent text-white dark:text-slate-900 shadow-sm'
                     : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
-                {isSelected && (
-                  <motion.span
-                    layoutId="eventsCategoryPill"
-                    transition={{ type: 'spring', stiffness: 450, damping: 32 }}
-                    className="absolute inset-0 rounded-full bg-slate-900 dark:bg-white shadow-sm"
-                  />
-                )}
-                <span className="relative z-10">{cat}</span>
+                {cat}
               </button>
             );
           })}
@@ -425,20 +428,13 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
                 key={tab.id}
                 type="button"
                 onClick={() => setSelectedSource(tab.id)}
-                className={`relative h-7 px-2.5 sm:px-3 rounded-full text-[11px] sm:text-xs font-bold inline-flex items-center justify-center transition-colors cursor-pointer whitespace-nowrap ${
+                className={`relative h-7 px-2.5 sm:px-3 rounded-full text-[11px] sm:text-xs font-bold inline-flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer whitespace-nowrap ${
                   isSelected
-                    ? 'text-white'
+                    ? 'bg-[#007ABB] text-white shadow-sm'
                     : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                {isSelected && (
-                  <motion.span
-                    layoutId="eventsSourcePill"
-                    transition={{ type: 'spring', stiffness: 450, damping: 32 }}
-                    className="absolute inset-0 rounded-full bg-[#007ABB] shadow-sm"
-                  />
-                )}
-                <span className="relative z-10">{tab.label}</span>
+                {tab.label}
               </button>
             );
           })}
@@ -571,30 +567,34 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
         </>
       )}
 
-      {/* Create / Edit Event Modal */}
-      <CreateEventModal
-        isOpen={isCreateOpen}
-        editingEvent={editingEvent}
-        onClose={() => {
-          setIsCreateOpen(false);
-          setEditingEvent(null);
-        }}
-        onCreated={(created) => setCommunityEvents((prev) => [created, ...prev])}
-        onUpdated={(updated) =>
-          setCommunityEvents((prev) =>
-            prev.map((ev) => (ev.id === updated.id ? updated : ev))
-          )
-        }
-        defaultCoords={userCoords}
-        user={user}
-      />
+      {/* Create / Edit Event Modal (lazy-loaded only when opened) */}
+      {isCreateOpen && (
+        <CreateEventModal
+          isOpen={isCreateOpen}
+          editingEvent={editingEvent}
+          onClose={() => {
+            setIsCreateOpen(false);
+            setEditingEvent(null);
+          }}
+          onCreated={(created) => setCommunityEvents((prev) => [created, ...prev])}
+          onUpdated={(updated) =>
+            setCommunityEvents((prev) =>
+              prev.map((ev) => (ev.id === updated.id ? updated : ev))
+            )
+          }
+          defaultCoords={userCoords}
+          user={user}
+        />
+      )}
 
-      {/* Share Event in Chat Modal */}
-      <ShareEventModal
-        event={sharingEvent}
-        onClose={() => setSharingEvent(null)}
-        user={user}
-      />
+      {/* Share Event in Chat Modal (lazy-loaded only when opened) */}
+      {sharingEvent && (
+        <ShareEventModal
+          event={sharingEvent}
+          onClose={() => setSharingEvent(null)}
+          user={user}
+        />
+      )}
     </div>
   );
 };
