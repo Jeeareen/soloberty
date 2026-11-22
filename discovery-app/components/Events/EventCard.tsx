@@ -255,7 +255,7 @@ export const EventCard: React.FC<EventCardProps> = ({
                                   : 'Soloberty Member');
                               return (
                                 <li key={uid}>
-                                  {isHost && uid !== currentUserId ? (
+                                  {isHost && Boolean(currentUserId) && uid !== currentUserId ? (
                                     <Link
                                       href={`/chat?name=${encodeURIComponent(
                                         displayName
