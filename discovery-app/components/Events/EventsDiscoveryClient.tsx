@@ -13,6 +13,8 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  MapPin,
+  Share2,
 } from 'lucide-react';
 import { useAuth } from '../../lib/hooks/useAuth';
 import {
@@ -75,6 +77,31 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
     'all' | 'community' | 'ticketmaster' | 'mine'
   >('all');
   const [currentPage, setCurrentPage] = useState(1);
+
+  // One-time Discover Events tips modal for unlogged visitors (matches Feed & Map tips)
+  const [showDiscoverTips, setShowDiscoverTips] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setShowDiscoverTips(false);
+      return;
+    }
+    try {
+      const seen = localStorage.getItem('soloberty_discover_intro_seen') === '1';
+      if (!seen) setShowDiscoverTips(true);
+    } catch {
+      // ignore storage errors
+    }
+  }, [user]);
+
+  const dismissDiscoverTips = () => {
+    setShowDiscoverTips(false);
+    try {
+      localStorage.setItem('soloberty_discover_intro_seen', '1');
+    } catch {
+      // ignore storage errors
+    }
+  };
 
   // Create / Edit / Delete / Share modal state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -609,6 +636,67 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
           onClose={() => setSharingEvent(null)}
           user={user}
         />
+      )}
+
+      {/* One-time Discover Events Tips Modal (matches Feed & Map tips design) */}
+      {showDiscoverTips && !user && (
+        <div
+          className="fixed inset-0 z-[2100] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4"
+          onClick={dismissDiscoverTips}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 text-slate-900 dark:text-slate-100 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h2 className="text-base font-extrabold font-heading">
+                How Discover Events Works
+              </h2>
+              <button
+                type="button"
+                onClick={dismissDiscoverTips}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                aria-label="Close guide"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <ul className="space-y-3 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
+              <li className="flex items-start gap-2.5">
+                <Sparkles className="w-4 h-4 text-[#007ABB] dark:text-[#B8E7FF] shrink-0 mt-0.5" />
+                <span>
+                  <strong className="text-slate-900 dark:text-white">Ask Scout AI</strong>{' '}
+                  to find events by mood or tap <em>Recommend for me</em>.
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <MapPin className="w-4 h-4 text-[#CC5500] dark:text-[#FF8533] shrink-0 mt-0.5" />
+                <span>
+                  <strong className="text-slate-900 dark:text-white">Tap any location tag</strong>{' '}
+                  on a card to fly straight to that event on the live Map.
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <Share2 className="w-4 h-4 text-[#007ABB] dark:text-[#B8E7FF] shrink-0 mt-0.5" />
+                <span>
+                  <strong className="text-slate-900 dark:text-white">Create &amp; share</strong>{' '}
+                  your own community meetups or invite friends directly in Chat.
+                </span>
+              </li>
+            </ul>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={dismissDiscoverTips}
+                className="w-full py-2.5 px-4 bg-[#007ABB] hover:bg-[#0088CC] text-white dark:bg-[#B8E7FF] dark:hover:bg-[#99D8FF] dark:text-slate-900 text-xs sm:text-sm font-extrabold rounded-xl shadow-md shadow-[#007ABB]/20 transition-all active:scale-95 cursor-pointer"
+              >
+                Got it, let&apos;s explore
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

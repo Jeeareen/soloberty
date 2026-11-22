@@ -24,6 +24,7 @@ import {
   Compass,
   MapPin,
   MessageSquare,
+  Code2,
 } from 'lucide-react';
 import { useUnreadMessages } from '../hooks/useUnreadMessages';
 import { useNotification } from '../lib/context/NotificationContext';
@@ -70,6 +71,7 @@ export const Navbar: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [devMode, setDevMode] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const userScope = user?.uid || 'guest';
@@ -97,10 +99,29 @@ export const Navbar: React.FC = () => {
       window.dispatchEvent(
         new CustomEvent('soloberty_reduced_motion_change', { detail: storedReduced })
       );
+
+      const storedDevMode = localStorage.getItem('soloberty_dev_mode') === 'true';
+      setDevMode(storedDevMode);
+      window.dispatchEvent(
+        new CustomEvent('soloberty_dev_mode_change', { detail: storedDevMode })
+      );
     } catch {
       // ignore storage errors
     }
   }, [userScope]);
+
+  const toggleDevMode = () => {
+    const next = !devMode;
+    setDevMode(next);
+    try {
+      localStorage.setItem('soloberty_dev_mode', String(next));
+      window.dispatchEvent(
+        new CustomEvent('soloberty_dev_mode_change', { detail: next })
+      );
+    } catch {
+      // ignore storage errors
+    }
+  };
 
   const toggleReducedMotion = () => {
     const next = !reducedMotion;
@@ -414,48 +435,83 @@ export const Navbar: React.FC = () => {
                       </div>
                     </button>
 
-                    {/* Health Status Tile */}
-                    <Link
-                      href="/health"
-                      onClick={() => setMenuOpen(false)}
-                      className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
+                    {/* Dev Mode Toggle */}
+                    <button
+                      type="button"
+                      onClick={toggleDevMode}
+                      className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className="p-1.5 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 rounded-xl">
-                          <Activity className="w-4 h-4" />
+                        <div className="p-1.5 bg-violet-50 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400 rounded-xl">
+                          <Code2 className="w-4 h-4" />
                         </div>
                         <div>
-                          <div className="text-xs font-bold text-slate-900 dark:text-white">System Health</div>
-                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Status: OK</div>
-                        </div>
-                      </div>
-                      <span className="text-xs text-slate-400 font-bold">→</span>
-                    </Link>
-
-                    {/* FE-AA1 Assignment Lab Option */}
-                    <Link
-                      href="/demo/motion-button"
-                      onClick={() => setMenuOpen(false)}
-                      className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div className="p-1.5 bg-yellow-100 dark:bg-yellow-950/50 text-yellow-500 dark:text-yellow-400 rounded-xl">
-                          <Sparkles className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                            Motion Lab
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 bg-slate-200/60 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md">
-                              FE-AA1
-                            </span>
-                          </div>
+                          <div className="text-xs font-bold text-slate-900 dark:text-white">Dev Mode</div>
                           <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                            5-State Micro-interactions
+                            {devMode ? 'Labs & Health Visible' : 'Hidden for Users'}
                           </div>
                         </div>
                       </div>
-                      <span className="text-xs text-slate-400 font-bold">→</span>
-                    </Link>
+                      <div
+                        className={`w-10 h-6 rounded-full p-1 transition-colors flex items-center ${
+                          devMode ? 'bg-[#007ABB] dark:bg-[#B8E7FF]' : 'bg-slate-300 dark:bg-slate-700'
+                        }`}
+                      >
+                        <motion.div
+                          className="w-4 h-4 bg-white dark:bg-slate-900 rounded-full shadow-sm"
+                          animate={{ x: devMode ? 16 : 0 }}
+                          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                        />
+                      </div>
+                    </button>
+
+                    {/* Dev-only Tools: Health Status & Motion Lab */}
+                    {devMode && (
+                      <>
+                        {/* Health Status Tile */}
+                        <Link
+                          href="/health"
+                          onClick={() => setMenuOpen(false)}
+                          className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div className="p-1.5 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                              <Activity className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold text-slate-900 dark:text-white">System Health</div>
+                              <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Status: OK</div>
+                            </div>
+                          </div>
+                          <span className="text-xs text-slate-400 font-bold">→</span>
+                        </Link>
+
+                        {/* FE-AA1 Assignment Lab Option */}
+                        <Link
+                          href="/demo/motion-button"
+                          onClick={() => setMenuOpen(false)}
+                          className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/80 rounded-2xl flex items-center justify-between transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ABB]"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div className="p-1.5 bg-yellow-100 dark:bg-yellow-950/50 text-yellow-500 dark:text-yellow-400 rounded-xl">
+                              <Sparkles className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                Motion Lab
+                                <span className="text-[9px] font-bold px-1.5 py-0.2 bg-slate-200/60 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md">
+                                  FE-AA1
+                                </span>
+                              </div>
+                              <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                                5-State Micro-interactions
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-xs text-slate-400 font-bold">→</span>
+                        </Link>
+                      </>
+                    )}
 
                     {/* Change Password Option */}
                     {user && (

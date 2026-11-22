@@ -1,8 +1,12 @@
 import { streamText, tool } from 'ai';
 import { google, createGoogleGenerativeAI } from '@ai-sdk/google';
 import { suggestIcebreakersSchema, executeSuggestIcebreakers } from '../../../lib/tools/suggestIcebreakers';
+import { checkRateLimit, rateLimitResponse } from '../../../lib/ai/rateLimit';
 
 export const maxDuration = 30;
+const MAX_MESSAGES = 20;
+const MAX_MESSAGE_CHARS = 1500;
+const MAX_TOTAL_CHARS = 8000;
 
 function parsePromptParams(promptText: string) {
   const nameMatch = promptText.match(/questions for\s+([^,]+)/i);
@@ -19,8 +23,14 @@ function parsePromptParams(promptText: string) {
 }
 
 export async function POST(req: Request) {
-  //FOR DEV PURPOSES, simulating 429
-  //return new Response('Too many requests', { status: 429 });
+  const limitResult = checkRateLimit(req, {
+    route: 'api:chat',
+    maxRequests: 20,
+    windowMs: 60_000,
+  });
+  if (limitResult.limited) {
+    return rateLimitResponse(limitResult.retryAfterSeconds);
+  }
 
   let userPrompt = '';
   try {
@@ -33,8 +43,9 @@ export async function POST(req: Request) {
       });
     }
 
-    // Format and sanitize messages array
-    const formattedMessages = messages.map((m: any) => {
+    // Format, sanitize, and cap messages array to prevent prompt/token abuse
+    let totalChars = 0;
+    const formattedMessages = messages.slice(-MAX_MESSAGES).map((m: any) => {
       let content = m.content;
       if (content === undefined || content === null) {
         if (Array.isArray(m.parts)) {
@@ -47,7 +58,11 @@ export async function POST(req: Request) {
         }
       }
 
-      const strContent = typeof content === 'string' ? content : String(content || '');
+      const strContent = (typeof content === 'string' ? content : String(content || '')).slice(
+        0,
+        MAX_MESSAGE_CHARS
+      );
+      totalChars += strContent.length;
       if (m.role === 'user' && strContent) {
         userPrompt = strContent;
       }
@@ -57,6 +72,13 @@ export async function POST(req: Request) {
         content: strContent,
       };
     });
+
+    if (totalChars > MAX_TOTAL_CHARS) {
+      return new Response(
+        JSON.stringify({ error: 'Conversation payload exceeds maximum allowed length.' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
     const googleProvider = apiKey ? createGoogleGenerativeAI({ apiKey }) : google;

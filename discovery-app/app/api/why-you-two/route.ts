@@ -4,6 +4,7 @@ import { google, createGoogleGenerativeAI } from '@ai-sdk/google';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../../lib/firebase/config';
 import { whyYouTwoSchema, WHY_YOU_TWO_SYSTEM_PROMPT } from '../../../lib/tools/whyYouTwo';
+import { checkRateLimit, rateLimitResponse } from '../../../lib/ai/rateLimit';
 
 export const maxDuration = 30;
 
@@ -80,6 +81,15 @@ async function resolveUserProfile(userParam: any): Promise<{ bio: string; intere
 }
 
 export async function POST(req: Request) {
+  const limitResult = checkRateLimit(req, {
+    route: 'api:why-you-two',
+    maxRequests: 15,
+    windowMs: 60_000,
+  });
+  if (limitResult.limited) {
+    return rateLimitResponse(limitResult.retryAfterSeconds);
+  }
+
   try {
     const body = await req.json();
 
@@ -102,19 +112,21 @@ export async function POST(req: Request) {
       };
     }
 
-    const currentUserInterestsStr = Array.isArray(currentUserProfile.interests)
-      ? currentUserProfile.interests.join(', ')
-      : String(currentUserProfile.interests || '');
+    const currentUserInterestsStr = (Array.isArray(currentUserProfile.interests)
+      ? currentUserProfile.interests.slice(0, 15).map((i) => String(i).slice(0, 40)).join(', ')
+      : String(currentUserProfile.interests || '')
+    ).slice(0, 300);
 
-    const matchedUserInterestsStr = Array.isArray(matchedUserProfile.interests)
-      ? matchedUserProfile.interests.join(', ')
-      : String(matchedUserProfile.interests || '');
+    const matchedUserInterestsStr = (Array.isArray(matchedUserProfile.interests)
+      ? matchedUserProfile.interests.slice(0, 15).map((i) => String(i).slice(0, 40)).join(', ')
+      : String(matchedUserProfile.interests || '')
+    ).slice(0, 300);
 
-    // Interpolate profile details into prompt
+    // Interpolate profile details into prompt (with input length caps)
     const prompt = WHY_YOU_TWO_SYSTEM_PROMPT
-      .replace('{{currentUserBio}}', currentUserProfile.bio || 'None provided')
+      .replace('{{currentUserBio}}', String(currentUserProfile.bio || 'None provided').slice(0, 500))
       .replace('{{currentUserInterests}}', currentUserInterestsStr || 'None provided')
-      .replace('{{matchedUserBio}}', matchedUserProfile.bio || 'None provided')
+      .replace('{{matchedUserBio}}', String(matchedUserProfile.bio || 'None provided').slice(0, 500))
       .replace('{{matchedUserInterests}}', matchedUserInterestsStr || 'None provided');
 
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;

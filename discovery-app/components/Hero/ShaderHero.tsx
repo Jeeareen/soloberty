@@ -11,6 +11,7 @@ import {
   Code2,
   X,
   Activity,
+  Compass,
 } from 'lucide-react';
 import {
   MAX_RIPPLES,
@@ -136,10 +137,29 @@ export const ShaderHero: React.FC<ShaderHeroProps> = ({
   const [manualReducedMotion, setManualReducedMotion] = useState<boolean>(false);
   const [webglUnsupported, setWebglUnsupported] = useState<boolean>(false);
 
-  // Inspector drawer & code modal states for mentor walkthrough
+  // Inspector drawer & code modal states for mentor walkthrough (visible only when Dev Mode is enabled)
+  const [devMode, setDevMode] = useState<boolean>(false);
   const [inspectorOpen, setInspectorOpen] = useState<boolean>(false);
   const [showShaderSource, setShowShaderSource] = useState<boolean>(false);
   const [isPausedByVisibility, setIsPausedByVisibility] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      setDevMode(localStorage.getItem('soloberty_dev_mode') === 'true');
+    } catch {
+      // ignore storage errors
+    }
+    const handleDevModeChange = (e: Event) => {
+      const detail = (e as CustomEvent<boolean>).detail;
+      setDevMode(Boolean(detail));
+      if (!detail) {
+        setInspectorOpen(false);
+        setShowShaderSource(false);
+      }
+    };
+    window.addEventListener('soloberty_dev_mode_change', handleDevModeChange);
+    return () => window.removeEventListener('soloberty_dev_mode_change', handleDevModeChange);
+  }, []);
 
   // Mutable refs for 60fps animation without triggering React re-renders every frame
   const targetMouseRef = useRef<{ x: number; y: number }>({ x: 0.5, y: 0.5 });
@@ -531,6 +551,14 @@ export const ShaderHero: React.FC<ShaderHeroProps> = ({
             </Link>
 
             <Link
+              href="/discover"
+              className="w-56 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-[#CC5500] hover:bg-[#B34A00] text-white font-extrabold text-sm sm:text-base shadow-[0_8px_30px_rgba(204,85,0,0.35)] border border-[#FF8533]/40 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF8533]"
+            >
+              <Compass className="w-4 h-4 shrink-0" />
+              <span>Discover Events</span>
+            </Link>
+
+            <Link
               href="/map"
               className="w-56 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-[#007ABB] dark:bg-slate-900/75 dark:hover:bg-slate-900/90 dark:backdrop-blur-md dark:text-white font-bold text-sm sm:text-base border border-white/60 dark:border-white/25 dark:hover:border-[#B8E7FF]/60 shadow-[0_8px_30px_rgba(0,0,0,0.28)] dark:shadow-lg transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8E7FF]"
             >
@@ -579,8 +607,8 @@ export const ShaderHero: React.FC<ShaderHeroProps> = ({
         </div>
       </div>
 
-      {/* Layer 4: Zero-CLS Floating Corner Pill & Popover for Assignment Metrics & Shader Inspector */}
-      {/* Mobile (< md): anchored top-right, opens downward. Desktop (md+): anchored bottom-right, opens upward as a sleek vertical card. */}
+      {/* Layer 4: Zero-CLS Floating Corner Pill & Popover for Assignment Metrics & Shader Inspector (Dev Mode only) */}
+      {devMode && (
       <div className="absolute top-3 right-3 md:top-auto md:bottom-5 md:right-8 z-30 flex flex-col items-end">
         <AnimatePresence>
           {inspectorOpen && (
@@ -704,6 +732,7 @@ export const ShaderHero: React.FC<ShaderHeroProps> = ({
           </span>
         </motion.button>
       </div>
+      )}
 
       {/* Modal: Commented GLSL Fragment Shader Source for Mentor Walkthrough */}
       {showShaderSource && (
