@@ -431,10 +431,7 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
 
       {/* Filter Bar */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 w-full min-w-0">
-        <div
-          style={{ WebkitOverflowScrolling: 'touch' }}
-          className="flex items-center gap-1.5 w-full min-w-0 max-w-full overflow-x-auto touch-pan-x pb-1 xl:pb-0 no-scrollbar"
-        >
+        <div className="flex flex-wrap items-center gap-1.5 w-full min-w-0">
           {(['All', ...EVENT_CATEGORIES] as const).map((cat) => {
             const isSelected = selectedCategory === cat;
             return (
