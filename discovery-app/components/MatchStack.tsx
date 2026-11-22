@@ -125,7 +125,8 @@ export const RenderCardFace: React.FC<{
             ...(isSafari
               ? {
                   visibility: isFlipped ? 'hidden' : 'visible',
-                  transition: 'visibility 0s linear 0.22s',
+                  opacity: isFlipped ? 0 : 1,
+                  transition: 'opacity 0.05s linear 0.22s, visibility 0s linear 0.22s',
                 }
               : {}),
           }}
@@ -236,9 +237,7 @@ export const RenderCardFace: React.FC<{
                     visibility: isFlipped ? 'visible' : 'hidden',
                     opacity: isFlipped ? 1 : 0,
                     pointerEvents: isFlipped ? 'auto' : 'none',
-                    transition: isFlipped
-                      ? 'opacity 0.05s linear 0.22s, visibility 0s linear 0.22s'
-                      : 'opacity 0.05s linear 0.16s, visibility 0s linear 0.21s',
+                    transition: 'opacity 0.05s linear 0.22s, visibility 0s linear 0.22s',
                   }
                 : {}),
             }}
