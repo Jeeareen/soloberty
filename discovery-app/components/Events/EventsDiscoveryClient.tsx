@@ -402,8 +402,8 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
       </section>
 
       {/* Filter Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 xl:pb-0 no-scrollbar">
           {(['All', ...EVENT_CATEGORIES] as const).map((cat) => {
             const isSelected = selectedCategory === cat;
             return (
@@ -423,7 +423,7 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
           })}
         </div>
 
-        <div className="inline-flex items-center flex-nowrap h-9 w-full sm:w-auto justify-between sm:justify-start p-1 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 self-start sm:self-center shrink-0">
+        <div className="inline-flex items-center flex-nowrap h-9 w-full sm:w-auto justify-between sm:justify-start p-1 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 self-start xl:self-center shrink-0">
           {(
             [
               { id: 'all', label: 'All' },
