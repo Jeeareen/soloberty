@@ -430,8 +430,11 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
       </section>
 
       {/* Filter Bar */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 xl:pb-0 no-scrollbar">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 w-full min-w-0">
+        <div
+          style={{ WebkitOverflowScrolling: 'touch' }}
+          className="flex items-center gap-1.5 w-full min-w-0 max-w-full overflow-x-auto touch-pan-x pb-1 xl:pb-0 no-scrollbar"
+        >
           {(['All', ...EVENT_CATEGORIES] as const).map((cat) => {
             const isSelected = selectedCategory === cat;
             return (
@@ -439,7 +442,7 @@ export const EventsDiscoveryClient: React.FC<EventsDiscoveryClientProps> = ({
                 key={cat}
                 type="button"
                 onClick={() => setSelectedCategory(cat)}
-                className={`relative h-9 px-3.5 rounded-full text-xs font-bold whitespace-nowrap inline-flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer border ${
+                className={`relative h-9 px-3.5 rounded-full text-xs font-bold whitespace-nowrap shrink-0 inline-flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer border ${
                   isSelected
                     ? 'bg-slate-900 dark:bg-white border-transparent text-white dark:text-slate-900 shadow-sm'
                     : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
