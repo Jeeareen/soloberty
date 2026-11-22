@@ -996,7 +996,14 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
               isDraggingRef.current = true;
             }}
             onDragEnd={handleDragEnd}
-            style={{ x, scale: activeScale, opacity: 1, zIndex: activeZIndex }}
+            style={{
+              x,
+              scale: activeScale,
+              opacity: 1,
+              zIndex: activeZIndex,
+              transformStyle: 'preserve-3d',
+              WebkitTransformStyle: 'preserve-3d',
+            }}
             animate={{ rotateY: isFlipped ? 180 : 0 }}
             transition={{ rotateY: { duration: 0.5, ease: 'easeInOut' } }}
             className="absolute flex h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#007ABB]/60 [transform-style:preserve-3d] cursor-grab active:cursor-grabbing"
