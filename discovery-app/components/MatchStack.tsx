@@ -117,8 +117,10 @@ export const RenderCardFace: React.FC<{
             WebkitBackfaceVisibility: 'hidden',
             backfaceVisibility: 'hidden',
             transform: 'rotateY(0deg) translateZ(1px)',
+            visibility: isFlipped ? 'hidden' : 'visible',
+            transition: 'visibility 0s linear 0.25s',
           }}
-          className="absolute inset-0 flex flex-col bg-white dark:bg-[#0F172A] rounded-xl overflow-hidden"
+          className="absolute inset-0 flex flex-col bg-white dark:bg-[#0F172A] rounded-[14px] border-2 border-slate-300 dark:border-slate-700 overflow-hidden"
         >
           <div className="relative w-full h-52 sm:h-56 shrink-0 bg-slate-100 dark:bg-slate-800 overflow-hidden">
             {card.avatarUrl ? (
@@ -219,8 +221,11 @@ export const RenderCardFace: React.FC<{
               WebkitBackfaceVisibility: 'hidden',
               backfaceVisibility: 'hidden',
               transform: 'rotateY(180deg) translateZ(1px)',
+              WebkitTransform: 'rotateY(180deg) translateZ(1px)',
+              visibility: isFlipped ? 'visible' : 'hidden',
+              transition: 'visibility 0s linear 0.25s',
             }}
-            className="absolute inset-0 flex flex-col p-6 bg-white dark:bg-[#0F172A] rounded-xl"
+            className="absolute inset-0 flex flex-col p-6 bg-white dark:bg-[#0F172A] rounded-[14px] border-2 border-slate-300 dark:border-slate-700 overflow-hidden"
           >
             {/* Top: Name, Age, Gender */}
             <div className="flex items-center gap-2 pb-3 border-b border-gray-100 dark:border-slate-800 shrink-0">
@@ -1006,7 +1011,7 @@ export const MatchStack: React.FC<MatchStackProps> = ({ cards: propCards, onComp
             }}
             animate={{ rotateY: isFlipped ? 180 : 0 }}
             transition={{ rotateY: { duration: 0.5, ease: 'easeInOut' } }}
-            className="absolute flex h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] flex-col rounded-[14px] bg-white dark:bg-[#0F172A] border-2 border-slate-300 dark:border-slate-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#007ABB]/60 [transform-style:preserve-3d] cursor-grab active:cursor-grabbing"
+            className="absolute flex h-[480px] w-[320px] sm:h-[540px] sm:w-[360px] md:h-[600px] md:w-[400px] flex-col focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#007ABB]/60 [transform-style:preserve-3d] cursor-grab active:cursor-grabbing"
           >
             <RenderCardFace
               card={currentCard}
