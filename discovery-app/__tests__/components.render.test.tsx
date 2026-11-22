@@ -24,6 +24,7 @@ import { UserPreviewCard } from '../components/Map/UserPreviewCard';
 import { Step1Credentials } from '../components/Auth/steps/Step1Credentials';
 import { Step2BasicInfo } from '../components/Auth/steps/Step2BasicInfo';
 import { Step3Interests } from '../components/Auth/steps/Step3Interests';
+import { Step4BioScout } from '../components/Auth/steps/Step4BioScout';
 
 describe('Core UI Component Render & Interaction Suite', () => {
   it('renders SolobertyLogo SVG', () => {
@@ -147,5 +148,17 @@ describe('Core UI Component Render & Interaction Suite', () => {
       />
     );
     expect(screen.getByText(/Outdoor Hiking/i)).toBeTruthy();
+  });
+
+  it('renders Step4BioScout bio textarea', () => {
+    render(
+      <Step4BioScout
+        formData={{ name: 'Mustafa', age: '22', gender: 'male', interests: ['hiking'], bio: 'Hi there!' }}
+        setFormData={vi.fn()}
+        onNext={vi.fn()}
+        renderErrorAlert={() => null}
+      />
+    );
+    expect(screen.getByText(/Create your bio/i)).toBeTruthy();
   });
 });

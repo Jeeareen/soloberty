@@ -36,6 +36,7 @@ describe('ShaderHero Fullscreen Fragment Shader Hero', () => {
   });
 
   it('allows toggling reduced-motion fallback and opening the GLSL source modal & lerp controls', () => {
+    localStorage.setItem('soloberty_dev_mode', 'true');
     render(<ShaderHero />);
 
     // Open Shader Lab drawer
