@@ -83,7 +83,7 @@ npm run test:e2e     # Playwright end-to-end tests
 | `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` | Client | Optional | Unsigned upload preset for client-side Cloudinary uploads. |
 | `CLOUDINARY_API_KEY` | Server | Optional | Server-side Cloudinary asset deletion (`/api/cloudinary/delete`). |
 | `CLOUDINARY_API_SECRET` | Server | Optional | Server-side Cloudinary signature for asset deletion. |
-| `TICKETMASTER_API_KEY` | Server | Optional | Live Ticketmaster Discovery API events (`/api/events`). If omitted, the app automatically falls back to curated mock events in `lib/events/mockEvents.ts`. |
+| `TICKETMASTER_API_KEY` | Server | Optional | Live Ticketmaster Discovery API events (`/api/events`). If omitted, the app automatically falls back to curated mock events in `lib/events/mockEvents.ts`. *(Note: Production currently runs on the mock fallback because the Ticketmaster developer account application is still pending approval — "Your application for an account is currently pending approval. Once it has been approved, you will receive another email containing information about how to log in, set your password, and other details." Dropping the key into `.env.local` / Vercel activates live Ticketmaster results with zero code changes.)* |
 
 ---
 
