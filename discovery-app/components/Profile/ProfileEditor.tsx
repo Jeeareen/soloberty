@@ -145,7 +145,14 @@ const ProfileMatchCardPreview: React.FC<{
           className={`relative h-full w-full [transform-style:preserve-3d] transition-transform duration-200 ${isHeld ? 'scale-105' : 'scale-100'}`}
         >
           {/* Front Face */}
-          <div className="absolute inset-0 flex flex-col bg-white dark:bg-[#0F172A] rounded-xl overflow-hidden [backface-visibility:hidden]">
+          <div
+            style={{
+              WebkitBackfaceVisibility: 'hidden',
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(0deg) translateZ(1px)',
+            }}
+            className="absolute inset-0 flex flex-col bg-white dark:bg-[#0F172A] rounded-xl overflow-hidden"
+          >
             {/* Rectangular PP taking top ~35% with Name, Gender Symbol & Age overlay */}
             <div className="relative w-full h-52 sm:h-56 shrink-0 bg-slate-100 dark:bg-slate-800 overflow-hidden">
               {photoUrl ? (
@@ -218,7 +225,14 @@ const ProfileMatchCardPreview: React.FC<{
           </div>
 
           {/* Back Face (Name, Age, Gender / Bio / Interest Images / Chat Button) */}
-          <div className="absolute inset-0 flex flex-col p-6 bg-white dark:bg-[#0F172A] rounded-xl [transform:rotateY(180deg)] [backface-visibility:hidden]">
+          <div
+            style={{
+              WebkitBackfaceVisibility: 'hidden',
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg) translateZ(1px)',
+            }}
+            className="absolute inset-0 flex flex-col p-6 bg-white dark:bg-[#0F172A] rounded-xl"
+          >
             {/* Top: Name, Age, Gender (1.25x font size) */}
             <div className="flex items-center gap-2 pb-3 border-b border-gray-100 dark:border-slate-800 shrink-0">
               <GenderSymbol gender={gender} className="w-6 h-6 shrink-0" />

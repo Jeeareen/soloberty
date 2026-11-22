@@ -107,7 +107,12 @@ export const RenderCardFace: React.FC<{
         {/* Front Face */}
         <div
           aria-hidden={isBackground || isFlipped ? true : undefined}
-          className="absolute inset-0 flex flex-col bg-white dark:bg-[#0F172A] rounded-xl overflow-hidden [backface-visibility:hidden]"
+          style={{
+            WebkitBackfaceVisibility: 'hidden',
+            backfaceVisibility: 'hidden',
+            transform: 'rotateY(0deg) translateZ(1px)',
+          }}
+          className="absolute inset-0 flex flex-col bg-white dark:bg-[#0F172A] rounded-xl overflow-hidden"
         >
           <div className="relative w-full h-52 sm:h-56 shrink-0 bg-slate-100 dark:bg-slate-800 overflow-hidden">
             {card.avatarUrl ? (
@@ -204,7 +209,12 @@ export const RenderCardFace: React.FC<{
         {!isBackground && (
           <div
             aria-hidden={!isFlipped ? true : undefined}
-            className="absolute inset-0 flex flex-col p-6 bg-white dark:bg-[#0F172A] rounded-xl [transform:rotateY(180deg)] [backface-visibility:hidden]"
+            style={{
+              WebkitBackfaceVisibility: 'hidden',
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg) translateZ(1px)',
+            }}
+            className="absolute inset-0 flex flex-col p-6 bg-white dark:bg-[#0F172A] rounded-xl"
           >
             {/* Top: Name, Age, Gender */}
             <div className="flex items-center gap-2 pb-3 border-b border-gray-100 dark:border-slate-800 shrink-0">
