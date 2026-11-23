@@ -526,10 +526,16 @@ export const SignupWizard: React.FC = () => {
         await refreshProfileStatus();
       }
 
-      // Show success feedback confirmation and redirect to feed
-      setSuccessMessage('Profile created! Welcome to Soloberty. Redirecting to your feed...');
+      const needsVerification = !isE2EMock && !auth.currentUser?.emailVerified;
+
+      // Show success feedback confirmation and redirect to email verification or feed
+      setSuccessMessage(
+        needsVerification
+          ? 'Account created! Please check your inbox to verify your email...'
+          : 'Profile created! Welcome to Soloberty. Redirecting to your feed...'
+      );
       setTimeout(() => {
-        router.push('/feed');
+        router.push(needsVerification ? '/auth/verify-email' : '/feed');
       }, 1500);
     } catch (err: any) {
       console.error('Final profile save error:', err);

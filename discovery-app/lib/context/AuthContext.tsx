@@ -5,6 +5,7 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendEmailVerification,
   signOut,
   type User as FirebaseUser,
 } from 'firebase/auth';
@@ -41,6 +42,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const isE2EMock =
         typeof window !== 'undefined' &&
         (window as unknown as { __E2E_MOCK_FIRESTORE__?: boolean }).__E2E_MOCK_FIRESTORE__ === true;
+
+      if (!isE2EMock && !fbUser.emailVerified) {
+        setUser(null);
+        setIsProfileCompleted(false);
+        setAuthCookie(false);
+        return;
+      }
+
       let isCompleted = false;
       if (isE2EMock) {
         isCompleted = true;
@@ -53,6 +62,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser({
           uid: fbUser.uid,
           email: fbUser.email || '',
+          emailVerified: isE2EMock ? true : fbUser.emailVerified,
           displayName: fbUser.displayName || undefined,
           photoURL: fbUser.photoURL || undefined,
           profileCompleted: true,
@@ -95,9 +105,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(true);
       setError(null);
       const res = await signInWithEmailAndPassword(auth, email, pass);
+      if (!res.user.emailVerified) {
+        setUser(null);
+        setIsProfileCompleted(false);
+        setAuthCookie(false);
+        return;
+      }
       setUser({
         uid: res.user.uid,
         email: res.user.email || email,
+        emailVerified: res.user.emailVerified,
       });
       setAuthCookie(true);
     } catch (err: any) {
@@ -114,11 +131,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(true);
       setError(null);
       const res = await createUserWithEmailAndPassword(auth, email, pass);
+      const isE2EMock =
+        typeof window !== 'undefined' &&
+        (window as unknown as { __E2E_MOCK_FIRESTORE__?: boolean }).__E2E_MOCK_FIRESTORE__ === true;
+      if (!isE2EMock) {
+        await sendEmailVerification(res.user);
+      }
       const newUser: User = {
         uid: res.user.uid,
         email: res.user.email || email,
+        emailVerified: res.user.emailVerified,
       };
-      setUser(newUser);
+      if (isE2EMock || res.user.emailVerified) {
+        setUser(newUser);
+      } else {
+        setUser(null);
+        setAuthCookie(false);
+      }
       return newUser;
     } catch (err: any) {
       const msg = err?.message || 'Failed to create account.';
@@ -127,6 +156,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } finally {
       setLoading(false);
     }
+  };
+
+  const resendVerificationEmail = async () => {
+    if (!auth.currentUser) {
+      throw new Error('No signed-in user found. Please log in again.');
+    }
+    await sendEmailVerification(auth.currentUser);
+  };
+
+  const checkEmailVerification = async (): Promise<boolean> => {
+    if (!auth.currentUser) return false;
+    await auth.currentUser.reload();
+    if (auth.currentUser.emailVerified) {
+      await checkProfileStatus(auth.currentUser);
+      return true;
+    }
+    return false;
   };
 
   const logout = async () => {
@@ -156,6 +202,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logout,
         clearError,
         refreshProfileStatus,
+        resendVerificationEmail,
+        checkEmailVerification,
       }}
     >
       {children}

@@ -1,6 +1,7 @@
 export interface User {
   uid: string;
   email: string;
+  emailVerified?: boolean;
   displayName?: string;
   photoURL?: string;
   profileCompleted?: boolean;
@@ -19,4 +20,6 @@ export interface AuthContextType extends AuthState {
   logout: () => Promise<void>;
   clearError: () => void;
   refreshProfileStatus: () => Promise<void>;
+  resendVerificationEmail?: () => Promise<void>;
+  checkEmailVerification?: () => Promise<boolean>;
 }

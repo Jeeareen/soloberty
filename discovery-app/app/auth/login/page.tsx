@@ -103,6 +103,11 @@ export default function LoginPage() {
       // 2. Email exists; attempt authentication with password
       await login(cleanEmail, password);
 
+      if (auth.currentUser && !auth.currentUser.emailVerified) {
+        router.push('/auth/verify-email');
+        return;
+      }
+
       // Check if user's profile is fully set up in Firestore
       const uid = auth.currentUser?.uid;
       if (uid) {
