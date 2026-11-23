@@ -6,7 +6,81 @@ test.describe('Primary Onboarding & Signup Flow E2E', () => {
     await context.grantPermissions(['geolocation']);
     await context.setGeolocation({ latitude: 48.2082, longitude: 16.3738 });
 
+    // Enable E2E Firestore mock flag before app scripts execute
+    await page.addInitScript(() => {
+      (window as unknown as { __E2E_MOCK_FIRESTORE__?: boolean }).__E2E_MOCK_FIRESTORE__ = true;
+    });
+
     const uniqueEmail = `testuser_${Date.now()}@example.com`;
+    const mockUid = 'e2e-mock-uid-12345';
+    const encodeBase64Url = (obj: Record<string, unknown>) =>
+      Buffer.from(JSON.stringify(obj)).toString('base64url');
+    const nowSec = Math.floor(Date.now() / 1000);
+    const mockIdToken = [
+      encodeBase64Url({ alg: 'RS256', typ: 'JWT' }),
+      encodeBase64Url({
+        iss: 'https://securetoken.google.com/mock-project',
+        aud: 'mock-project',
+        auth_time: nowSec,
+        user_id: mockUid,
+        sub: mockUid,
+        iat: nowSec,
+        exp: nowSec + 3600,
+        email: uniqueEmail,
+        email_verified: false,
+      }),
+      'mock-signature',
+    ].join('.');
+
+    // Intercept Firebase Auth & Firestore requests so CI never writes test accounts to the live DB
+    await page.route('**/identitytoolkit.googleapis.com/**', async (route) => {
+      const url = route.request().url();
+      if (url.includes('accounts:signUp')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            kind: 'identitytoolkit#SignupNewUserResponse',
+            idToken: mockIdToken,
+            email: uniqueEmail,
+            refreshToken: 'mock-refresh-token',
+            expiresIn: '3600',
+            localId: mockUid,
+          }),
+        });
+      }
+      if (url.includes('accounts:lookup')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            kind: 'identitytoolkit#GetAccountInfoResponse',
+            users: [{ localId: mockUid, email: uniqueEmail, emailVerified: false }],
+          }),
+        });
+      }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    });
+
+    await page.route('**/securetoken.googleapis.com/**', async (route) => {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: mockIdToken,
+          expires_in: '3600',
+          token_type: 'Bearer',
+          refresh_token: 'mock-refresh-token',
+          id_token: mockIdToken,
+          user_id: mockUid,
+          project_id: 'mock-project',
+        }),
+      });
+    });
+
+    await page.route('**/firestore.googleapis.com/**', async (route) => {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    });
 
     // 1. Navigate to signup page
     await page.goto('/auth/signup');

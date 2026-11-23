@@ -513,8 +513,13 @@ export const SignupWizard: React.FC = () => {
         updatedAt: serverTimestamp(),
       };
 
-      // Save to Firestore
-      await setDoc(doc(db, 'users', currentUid), fullProfile, { merge: true });
+      // Save to Firestore (skipped in E2E mock mode so tests never write to live DB)
+      const isE2EMock =
+        typeof window !== 'undefined' &&
+        (window as unknown as { __E2E_MOCK_FIRESTORE__?: boolean }).__E2E_MOCK_FIRESTORE__ === true;
+      if (!isE2EMock) {
+        await setDoc(doc(db, 'users', currentUid), fullProfile, { merge: true });
+      }
 
       // Refresh auth context profile completion status
       if (refreshProfileStatus) {

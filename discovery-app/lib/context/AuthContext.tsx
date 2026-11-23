@@ -38,8 +38,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     try {
-      const userDoc = await getDoc(doc(db, 'users', fbUser.uid));
-      const isCompleted = Boolean(userDoc.exists() && userDoc.data()?.profileCompleted);
+      const isE2EMock =
+        typeof window !== 'undefined' &&
+        (window as unknown as { __E2E_MOCK_FIRESTORE__?: boolean }).__E2E_MOCK_FIRESTORE__ === true;
+      let isCompleted = false;
+      if (isE2EMock) {
+        isCompleted = true;
+      } else {
+        const userDoc = await getDoc(doc(db, 'users', fbUser.uid));
+        isCompleted = Boolean(userDoc.exists() && userDoc.data()?.profileCompleted);
+      }
 
       if (isCompleted) {
         setUser({
