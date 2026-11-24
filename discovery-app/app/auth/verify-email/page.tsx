@@ -1,18 +1,20 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Suspense, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, CheckCircle2, RefreshCw, LogOut, ArrowRight } from 'lucide-react';
 import { auth } from '../../../lib/firebase/config';
 import { useAuth } from '../../../lib/hooks/useAuth';
 import { SolobertyLogo } from '../../../components/SolobertyLogo';
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryEmail = searchParams.get('email') || '';
   const { user, loading, logout, resendVerificationEmail, checkEmailVerification } = useAuth();
 
-  const [email, setEmail] = useState<string>('');
+  const [email, setEmail] = useState<string>(queryEmail);
   const [checking, setChecking] = useState(false);
   const [resending, setResending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
@@ -20,12 +22,14 @@ export default function VerifyEmailPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (auth.currentUser?.email) {
+    if (queryEmail) {
+      setEmail(queryEmail);
+    } else if (auth.currentUser?.email) {
       setEmail(auth.currentUser.email);
     } else if (user?.email) {
       setEmail(user.email);
     }
-  }, [user]);
+  }, [queryEmail, user]);
 
   useEffect(() => {
     if (user?.emailVerified) {
@@ -181,5 +185,19 @@ export default function VerifyEmailPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#FCF9F2] flex items-center justify-center p-6">
+          <div className="w-8 h-8 rounded-full border-2 border-[#B84A00] border-t-transparent animate-spin" />
+        </div>
+      }
+    >
+      <VerifyEmailContent />
+    </Suspense>
   );
 }

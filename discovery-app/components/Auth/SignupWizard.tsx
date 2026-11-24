@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../../lib/hooks/useAuth';
 import { PREDEFINED_INTERESTS, type UserProfile } from '../../types/user';
 import { doc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
-import { fetchSignInMethodsForEmail } from 'firebase/auth';
+import { fetchSignInMethodsForEmail, signOut } from 'firebase/auth';
 import { db, auth } from '../../lib/firebase/config';
 import { uploadToCloudinary } from '../../lib/cloudinary';
 import { Sparkles, AlertCircle, LogIn, RefreshCw, Check, Loader2 } from 'lucide-react';
@@ -443,10 +443,17 @@ export const SignupWizard: React.FC = () => {
     setUploadingPhotos(true);
 
     try {
-      // 1. Create account in Firebase Auth only when user completes registration
+      // 1. Create account in Firebase Auth only when user completes registration.
+      // If another user is still signed in from an earlier session/attempt, sign them out first
+      // so the new email gets its own Firebase Auth account and verification email.
+      const targetEmail = formData.email.trim();
       let currentUid = auth.currentUser?.uid;
+      if (auth.currentUser && auth.currentUser.email?.toLowerCase() !== targetEmail.toLowerCase()) {
+        await signOut(auth);
+        currentUid = undefined;
+      }
       if (!currentUid) {
-        const newUser = await signup(formData.email.trim(), formData.password);
+        const newUser = await signup(targetEmail, formData.password);
         currentUid = newUser.uid;
       }
 
@@ -535,7 +542,11 @@ export const SignupWizard: React.FC = () => {
           : 'Profile created! Welcome to Soloberty. Redirecting to your feed...'
       );
       setTimeout(() => {
-        router.push(needsVerification ? '/auth/verify-email' : '/feed');
+        router.push(
+          needsVerification
+            ? `/auth/verify-email?email=${encodeURIComponent(formData.email.trim())}`
+            : '/feed'
+        );
       }, 1500);
     } catch (err: any) {
       console.error('Final profile save error:', err);

@@ -43,13 +43,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         typeof window !== 'undefined' &&
         (window as unknown as { __E2E_MOCK_FIRESTORE__?: boolean }).__E2E_MOCK_FIRESTORE__ === true;
 
-      if (!isE2EMock && !fbUser.emailVerified) {
-        setUser(null);
-        setIsProfileCompleted(false);
-        setAuthCookie(false);
-        return;
-      }
-
       let isCompleted = false;
       if (isE2EMock) {
         isCompleted = true;
@@ -105,12 +98,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(true);
       setError(null);
       const res = await signInWithEmailAndPassword(auth, email, pass);
-      if (!res.user.emailVerified) {
-        setUser(null);
-        setIsProfileCompleted(false);
-        setAuthCookie(false);
-        return;
-      }
       setUser({
         uid: res.user.uid,
         email: res.user.email || email,
@@ -130,6 +117,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       setLoading(true);
       setError(null);
+      if (auth.currentUser && auth.currentUser.email?.toLowerCase() !== email.trim().toLowerCase()) {
+        await signOut(auth);
+      }
       const res = await createUserWithEmailAndPassword(auth, email, pass);
       const isE2EMock =
         typeof window !== 'undefined' &&
@@ -142,12 +132,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         email: res.user.email || email,
         emailVerified: res.user.emailVerified,
       };
-      if (isE2EMock || res.user.emailVerified) {
-        setUser(newUser);
-      } else {
-        setUser(null);
-        setAuthCookie(false);
-      }
+      setUser(newUser);
       return newUser;
     } catch (err: any) {
       const msg = err?.message || 'Failed to create account.';
